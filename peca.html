@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRASMAT MES — Buscar Peça</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;
+  --border:#2A3045;--border2:#3A4560;
+  --text:#E8ECF5;--text2:#8892AA;--text3:#4E5A72;
+  --accent:#3B7FFF;--accent2:#1A4FCC;
+  --ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+
+/* TOPBAR */
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;gap:16px;flex-shrink:0}
+.topbar-brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
+.brand-name{font-size:14px;font-weight:600;letter-spacing:0.04em}
+.brand-sub{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.topbar-nav{display:flex;gap:4px}
+.nav-btn{font-size:12px;padding:6px 14px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s}
+.nav-btn:hover{background:var(--bg3);color:var(--text)}
+.nav-btn.active{background:var(--accent);color:#fff}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-label{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+/* LAYOUT */
+.shell{display:grid;grid-template-columns:380px 1fr;height:calc(100vh - 56px)}
+
+/* PAINEL ESQUERDO — BUSCA */
+.left{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+
+.search-section{padding:20px 20px 16px;border-bottom:1px solid var(--border)}
+.search-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
+.search-desc{font-size:12px;color:var(--text3);margin-bottom:14px;line-height:1.5}
+.search-wrap{position:relative;margin-bottom:10px}
+.search-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 14px 11px 40px;font-size:14px;color:var(--text);font-family:var(--mono);outline:none;transition:border-color 0.15s}
+.search-input:focus{border-color:var(--accent)}
+.search-input::placeholder{color:var(--text3);font-family:var(--sans);font-size:13px}
+.search-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:16px;pointer-events:none}
+.search-hint{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+.results-section{flex:1;overflow-y:auto;padding:12px}
+.results-label{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);padding:4px 8px 10px}
+.result-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;transition:background 0.12s;border:1px solid transparent}
+.result-item:hover{background:var(--bg3)}
+.result-item.selected{background:var(--bg3);border-color:var(--accent)}
+.result-stripe{width:3px;height:36px;border-radius:2px;flex-shrink:0}
+.result-info{flex:1;min-width:0}
+.result-pedido{font-size:13px;font-weight:500;color:var(--text);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result-codigo{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.result-meta{font-size:11px;color:var(--text2);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.result-badge{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:8px;flex-shrink:0}
+.badge-em{background:rgba(59,127,255,0.12);color:var(--accent)}
+.badge-livre{background:rgba(45,191,126,0.1);color:var(--ok)}
+.empty-results{text-align:center;padding:40px 16px;color:var(--text3);font-size:13px;line-height:1.6}
+.empty-hero{font-size:32px;margin-bottom:10px}
+
+/* PAINEL DIREITO — DETALHE */
+.right{overflow-y:auto;background:var(--bg)}
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);gap:12px}
+.placeholder-icon{font-size:48px;opacity:0.3}
+.placeholder-text{font-size:14px;text-align:center;line-height:1.6;max-width:280px}
+
+/* DETALHE DA PEÇA */
+.detail{padding:28px 32px}
+.detail-topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+.detail-id{font-size:22px;font-weight:600;color:var(--text);font-family:var(--mono)}
+.detail-codigo{font-size:14px;color:var(--text2);font-family:var(--mono);margin-top:2px}
+.status-pill{font-size:12px;font-weight:500;padding:6px 14px;border-radius:20px;flex-shrink:0}
+.status-em{background:rgba(59,127,255,0.12);color:var(--accent);border:1px solid rgba(59,127,255,0.2)}
+.status-livre{background:rgba(45,191,126,0.1);color:var(--ok);border:1px solid rgba(45,191,126,0.2)}
+
+/* MÉTRICAS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.metric{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.metric-val{font-size:24px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:4px}
+.metric-val.accent{color:var(--accent)}
+.metric-val.ok{color:var(--ok)}
+.metric-val.warn{color:var(--warn)}
+.metric-val.danger{color:var(--danger)}
+.metric-label{font-size:11px;color:var(--text3)}
+
+/* POSIÇÃO ATUAL */
+.pos-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;gap:16px}
+.pos-stripe{width:4px;height:48px;border-radius:2px;flex-shrink:0}
+.pos-info{flex:1}
+.pos-label{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px}
+.pos-proc{font-size:16px;font-weight:600;color:var(--text)}
+.pos-subop{font-size:12px;color:var(--text2);margin-top:2px}
+.pos-right{text-align:right}
+.pos-dias{font-size:20px;font-weight:600;font-family:var(--mono)}
+.pos-dias-label{font-size:11px;color:var(--text3)}
+
+/* SEÇÃO TÍTULOS */
+.section-title{font-size:11px;font-weight:500;letter-spacing:0.09em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:"";flex:1;height:1px;background:var(--border)}
+
+/* TIMELINE */
+.timeline{list-style:none;position:relative;padding-left:32px;margin-bottom:24px}
+.timeline::before{content:"";position:absolute;left:10px;top:6px;bottom:6px;width:1px;background:var(--border)}
+.tl-item{position:relative;margin-bottom:14px}
+.tl-item:last-child{margin-bottom:0}
+.tl-dot{position:absolute;left:-32px;top:5px;width:14px;height:14px;border-radius:50%;border:2px solid var(--bg)}
+.tl-dot.entrada{background:var(--accent)}
+.tl-dot.saida{background:var(--ok)}
+.tl-dot.atual{background:var(--warn);box-shadow:0 0 0 4px rgba(245,166,35,0.15)}
+.tl-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;transition:border-color 0.15s}
+.tl-card.atual{border-color:rgba(245,166,35,0.4);background:rgba(245,166,35,0.03)}
+.tl-card.saida-card{opacity:0.7}
+.tl-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.tl-proc{font-size:13px;font-weight:500;color:var(--text)}
+.tl-evt{font-size:10px;padding:2px 8px;border-radius:8px;font-family:var(--mono)}
+.evt-entrada{background:rgba(59,127,255,0.12);color:var(--accent)}
+.evt-saida{background:rgba(45,191,126,0.1);color:var(--ok)}
+.tl-atual-tag{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(245,166,35,0.12);color:var(--warn);font-family:var(--mono)}
+.tl-ret-tag{font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(240,69,69,0.12);color:var(--danger)}
+.tl-sub{font-size:12px;color:var(--text2);margin-bottom:8px}
+.tl-foot{display:flex;gap:16px;flex-wrap:wrap}
+.tl-meta{font-size:11px;color:var(--text3);font-family:var(--mono);display:flex;align-items:center;gap:4px}
+.tl-dur{font-size:11px;font-family:var(--mono);padding:2px 8px;border-radius:8px;background:var(--bg3);color:var(--text2)}
+.tl-obs{margin-top:8px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:8px;line-height:1.5}
+
+/* PEDIDO COMPLETO */
+.pedido-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:24px}
+.pedido-item{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;transition:border-color 0.15s}
+.pedido-item:hover{border-color:var(--accent)}
+.pedido-item.atual-peca{border-color:rgba(245,166,35,0.4)}
+.pedido-pedido{font-size:12px;font-weight:500;color:var(--text);font-family:var(--mono)}
+.pedido-codigo{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.pedido-proc{font-size:11px;color:var(--text2);margin-top:4px}
+.pedido-dias{font-size:10px;font-family:var(--mono);padding:1px 7px;border-radius:8px;margin-top:4px;display:inline-block}
+
+/* LOADING */
+.loading{display:flex;align-items:center;justify-content:center;height:200px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-mark">BM</div>
+    <div>
+      <div class="brand-name">BRASMAT MES</div>
+      <div class="brand-sub">sistema de execução de manufatura</div>
+    </div>
+  </div>
+  <div class="topbar-nav">
+    <button class="nav-btn" onclick="navTo('index.html')">Posição</button>
+    <button class="nav-btn" onclick="navTo('kanban.html')">Kanban</button>
+    <button class="nav-btn active">Buscar peça</button>
+  </div>
+  <div class="topbar-right">
+    <div class="sync-dot"></div>
+    <span class="sync-label" id="sync-label">carregando...</span>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- ESQUERDA: BUSCA -->
+  <div class="left">
+    <div class="search-section">
+      <div class="search-title">Localizar peça</div>
+      <div class="search-desc">Busque pelo número do pedido ou código da peça para ver a posição atual e o histórico completo de movimentação.</div>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input class="search-input" id="search" placeholder="Digite pedido ou código..." autocomplete="off">
+      </div>
+      <div class="search-hint" id="search-hint">aguardando dados...</div>
+    </div>
+    <div class="results-section" id="results-section">
+      <div class="empty-results">
+        <div class="empty-hero">🔍</div>
+        <div>Digite ao menos 2 caracteres para buscar uma peça.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIREITA: DETALHE -->
+  <div class="right" id="right-panel">
+    <div class="placeholder">
+      <div class="placeholder-icon">📋</div>
+      <div class="placeholder-text">Selecione uma peça na busca para ver o histórico completo de movimentação.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = "https://hjvlznijsgdwurtsyukl.supabase.co";
+const SUPABASE_KEY = "sb_publishable_3N0kbWDpJ542n_aWeFzUqQ_pmVGrFiB";
+
+const COR_PROCESSO = {
+  "RETÍFICA PLANA":"#3B7FFF","RETÍFICA CILÍNDRICA INTERNA":"#9B5DE5",
+  "RETÍFICA CILÍNDRICA EXTERNA":"#7C3AED","TORNO":"#059669",
+  "EROSÃO A FIO":"#DC2626","EROSÃO PENETRAÇÃO":"#B91C1C",
+  "FORMA":"#D97706","BRUNIDORA":"#0891B2","POLIMENTO":"#DB2777",
+  "PRENSA":"#65A30D","QUALIDADE":"#F59E0B","SERVIÇO EXTERNO":"#6B7280",
+  "ADMINISTRATIVO":"#4B5563"
+};
+
+let TODOS = [];
+let pecaSelecionada = null;
+
+async function fetchSupabase(path){
+  const r = await fetch(SUPABASE_URL+path,{
+    headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY}
+  });
+  return r.json();
+}
+
+async function carregarDados(){
+  let todos=[], offset=0;
+  while(true){
+    const chunk = await fetchSupabase(
+      `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,sequencial_operacao,observacao,retrabalho,prazo_entrega,quantidade_produzida,quantidade_solicitada,operacao_retifica_plana,operacao_retifica_cilindrica_interna,operacao_retifica_cilindrica_externa,operacao_erosao_fio,operacao_forma,operacao_polimento,operacao_brunidora,operacao_prensa,operacao_torno,operacao_qualidade,operacao_administrativo,operacao_servico_externo,operacao_erosao_penetracao&order=id.asc&limit=1000&offset=${offset}`
+    );
+    if(!Array.isArray(chunk)||chunk.length===0) break;
+    todos=todos.concat(chunk);
+    if(chunk.length<1000) break;
+    offset+=1000;
+  }
+  TODOS=todos;
+  document.getElementById("sync-label").textContent=`${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
+  document.getElementById("search-hint").textContent=`${todos.length} eventos carregados`;
+}
+
+function getSubop(row){
+  const cols=["operacao_retifica_plana","operacao_retifica_cilindrica_interna","operacao_retifica_cilindrica_externa","operacao_erosao_fio","operacao_forma","operacao_polimento","operacao_brunidora","operacao_prensa","operacao_torno","operacao_qualidade","operacao_administrativo","operacao_servico_externo","operacao_erosao_penetracao"];
+  for(const c of cols){ if(row[c]&&String(row[c]).trim()) return String(row[c]).trim(); }
+  return "—";
+}
+
+function diasNoSetor(row){
+  if(!row.data_evento) return 0;
+  return Math.floor((Date.now()-new Date(row.data_evento))/(1000*60*60*24));
+}
+function diasClass(d){ return d>=6?"danger":d>=3?"warn":"ok"; }
+function diasLabel(d){ return d===0?"hoje":d===1?"1 dia":d+" dias"; }
+function fmtData(d){
+  if(!d) return "—";
+  const dt=new Date(d);
+  return dt.toLocaleDateString("pt-BR")+" "+dt.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+}
+
+// ---- BUSCA ----
+document.getElementById("search").addEventListener("input", function(){
+  const q = this.value.trim().toUpperCase();
+  const sec = document.getElementById("results-section");
+  if(q.length < 2){
+    sec.innerHTML=`<div class="empty-results"><div class="empty-hero">🔍</div><div>Digite ao menos 2 caracteres para buscar.</div></div>`;
+    return;
+  }
+
+  // Agrupa por pedido+codigo e pega o último evento de cada
+  const mapa={};
+  TODOS.forEach(r=>{
+    const p=String(r.pedido||"").toUpperCase();
+    const c=String(r.codigo_peca||"").toUpperCase();
+    if(!p.includes(q)&&!c.includes(q)) return;
+    const k=r.pedido+"||"+r.codigo_peca;
+    if(!mapa[k]||r.id>mapa[k].id) mapa[k]=r;
+  });
+
+  const resultados = Object.values(mapa).sort((a,b)=>{
+    // Prioriza exato no início
+    const pa=String(a.pedido||"").toUpperCase();
+    const pb=String(b.pedido||"").toUpperCase();
+    if(pa.startsWith(q)&&!pb.startsWith(q)) return -1;
+    if(!pa.startsWith(q)&&pb.startsWith(q)) return 1;
+    return b.id-a.id;
+  }).slice(0,40);
+
+  if(resultados.length===0){
+    sec.innerHTML=`<div class="empty-results"><div class="empty-hero">😕</div><div>Nenhuma peça encontrada para "<strong>${this.value}</strong>".</div></div>`;
+    return;
+  }
+
+  const label = `<div class="results-label">${resultados.length} resultado(s)</div>`;
+  const items = resultados.map(r=>{
+    const evt=String(r.evento||"").trim().toUpperCase();
+    const emProcesso=evt==="ENTRADA";
+    const proc=String(r.processo||"").trim();
+    const cor=COR_PROCESSO[proc.toUpperCase()]||"#4E5A72";
+    const dias=diasNoSetor(r);
+    const dc=diasClass(dias);
+    const isSelected=pecaSelecionada&&pecaSelecionada.pedido===r.pedido&&pecaSelecionada.codigo===r.codigo_peca;
+    return `<div class="result-item${isSelected?" selected":""}" onclick="selecionarPeca('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
+      <div class="result-stripe" style="background:${emProcesso?cor:"var(--border)"}"></div>
+      <div class="result-info">
+        <div class="result-pedido">${r.pedido||"—"}</div>
+        <div class="result-codigo">${r.codigo_peca||"—"}</div>
+        <div class="result-meta">${r.cliente||""} ${r.operador?"· "+r.operador:""}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="result-badge ${emProcesso?"badge-em":"badge-livre"}">${emProcesso?"em processo":"liberada"}</div>
+        ${emProcesso?`<div style="font-size:10px;font-family:var(--mono);color:var(--${dc});margin-top:4px">${diasLabel(dias)}</div>`:""}
+      </div>
+    </div>`;
+  }).join("");
+
+  sec.innerHTML = label+items;
+});
+
+// ---- SELECIONAR PEÇA ----
+function selecionarPeca(pedido, codigo){
+  pecaSelecionada = {pedido, codigo};
+
+  // Re-renderiza busca para marcar selected
+  document.getElementById("search").dispatchEvent(new Event("input"));
+
+  const right = document.getElementById("right-panel");
+  right.innerHTML=`<div class="loading"><div class="spinner"></div>carregando histórico...</div>`;
+
+  // Busca todos os eventos desta peça
+  const eventos = TODOS.filter(r=>r.pedido===pedido&&r.codigo_peca===codigo).sort((a,b)=>a.id-b.id);
+
+  if(!eventos.length){
+    right.innerHTML=`<div class="placeholder"><div class="placeholder-icon">😕</div><div class="placeholder-text">Nenhum evento encontrado para esta peça.</div></div>`;
+    return;
+  }
+
+  const ultimo=eventos[eventos.length-1];
+  const evt=String(ultimo.evento||"").trim().toUpperCase();
+  const emProcesso=evt==="ENTRADA";
+  const proc=String(ultimo.processo||"").trim();
+  const corProc=COR_PROCESSO[proc.toUpperCase()]||"#4E5A72";
+  const subopAtual=getSubop(ultimo);
+  const diasAtual=diasNoSetor(ultimo);
+  const dc=diasClass(diasAtual);
+
+  const cliente=ultimo.cliente||"—";
+  const prazo=ultimo.prazo_entrega||"—";
+  const qtdSol=ultimo.quantidade_solicitada||"—";
+  const qtdProd=ultimo.quantidade_produzida||"—";
+  const retrabalhos=eventos.filter(r=>String(r.retrabalho||"").trim()).length;
+
+  // Calcula lead time (primeiro ao último evento)
+  const dtIni=new Date(eventos[0].data_evento);
+  const dtFim=new Date(ultimo.data_evento);
+  const leadDias=Math.floor((dtFim-dtIni)/(1000*60*60*24));
+
+  const prazoDate=prazo!=="—"?new Date(prazo):null;
+  const prazoStatus=prazoDate
+    ?(prazoDate>new Date()
+      ?`<span style="color:var(--ok)">✓ dentro do prazo</span>`
+      :`<span style="color:var(--danger)">⚠ prazo vencido</span>`)
+    :"";
+
+  // Busca pedidos irmãos (mesmo número de pedido, códigos diferentes)
+  const irmaos = (() => {
+    const mapa={};
+    TODOS.forEach(r=>{
+      if(r.pedido!==pedido) return;
+      const k=r.codigo_peca;
+      if(!mapa[k]||r.id>mapa[k].id) mapa[k]=r;
+    });
+    return Object.values(mapa).filter(r=>r.codigo_peca!==codigo);
+  })();
+
+  // Timeline
+  const tlHtml=eventos.map((ev,i)=>{
+    const isUlt=i===eventos.length-1;
+    const evtStr=String(ev.evento||"").trim().toUpperCase();
+    const isEnt=evtStr==="ENTRADA";
+    const dotC=isUlt&&isEnt?"atual":isEnt?"entrada":"saida";
+    const cardC=isUlt&&isEnt?"atual":!isEnt?"saida-card":"";
+    const evtChip=isEnt?`<span class="tl-evt evt-entrada">ENTRADA</span>`:`<span class="tl-evt evt-saida">SAÍDA</span>`;
+    const atualTag=isUlt&&isEnt?`<span class="tl-atual-tag">posição atual · ${diasLabel(diasAtual)}</span>`:"";
+    const retTag=ev.retrabalho&&String(ev.retrabalho).trim()?`<span class="tl-ret-tag">retrabalho</span>`:"";
+    const subop=getSubop(ev);
+
+    // Duração: se SAÍDA, calcula desde a ENTRADA anterior deste processo
+    let durHtml="";
+    if(!isEnt && i>0){
+      const anterior=eventos[i-1];
+      if(anterior&&String(anterior.evento||"").trim().toUpperCase()==="ENTRADA"){
+        const ms=new Date(ev.data_evento)-new Date(anterior.data_evento);
+        if(ms>0){
+          const h=Math.floor(ms/3600000);
+          const d=Math.floor(h/24);
+          durHtml=`<span class="tl-dur">${d>0?d+"d ":""}${h%24}h no setor</span>`;
+        }
+      }
+    }
+
+    return `<li class="tl-item">
+      <div class="tl-dot ${dotC}"></div>
+      <div class="tl-card ${cardC}">
+        <div class="tl-top">
+          <span class="tl-proc">${ev.processo||"—"}</span>
+          ${evtChip}${atualTag}${retTag}
+        </div>
+        <div class="tl-sub">${subop}</div>
+        <div class="tl-foot">
+          <span class="tl-meta">👤 ${ev.operador||"—"}</span>
+          <span class="tl-meta">📅 ${fmtData(ev.data_evento)}</span>
+          ${ev.sequencial_operacao?`<span class="tl-meta">op. ${ev.sequencial_operacao}</span>`:""}
+          ${durHtml}
+        </div>
+        ${ev.observacao&&String(ev.observacao).trim()?`<div class="tl-obs">${ev.observacao}</div>`:""}
+      </div>
+    </li>`;
+  }).join("");
+
+  // Peças irmãs do mesmo pedido
+  const irmaoHtml=irmaos.length===0?"<p style='font-size:12px;color:var(--text3)'>Nenhuma outra peça neste pedido.</p>"
+    :irmaos.map(r=>{
+        const e=String(r.evento||"").trim().toUpperCase();
+        const emP=e==="ENTRADA";
+        const p=String(r.processo||"").trim().toUpperCase();
+        const cor=COR_PROCESSO[p]||"#4E5A72";
+        const d=diasNoSetor(r);
+        const dc=diasClass(d);
+        const isEsta=r.codigo_peca===codigo;
+        return `<div class="pedido-item${isEsta?" atual-peca":""}" onclick="selecionarPeca('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
+          <div class="pedido-pedido">${r.pedido}</div>
+          <div class="pedido-codigo">${r.codigo_peca}</div>
+          <div class="pedido-proc" style="color:${emP?cor:"var(--text3)"}">${emP?r.processo:"liberada"}</div>
+          ${emP?`<span class="pedido-dias dias-${dc}" style="background:rgba(var(--${dc}-rgb,59,127,255),0.1);color:var(--${dc})">${diasLabel(d)}</span>`:""}
+        </div>`;
+      }).join("");
+
+  right.innerHTML=`<div class="detail">
+
+    <div class="detail-topbar">
+      <div>
+        <div class="detail-id">${pedido}</div>
+        <div class="detail-codigo">${codigo}</div>
+      </div>
+      <span class="status-pill ${emProcesso?"status-em":"status-livre"}">
+        ${emProcesso?"Em processo — "+proc:"Peça liberada"}
+      </span>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-val accent">${eventos.length}</div>
+        <div class="metric-label">eventos registrados</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val ${dc}">${diasLabel(diasAtual)}</div>
+        <div class="metric-label">no processo atual</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val ${retrabalhos>0?"danger":"ok"}">${retrabalhos}</div>
+        <div class="metric-label">retrabalho(s)</div>
+      </div>
+      <div class="metric">
+        <div class="metric-val warn">${leadDias} dias</div>
+        <div class="metric-label">lead time total</div>
+      </div>
+    </div>
+
+    ${emProcesso?`
+    <div class="pos-card">
+      <div class="pos-stripe" style="background:${corProc}"></div>
+      <div class="pos-info">
+        <div class="pos-label">posição atual</div>
+        <div class="pos-proc">${proc}</div>
+        <div class="pos-subop">${subopAtual}</div>
+      </div>
+      <div class="pos-right">
+        <div class="pos-dias" style="color:var(--${dc})">${diasLabel(diasAtual)}</div>
+        <div class="pos-dias-label">neste setor</div>
+      </div>
+    </div>`:""}
+
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:24px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <div><div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px">CLIENTE</div><div style="font-size:13px;font-weight:500;color:var(--text)">${cliente}</div></div>
+      <div><div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px">PRAZO</div><div style="font-size:13px;font-weight:500;color:var(--text)">${prazo} ${prazoStatus}</div></div>
+      <div><div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px">QTD SOLICITADA</div><div style="font-size:13px;font-weight:500;color:var(--text)">${qtdSol}</div></div>
+      <div><div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px">QTD PRODUZIDA</div><div style="font-size:13px;font-weight:500;color:var(--text)">${qtdProd}</div></div>
+    </div>
+
+    <div class="section-title">linha do tempo</div>
+    <ul class="timeline">${tlHtml}</ul>
+
+    ${irmaos.length>0?`
+    <div class="section-title">outras peças do pedido ${pedido} (${irmaos.length})</div>
+    <div class="pedido-grid">${irmaoHtml}</div>`:""}
+
+  </div>`;
+}
+
+function esc(s){ return String(s||"").replace(/'/g,"\\'"); }
+function navTo(p){ window.location.href=p; }
+
+carregarDados();
+</script>
+</body>
+</html>

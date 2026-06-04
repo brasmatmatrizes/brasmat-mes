@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRASMAT MES — Peças Paradas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#8892AA;--text3:#4E5A72;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;gap:16px}
+.topbar-brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
+.brand-name{font-size:14px;font-weight:600;letter-spacing:0.04em}
+.brand-sub{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.topbar-nav{display:flex;gap:4px}
+.nav-btn{font-size:12px;padding:6px 14px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s}
+.nav-btn:hover{background:var(--bg3);color:var(--text)}
+.nav-btn.active{background:var(--accent);color:#fff}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-label{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+.page{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 56px)}
+
+/* CONFIG SIDEBAR */
+.config-panel{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:16px}
+.config-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.config-desc{font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:14px}
+.label{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:8px}
+.proc-config{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.proc-config-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px}
+.proc-config-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.proc-config-name{font-size:11px;color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.proc-config-input{width:44px;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:12px;color:var(--text);font-family:var(--mono);text-align:center;outline:none}
+.proc-config-input:focus{border-color:var(--accent)}
+.proc-config-unit{font-size:10px;color:var(--text3);white-space:nowrap}
+.btn-salvar{width:100%;background:var(--accent);border:none;border-radius:8px;padding:9px;font-size:13px;color:#fff;font-family:var(--sans);font-weight:500;cursor:pointer;transition:background 0.15s;margin-bottom:8px}
+.btn-salvar:hover{background:#1A4FCC}
+.btn-reset-cfg{width:100%;background:transparent;border:1px solid var(--border);border-radius:8px;padding:7px;font-size:12px;color:var(--text2);font-family:var(--sans);cursor:pointer;transition:all 0.15s}
+.btn-reset-cfg:hover{border-color:var(--border2);color:var(--text)}
+.saved-msg{font-size:11px;color:var(--ok);text-align:center;margin-top:6px;height:16px;font-family:var(--mono)}
+
+/* CONTENT */
+.content{overflow-y:auto;padding:20px}
+.content-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.content-title{font-size:17px;font-weight:600;color:var(--text)}
+.content-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap}
+.filter-select{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--text2);font-family:var(--sans);outline:none;cursor:pointer}
+.filter-select:focus{border-color:var(--accent)}
+.btn-ghost{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;transition:all 0.15s}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text)}
+
+/* MÉTRICAS */
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+.metric{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.metric-val{font-size:26px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:4px}
+.metric-val.danger{color:var(--danger)}.metric-val.warn{color:var(--warn)}.metric-val.ok{color:var(--ok)}.metric-val.accent{color:var(--accent)}
+.metric-label{font-size:11px;color:var(--text3)}
+
+/* GRÁFICO POR PROCESSO */
+.chart-section{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:18px}
+.chart-title{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.07em;font-family:var(--mono)}
+.bar-rows{display:flex;flex-direction:column;gap:7px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-label{font-size:11px;color:var(--text2);width:160px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width 0.5s}
+.bar-count{font-size:11px;font-family:var(--mono);color:var(--text2);width:24px;text-align:right}
+
+/* TABELA */
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.table-head{display:grid;grid-template-columns:120px 120px 140px 120px 90px 110px 100px;border-bottom:1px solid var(--border);padding:0 14px}
+.th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);padding:9px 6px}
+.table-body{display:flex;flex-direction:column;max-height:400px;overflow-y:auto}
+.tr{display:grid;grid-template-columns:120px 120px 140px 120px 90px 110px 100px;padding:0 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s}
+.tr:last-child{border-bottom:none}
+.tr:hover{background:var(--bg3)}
+.tr.critico{border-left:2px solid var(--danger)}
+.tr.atencao{border-left:2px solid var(--warn)}
+.td{font-size:12px;color:var(--text2);padding:10px 6px;display:flex;align-items:center;overflow:hidden}
+.td.mono{font-family:var(--mono);color:var(--text)}
+.dias-chip{font-size:11px;font-family:var(--mono);font-weight:500;padding:3px 9px;border-radius:10px;white-space:nowrap}
+.dias-warn{background:rgba(245,166,35,0.12);color:var(--warn)}
+.dias-danger{background:rgba(240,69,69,0.12);color:var(--danger)}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;color:var(--text3)}
+.empty-icon{font-size:36px;margin-bottom:10px}
+.empty-state p{font-size:13px;text-align:center;line-height:1.6}
+.loading{display:flex;align-items:center;justify-content:center;padding:80px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* DETALHE */
+.detail-panel{display:none;position:fixed;right:0;top:56px;bottom:0;width:440px;background:var(--bg2);border-left:1px solid var(--border);z-index:100;overflow-y:auto;animation:slideIn 0.18s ease}
+.detail-panel.open{display:block}
+@keyframes slideIn{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+.detail-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--bg2)}
+.detail-close{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer}
+.detail-body{padding:16px 20px}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.meta-box{background:var(--bg3);border-radius:8px;padding:10px 12px}
+.meta-label{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.07em}
+.meta-val{font-size:13px;font-weight:500;color:var(--text)}
+.tl-label{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:12px}
+.timeline{list-style:none;position:relative;padding-left:28px}
+.timeline::before{content:"";position:absolute;left:9px;top:0;bottom:0;width:1px;background:var(--border)}
+.tl-item{position:relative;margin-bottom:12px}
+.tl-item:last-child{margin-bottom:0}
+.tl-dot{position:absolute;left:-28px;top:4px;width:13px;height:13px;border-radius:50%;border:2px solid var(--bg2)}
+.tl-dot.entrada{background:var(--accent)}.tl-dot.saida{background:var(--ok)}.tl-dot.limbo{background:var(--danger);box-shadow:0 0 0 3px rgba(240,69,69,0.2)}
+.tl-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.tl-card.limbo-card{border-color:rgba(240,69,69,0.4);background:rgba(240,69,69,0.03)}
+.tl-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.tl-proc{font-size:12px;font-weight:500;color:var(--text)}
+.tl-evt{font-size:10px;padding:1px 7px;border-radius:8px}
+.evt-entrada{background:rgba(59,127,255,0.12);color:var(--accent)}
+.evt-saida{background:rgba(45,191,126,0.1);color:var(--ok)}
+.tl-limbo-tag{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(240,69,69,0.12);color:var(--danger)}
+.tl-sub{font-size:11px;color:var(--text2);margin-bottom:6px}
+.tl-foot{display:flex;gap:12px;flex-wrap:wrap}
+.tl-meta{font-size:11px;color:var(--text3);font-family:var(--mono)}
+</style>
+</head>
+<body>
+<div style="display:grid;grid-template-rows:56px 1fr;height:100vh">
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-mark">BM</div>
+    <div><div class="brand-name">BRASMAT MES</div><div class="brand-sub">sistema de execução de manufatura</div></div>
+  </div>
+  <div class="topbar-nav">
+    <button class="nav-btn" onclick="navTo('index.html')">Posição</button>
+    <button class="nav-btn" onclick="navTo('kanban.html')">Kanban</button>
+    <button class="nav-btn" onclick="navTo('peca.html')">Buscar peça</button>
+    <button class="nav-btn active">Peças paradas</button>
+  </div>
+  <div class="topbar-right">
+    <div class="sync-dot"></div>
+    <span class="sync-label" id="sync-label">carregando...</span>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- CONFIG -->
+  <div class="config-panel">
+    <div class="config-title">⚙️ Tempo máximo por processo</div>
+    <div class="config-desc">Defina quantos dias é aceitável uma peça ficar sem movimentação após sair de cada processo. Peças que ultrapassarem esse limite aparecem como paradas.</div>
+    <div class="label">configuração de limites</div>
+    <div class="proc-config" id="proc-config"></div>
+    <button class="btn-salvar" onclick="salvarConfig()">Salvar configuração</button>
+    <button class="btn-reset-cfg" onclick="resetarConfig()">Restaurar padrões (3 dias)</button>
+    <div class="saved-msg" id="saved-msg"></div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+    <div class="content-header">
+      <div>
+        <div class="content-title">Peças no limbo</div>
+        <div class="content-sub">Peças com SAÍDA registrada sem nova ENTRADA além do tempo configurado</div>
+      </div>
+      <div class="filter-row">
+        <select class="filter-select" id="f-processo"><option value="">Todos os processos</option></select>
+        <select class="filter-select" id="f-cliente"><option value="">Todos os clientes</option></select>
+        <select class="filter-select" id="f-urgencia">
+          <option value="">Toda urgência</option>
+          <option value="critico">Crítico (&gt; 2x limite)</option>
+          <option value="atencao">Atenção (1x a 2x limite)</option>
+        </select>
+        <button class="btn-ghost" onclick="limparFiltros()">Limpar</button>
+      </div>
+    </div>
+
+    <div class="metrics-row" id="metrics-row">
+      <div class="metric"><div class="metric-val danger" id="m-total">—</div><div class="metric-label">peças no limbo</div></div>
+      <div class="metric"><div class="metric-val danger" id="m-critico">—</div><div class="metric-label">críticas (&gt;2x limite)</div></div>
+      <div class="metric"><div class="metric-val warn" id="m-atencao">—</div><div class="metric-label">atenção (1x a 2x)</div></div>
+      <div class="metric"><div class="metric-val accent" id="m-gargalo" style="font-size:14px;padding-top:4px">—</div><div class="metric-label">processo com mais paradas</div></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-title">peças no limbo por processo de saída</div>
+      <div class="bar-rows" id="bar-rows"></div>
+    </div>
+
+    <div id="content-area"><div class="loading"><div class="spinner"></div>carregando dados...</div></div>
+  </div>
+</div>
+</div>
+
+<!-- DETALHE -->
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-header">
+    <div id="detail-title"></div>
+    <button class="detail-close" onclick="fecharDetalhe()">✕ fechar</button>
+  </div>
+  <div class="detail-body" id="detail-body"></div>
+</div>
+
+<script src="status.js"></script>
+<script>
+const SUPABASE_URL = "https://hjvlznijsgdwurtsyukl.supabase.co";
+const SUPABASE_KEY = "sb_publishable_3N0kbWDpJ542n_aWeFzUqQ_pmVGrFiB";
+
+// Config padrão: 3 dias para todos os processos
+const PROCESSOS_CONFIG = [
+  "RETÍFICA PLANA","RETÍFICA CILÍNDRICA INTERNA","RETÍFICA CILÍNDRICA EXTERNA",
+  "TORNO","EROSÃO A FIO","EROSÃO PENETRAÇÃO","FORMA","BRUNIDORA",
+  "POLIMENTO","PRENSA","QUALIDADE","SERVIÇO EXTERNO","ADMINISTRATIVO"
+];
+const STORAGE_KEY = "brasmat_limites_processo";
+
+function carregarConfig(){
+  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch(e){ return {}; }
+}
+
+function salvarConfig(){
+  const cfg={};
+  PROCESSOS_CONFIG.forEach(p=>{
+    const el=document.getElementById("cfg_"+p.replace(/\s/g,"_").replace(/[^a-zA-Z0-9_]/g,""));
+    cfg[p]=parseInt(el?el.value:3)||3;
+  });
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(cfg));
+  document.getElementById("saved-msg").textContent="✓ configuração salva";
+  setTimeout(()=>document.getElementById("saved-msg").textContent="",2000);
+  calcularERenderar();
+}
+
+function resetarConfig(){
+  localStorage.removeItem(STORAGE_KEY);
+  renderConfigPanel();
+  calcularERenderar();
+  document.getElementById("saved-msg").textContent="✓ padrões restaurados";
+  setTimeout(()=>document.getElementById("saved-msg").textContent="",2000);
+}
+
+function getLimite(processo){
+  const cfg=carregarConfig();
+  return cfg[processo.trim().toUpperCase()] || 3;
+}
+
+function renderConfigPanel(){
+  const cfg=carregarConfig();
+  document.getElementById("proc-config").innerHTML=PROCESSOS_CONFIG.map(p=>{
+    const cor=COR_PROCESSO[p]||"#4E5A72";
+    const id="cfg_"+p.replace(/\s/g,"_").replace(/[^a-zA-Z0-9_]/g,"");
+    const val=cfg[p]||3;
+    return `<div class="proc-config-row">
+      <div class="proc-config-dot" style="background:${cor}"></div>
+      <span class="proc-config-name">${p.charAt(0)+p.slice(1).toLowerCase()}</span>
+      <input class="proc-config-input" id="${id}" type="number" min="1" max="60" value="${val}">
+      <span class="proc-config-unit">dias</span>
+    </div>`;
+  }).join("");
+}
+
+let TODOS=[];
+let filtroProcesso="",filtroCliente="",filtroUrgencia="";
+
+async function fetchSupabase(path){
+  const r=await fetch(SUPABASE_URL+path,{headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY}});
+  return r.json();
+}
+
+async function carregarDados(){
+  let todos=[],offset=0;
+  while(true){
+    const chunk=await fetchSupabase(`/rest/v1/producao_eventos?select=id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,sequencial_operacao,observacao,retrabalho,prazo_entrega,operacao_retifica_plana,operacao_retifica_cilindrica_interna,operacao_retifica_cilindrica_externa,operacao_erosao_fio,operacao_forma,operacao_polimento,operacao_brunidora,operacao_prensa,operacao_torno,operacao_qualidade,operacao_administrativo,operacao_servico_externo,operacao_erosao_penetracao&order=id.asc&limit=1000&offset=${offset}`);
+    if(!Array.isArray(chunk)||chunk.length===0) break;
+    todos=todos.concat(chunk);
+    if(chunk.length<1000) break;
+    offset+=1000;
+  }
+  TODOS=todos;
+  popularFiltros();
+  calcularERenderar();
+  document.getElementById("sync-label").textContent=`${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
+}
+
+/*
+  LÓGICA DE PEÇA NO LIMBO:
+  Para cada pedido+codigo_peca, pega o último evento.
+  Se o último evento for SAÍDA E não for:
+    - SAÍDA Administrativo 11.4 (expedida — ciclo encerrado)
+    - SAÍDA Administrativo 11.3 (elaboração — início do ciclo, não é limbo)
+  Então calcula quantos dias se passaram desde essa SAÍDA.
+  Se dias > limite configurado para aquele processo → está no limbo.
+*/
+function calcularLimbo(){
+  const posicao=calcularPosicaoTodos(TODOS);
+  const limbo=[];
+
+  Object.values(posicao).forEach(row=>{
+    const evt=String(row.evento||"").trim().toUpperCase();
+    const isSaida=evt==="SAÍDA"||evt==="SAIDA";
+    if(!isSaida) return;
+
+    const proc=String(row.processo||"").trim().toUpperCase();
+    const subop=getSubop(row);
+
+    // Ignora: expedida (11.4 saída) e elaboração de processo (11.3)
+    if(proc.includes("ADMINISTRATIVO")){
+      if(subop.includes(SUBOP_ALMOXARIFADO)) return; // expedida
+      if(subop.includes(SUBOP_ELABORACAO))   return; // largada normal
+    }
+
+    const dias=diasDesde(row);
+    const limite=getLimite(proc);
+    if(dias<=limite) return; // dentro do prazo
+
+    const urgencia=dias>=(limite*2)?"critico":"atencao";
+    limbo.push({row, dias, limite, urgencia, proc});
+  });
+
+  return limbo.sort((a,b)=>b.dias-a.dias);
+}
+
+function calcularERenderar(){
+  const limbo=calcularLimbo().filter(item=>{
+    if(filtroProcesso && item.proc!==filtroProcesso) return false;
+    if(filtroCliente  && String(item.row.cliente||"").trim()!==filtroCliente) return false;
+    if(filtroUrgencia && item.urgencia!==filtroUrgencia) return false;
+    return true;
+  });
+  renderMetricas(limbo);
+  renderGrafico(limbo);
+  renderTabela(limbo);
+}
+
+function renderMetricas(limbo){
+  const critico=limbo.filter(i=>i.urgencia==="critico").length;
+  const atencao=limbo.filter(i=>i.urgencia==="atencao").length;
+  const cnt={};
+  limbo.forEach(i=>{ cnt[i.proc]=(cnt[i.proc]||0)+1; });
+  const gargalo=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById("m-total").textContent=limbo.length;
+  document.getElementById("m-critico").textContent=critico;
+  document.getElementById("m-atencao").textContent=atencao;
+  document.getElementById("m-gargalo").textContent=gargalo?gargalo[0].charAt(0)+gargalo[0].slice(1).toLowerCase()+" ("+gargalo[1]+")":"—";
+}
+
+function renderGrafico(limbo){
+  const cnt={};
+  limbo.forEach(i=>{ cnt[i.proc]=(cnt[i.proc]||0)+1; });
+  const itens=Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
+  const max=itens[0]?itens[0][1]:1;
+  document.getElementById("bar-rows").innerHTML=itens.length===0
+    ?`<p style="font-size:12px;color:var(--text3)">Nenhuma peça no limbo com os filtros selecionados.</p>`
+    :itens.map(([proc,cnt])=>{
+      const cor=COR_PROCESSO[proc]||"#4E5A72";
+      const pct=Math.round(cnt/max*100);
+      return `<div class="bar-row">
+        <span class="bar-label">${proc.charAt(0)+proc.slice(1).toLowerCase()}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${cor}"></div></div>
+        <span class="bar-count">${cnt}</span>
+      </div>`;
+    }).join("");
+}
+
+function renderTabela(limbo){
+  const area=document.getElementById("content-area");
+  if(!limbo.length){
+    area.innerHTML=`<div class="empty-state"><div class="empty-icon">✅</div><p>Nenhuma peça no limbo com os filtros selecionados.<br>Todos os processos estão dentro do tempo configurado.</p></div>`;
+    return;
+  }
+  const rows=limbo.map(item=>{
+    const {row,dias,limite,urgencia,proc}=item;
+    const excesso=dias-limite;
+    const dc=urgencia==="critico"?"danger":"warn";
+    const subop=getSubop(row);
+    return `<div class="tr ${urgencia}" onclick="abrirDetalhe('${esc(row.pedido)}','${esc(row.codigo_peca)}')">
+      <div class="td mono">${row.pedido||"—"}</div>
+      <div class="td mono">${row.codigo_peca||"—"}</div>
+      <div class="td" style="flex-direction:column;align-items:flex-start;gap:2px">
+        <span style="font-size:11px;color:var(--text)">${proc.charAt(0)+proc.slice(1).toLowerCase()}</span>
+        <span style="font-size:10px;color:var(--text3)">${subop}</span>
+      </div>
+      <div class="td" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.cliente||"—"}</div>
+      <div class="td" style="font-size:11px">${row.operador||"—"}</div>
+      <div class="td"><span class="dias-chip dias-${dc}">${dias} dias</span></div>
+      <div class="td" style="font-size:11px;color:var(--${dc})">+${excesso}d do limite</div>
+    </div>`;
+  }).join("");
+  area.innerHTML=`<div class="table-wrap">
+    <div class="table-head">
+      <div class="th">Pedido</div><div class="th">Código</div><div class="th">Saiu de</div>
+      <div class="th">Cliente</div><div class="th">Operador</div><div class="th">Dias parada</div><div class="th">Excesso</div>
+    </div>
+    <div class="table-body">${rows}</div>
+  </div>`;
+}
+
+function popularFiltros(){
+  const posicao=calcularPosicaoTodos(TODOS);
+  const procs=[...new Set(Object.values(posicao).map(r=>String(r.processo||"").trim().toUpperCase()).filter(Boolean))].sort();
+  const clis=[...new Set(Object.values(posicao).map(r=>String(r.cliente||"").trim()).filter(Boolean))].sort();
+  document.getElementById("f-processo").innerHTML='<option value="">Todos os processos</option>'+procs.map(p=>`<option value="${p}">${p}</option>`).join("");
+  document.getElementById("f-cliente").innerHTML='<option value="">Todos os clientes</option>'+clis.map(c=>`<option>${c}</option>`).join("");
+}
+
+function limparFiltros(){
+  filtroProcesso="";filtroCliente="";filtroUrgencia="";
+  document.getElementById("f-processo").value="";
+  document.getElementById("f-cliente").value="";
+  document.getElementById("f-urgencia").value="";
+  calcularERenderar();
+}
+
+function abrirDetalhe(pedido,codigo){
+  const panel=document.getElementById("detail-panel");
+  const body=document.getElementById("detail-body");
+  panel.classList.add("open");
+  body.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:40px;color:var(--text3);font-family:var(--mono);font-size:12px"><div class="spinner"></div>carregando...</div>`;
+  document.getElementById("detail-title").innerHTML=`<div style="font-size:15px;font-weight:600;color:var(--text);font-family:var(--mono)">${pedido}</div><div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px">${codigo}</div>`;
+
+  const eventos=TODOS.filter(r=>r.pedido===pedido&&r.codigo_peca===codigo).sort((a,b)=>a.id-b.id);
+  if(!eventos.length){body.innerHTML="<p style='color:var(--text3);font-size:13px'>Sem eventos.</p>";return;}
+
+  const ultimo=eventos[eventos.length-1];
+  const diasLimbo=diasDesde(ultimo);
+  const proc=String(ultimo.processo||"").trim().toUpperCase();
+  const limite=getLimite(proc);
+
+  const tl=eventos.map((ev,i)=>{
+    const isUlt=i===eventos.length-1;
+    const evtStr=String(ev.evento||"").trim().toUpperCase();
+    const isEnt=evtStr==="ENTRADA";
+    const dotC=isUlt?"limbo":isEnt?"entrada":"saida";
+    const cardC=isUlt?"limbo-card":"";
+    const subop=getSubop(ev);
+    return `<li class="tl-item">
+      <div class="tl-dot ${dotC}"></div>
+      <div class="tl-card ${cardC}">
+        <div class="tl-top">
+          <span class="tl-proc">${ev.processo||"—"}</span>
+          <span class="tl-evt ${isEnt?"evt-entrada":"evt-saida"}">${evtStr}</span>
+          ${isUlt?`<span class="tl-limbo-tag">⚠ no limbo há ${diasLimbo} dias (limite: ${limite}d)</span>`:""}
+        </div>
+        <div class="tl-sub">${subop}</div>
+        <div class="tl-foot">
+          <span class="tl-meta">👤 ${ev.operador||"—"}</span>
+          <span class="tl-meta">📅 ${fmtData(ev.data_evento)}</span>
+        </div>
+        ${ev.observacao&&String(ev.observacao).trim()?`<div style="margin-top:6px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:5px">${ev.observacao}</div>`:""}
+      </div>
+    </li>`;
+  }).join("");
+
+  body.innerHTML=`
+    <div class="meta-grid">
+      <div class="meta-box"><div class="meta-label">cliente</div><div class="meta-val">${ultimo.cliente||"—"}</div></div>
+      <div class="meta-box"><div class="meta-label">prazo entrega</div><div class="meta-val">${ultimo.prazo_entrega||"—"}</div></div>
+      <div class="meta-box"><div class="meta-label">dias no limbo</div><div class="meta-val" style="color:var(--danger)">${diasLimbo} dias</div></div>
+      <div class="meta-box"><div class="meta-label">limite configurado</div><div class="meta-val">${limite} dias</div></div>
+    </div>
+    <div class="tl-label">linha do tempo</div>
+    <ul class="timeline">${tl}</ul>`;
+}
+
+function fecharDetalhe(){document.getElementById("detail-panel").classList.remove("open");}
+function navTo(p){window.location.href=p;}
+
+document.getElementById("f-processo").addEventListener("change",function(){filtroProcesso=this.value;calcularERenderar();});
+document.getElementById("f-cliente").addEventListener("change",function(){filtroCliente=this.value;calcularERenderar();});
+document.getElementById("f-urgencia").addEventListener("change",function(){filtroUrgencia=this.value;calcularERenderar();});
+
+renderConfigPanel();
+carregarDados();
+</script>
+</body>
+</html>

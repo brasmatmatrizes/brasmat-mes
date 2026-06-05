@@ -260,26 +260,44 @@ function calcularPares(eventos){
     if(!grupos[k]) grupos[k]=[];
     grupos[k].push(ev);
   });
+
   Object.values(grupos).forEach(evs=>{
     evs.sort((a,b)=>new Date(a.data_evento)-new Date(b.data_evento));
+
+    // Percorre sequencialmente: cada ENTRADA consome a próxima SAÍDA disponível
+    const usados = new Set();
     for(let i=0;i<evs.length;i++){
+      if(usados.has(i)) continue;
       const ev = evs[i];
       const evtStr = String(ev.evento||"").trim().toUpperCase();
-      if(evtStr==="ENTRADA"){
-        // Procura a próxima saída
-        const prox = evs.find((e,j)=>j>i&&(String(e.evento||"").trim().toUpperCase()==="SAÍDA"||String(e.evento||"").trim().toUpperCase()==="SAIDA"));
-        const durMs = prox ? new Date(prox.data_evento)-new Date(ev.data_evento) : -1;
-        const qtd = prox ? Number(prox.quantidade_produzida||0) : 0;
-        pares.push({
-          entrada: ev,
-          saida: prox||null,
-          durMs,
-          qtd,
-          semSaida: !prox,
-          muitoRapido: prox && durMs>=0 && durMs < 2*60*1000, // menos de 2 min
-          fimDeSemana: [0,6].includes(new Date(ev.data_evento).getDay())
-        });
+      if(evtStr!=="ENTRADA") continue;
+
+      // Procura a PRÓXIMA saída ainda não usada
+      let saidaIdx = -1;
+      for(let j=i+1;j<evs.length;j++){
+        if(usados.has(j)) continue;
+        const eStr = String(evs[j].evento||"").trim().toUpperCase();
+        if(eStr==="SAÍDA"||eStr==="SAIDA"){ saidaIdx=j; break; }
+        // Se encontrou outra ENTRADA antes da saída, para (entrada sem saída)
+        if(eStr==="ENTRADA") break;
       }
+
+      const prox = saidaIdx>=0 ? evs[saidaIdx] : null;
+      if(prox) usados.add(saidaIdx);
+      usados.add(i);
+
+      const durMs = prox ? new Date(prox.data_evento)-new Date(ev.data_evento) : -1;
+      const qtd   = prox ? Number(prox.quantidade_produzida||0) : 0;
+
+      pares.push({
+        entrada: ev,
+        saida: prox||null,
+        durMs,
+        qtd,
+        semSaida: !prox,
+        muitoRapido: prox && durMs>=0 && durMs < 2*60*1000,
+        fimDeSemana: [0,6].includes(new Date(ev.data_evento).getDay())
+      });
     }
   });
   return pares;

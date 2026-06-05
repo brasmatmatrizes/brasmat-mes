@@ -36,7 +36,7 @@
 .cn{background:rgba(45,191,126,0.1);color:var(--ok)}.ca{background:rgba(245,166,35,0.1);color:var(--warn)}.ce{background:rgba(240,69,69,0.1);color:var(--danger)}
 .board-wrap{height:calc(100vh - 108px);display:flex;flex-direction:column}
 .board{display:flex;gap:10px;padding:14px 20px;height:100%;overflow-x:auto;overflow-y:hidden;align-items:flex-start}
-.board::-webkit-scrollbar{height:8px}
+.board::-webkit-scrollbar{height:12px}
 .board::-webkit-scrollbar-track{background:var(--bg2);border-radius:4px}
 .board::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
 .board::-webkit-scrollbar-thumb:hover{background:#4A5570}
@@ -118,11 +118,7 @@
   </div>
 </div>
 <div class="toolbar">
-  <span class="flbl">De</span>
-  <input type="date" class="fsel" id="di">
-  <span class="flbl">até</span>
-  <input type="date" class="fsel" id="df">
-  <div class="sep"></div>
+
   <select class="fsel" id="fop"><option value="">Todos os operadores</option></select>
   <select class="fsel" id="fcl"><option value="">Todos os clientes</option></select>
   <div class="sep"></div>
@@ -149,11 +145,7 @@
 <script>
 let POS=[];
 const flags={a:false,e:false,s:false,w:false};
-const hoje=new Date();
-const ini=new Date(hoje);ini.setDate(hoje.getDate()-90);
-function fmtDI(d){return d.toISOString().slice(0,10);}
-document.getElementById("di").value=fmtDI(ini);
-document.getElementById("df").value=fmtDI(hoje);
+
 
 function toggleFlag(f){
   flags[f]=!flags[f];
@@ -192,13 +184,9 @@ function catCard(row){
 }
 
 function dadosFiltrados(){
-  const di=new Date(document.getElementById("di").value+"T00:00:00");
-  const df=new Date(document.getElementById("df").value+"T23:59:59");
   const op=document.getElementById("fop").value.trim();
   const cl=document.getElementById("fcl").value.trim();
   return POS.filter(r=>{
-    const dt=r.data_evento?new Date(r.data_evento):null;
-    if(dt&&(dt<di||dt>df)) return false;
     if(op&&String(r.operador||"").trim()!==op) return false;
     if(cl&&String(r.cliente||"").trim()!==cl) return false;
     return true;
@@ -255,7 +243,7 @@ async function abrirDet(pedido,codigo){
 }
 function fechar(){document.getElementById("dp").classList.remove("open");}
 function navTo(p){window.location.href=p;}
-["di","df","fop","fcl"].forEach(id=>document.getElementById(id).addEventListener("change",renderBoard));
+["fop","fcl"].forEach(id=>document.getElementById(id).addEventListener("change",renderBoard));
 init();
 </script>
 </body>

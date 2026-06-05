@@ -265,10 +265,9 @@ async function fetchSupabase(path){
   return r.json();
 }
 
-async function carregarDados(force){
+async function carregarDados(){
   document.getElementById("sync-label").textContent="carregando...";
-  const todos = await carregarEventos(force);
-  TODOS=todos;
+  TODOS = await carregarEventos();
   popularFiltros();
   renderBoard();
   document.getElementById("sync-label").textContent=`${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
@@ -440,8 +439,8 @@ function navTo(p){window.location.href=p;}
 document.getElementById("f-operador").addEventListener("change",renderBoard);
 document.getElementById("f-cliente").addEventListener("change",renderBoard);
 
-function limparCacheERecarregar(){ limparCache(); carregarDados(true); }
-carregarDados(false);
+
+carregarDados();
 </script>
 </body>
 </html>

@@ -274,9 +274,9 @@ async function fetchSupabase(path){
   return r.json();
 }
 
-async function carregarDados(force){
+async function carregarDados(){
   document.getElementById("sync-label").textContent="carregando...";
-  TODOS = await carregarEventos(false);
+  TODOS = await carregarEventos();
   popularFiltros();
   calcularERenderar();
   document.getElementById("sync-label").textContent=`${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
@@ -493,8 +493,7 @@ document.getElementById("f-urgencia").addEventListener("change",function(){filtr
 document.getElementById("f-subop").addEventListener("change",function(){filtroSubop=this.value;calcularERenderar();});
 
 renderConfigPanel();
-function limparCacheERecarregar(){ limparCache(); carregarDados(true); }
-carregarDados(false);
+carregarDados();
 </script>
 </body>
 </html>

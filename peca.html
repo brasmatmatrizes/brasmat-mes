@@ -158,9 +158,9 @@ async function fetchSupabase(path){
   return r.json();
 }
 
-async function carregarDados(force){
+async function carregarDados(){
   document.getElementById("sync-label").textContent="carregando...";
-  TODOS = await carregarEventos(false);
+  TODOS = await carregarEventos();
   document.getElementById("sync-label").textContent=`${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
   document.getElementById("search-hint").textContent=`${todos.length} eventos carregados`;
 }
@@ -310,8 +310,7 @@ function selecionarPeca(pedido,codigo){
 }
 
 function navTo(p){window.location.href=p;}
-function limparCacheERecarregar(){ limparCache(); carregarDados(true); }
-carregarDados(false);
+carregarDados();
 </script>
 </body>
 </html>

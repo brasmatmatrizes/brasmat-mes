@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#8892AA;--text3:#4E5A72;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#A8B2C8;--text3:#6E7A92;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
 .topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;gap:16px}
@@ -274,16 +274,9 @@ async function fetchSupabase(path){
   return r.json();
 }
 
-async function carregarDados(){
-  let todos=[],offset=0;
-  while(true){
-    const chunk=await fetchSupabase(`/rest/v1/producao_eventos?select=id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,sequencial_operacao,observacao,retrabalho,prazo_entrega,operacao_retifica_plana,operacao_retifica_cilindrica_interna,operacao_retifica_cilindrica_externa,operacao_erosao_fio,operacao_forma,operacao_polimento,operacao_brunidora,operacao_prensa,operacao_torno,operacao_qualidade,operacao_administrativo,operacao_servico_externo,operacao_erosao_penetracao&order=id.asc&limit=1000&offset=${offset}`);
-    if(!Array.isArray(chunk)||chunk.length===0) break;
-    todos=todos.concat(chunk);
-    if(chunk.length<1000) break;
-    offset+=1000;
-  }
-  TODOS=todos;
+async function carregarDados(force){
+  document.getElementById("sync-label").textContent="carregando...";
+  TODOS = await carregarEventos(false);
   popularFiltros();
   calcularERenderar();
   document.getElementById("sync-label").textContent=`${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
@@ -400,8 +393,8 @@ function renderTabela(limbo){
     const dc=urgencia==="critico"?"danger":"warn";
     const subop=getSubop(row);
     return `<div class="tr ${urgencia}" onclick="abrirDetalhe('${esc(row.pedido)}','${esc(row.codigo_peca)}')">
-      <div class="td mono">${row.pedido||"—"}</div>
-      <div class="td mono">${row.codigo_peca||"—"}</div>
+      <div class="td mono" style="font-weight:600">${row.codigo_peca||"—"}</div>
+      <div class="td" style="font-size:11px;color:var(--text2)">${row.pedido||"—"}</div>
       <div class="td" style="flex-direction:column;align-items:flex-start;gap:2px">
         <span style="font-size:11px;color:var(--text)">${proc.charAt(0)+proc.slice(1).toLowerCase()}</span>
         <span style="font-size:10px;color:var(--text3)">${subop}</span>
@@ -414,7 +407,7 @@ function renderTabela(limbo){
   }).join("");
   area.innerHTML=`<div class="table-wrap">
     <div class="table-head">
-      <div class="th">Pedido</div><div class="th">Código</div><div class="th">Saiu de</div>
+      <div class="th">Código</div><div class="th">Pedido</div><div class="th">Saiu de</div>
       <div class="th">Cliente</div><div class="th">Operador</div><div class="th">Dias parada</div><div class="th">Excesso</div>
     </div>
     <div class="table-body">${rows}</div>
@@ -500,7 +493,8 @@ document.getElementById("f-urgencia").addEventListener("change",function(){filtr
 document.getElementById("f-subop").addEventListener("change",function(){filtroSubop=this.value;calcularERenderar();});
 
 renderConfigPanel();
-carregarDados();
+function limparCacheERecarregar(){ limparCache(); carregarDados(true); }
+carregarDados(false);
 </script>
 </body>
 </html>

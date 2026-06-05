@@ -7,7 +7,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#8892AA;--text3:#4E5A72;--accent:#3B7FFF;--accent2:#1A4FCC;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+:root{
+  --bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;
+  --border:#2A3045;--border2:#3A4560;
+  --text:#E8ECF5;
+  --text2:#A8B2C8;  /* clareado */
+  --text3:#6E7A92;  /* clareado */
+  --accent:#3B7FFF;--accent2:#1A4FCC;
+  --ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
 .topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;gap:16px;flex-shrink:0}
@@ -23,6 +32,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 .sync-label{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.btn-refresh{background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--mono)}
+.btn-refresh:hover{border-color:var(--border2);color:var(--text2)}
+
 .main{display:grid;grid-template-columns:300px 1fr;height:calc(100vh - 56px);overflow:hidden}
 .sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .sidebar-section{padding:14px}
@@ -36,8 +48,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .search-results{margin-top:8px;display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto}
 .result-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 11px;cursor:pointer;transition:border-color 0.15s}
 .result-card:hover{border-color:var(--accent)}
-.result-pedido{font-size:12px;font-weight:500;color:var(--text);font-family:var(--mono)}
-.result-codigo{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:1px}
+.result-codigo{font-size:13px;font-weight:600;color:var(--text);font-family:var(--mono)}
+.result-pedido{font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:1px}
 .result-proc{font-size:11px;color:var(--text2);margin-top:3px}
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .stat-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
@@ -52,7 +64,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .proc-bar-wrap{width:50px;height:3px;background:var(--bg);border-radius:2px;overflow:hidden}
 .proc-bar{height:100%;border-radius:2px;transition:width 0.4s}
 .content{overflow-y:auto;padding:20px}
-.content-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.content-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
 .content-title{font-size:17px;font-weight:600;color:var(--text)}
 .content-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
 .filter-row{display:flex;gap:6px;flex-wrap:wrap}
@@ -60,29 +72,25 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .filter-select:focus{border-color:var(--accent)}
 .btn-ghost{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;transition:all 0.15s}
 .btn-ghost:hover{border-color:var(--border2);color:var(--text)}
-
-/* STATUS TABS */
-.status-tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
+.status-tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
 .status-tab{font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
 .status-tab:hover{border-color:var(--border2);color:var(--text)}
 .status-tab.active{border-color:transparent;color:#fff}
-.tab-em_producao.active{background:#3B7FFF}
-.tab-em_estoque.active{background:#2DBF7E}
-.tab-aprovada.active{background:#2DBF7E}
-.tab-aguardando.active{background:#F5A623}
-.tab-liberada.active{background:#8892AA}
-.tab-todas.active{background:var(--accent)}
-
+.tab-em_producao.active{background:#3B7FFF}.tab-em_estoque.active{background:#2DBF7E}
+.tab-aprovada.active{background:#2DBF7E}.tab-aguardando.active{background:#F5A623}
+.tab-liberada.active{background:#6E7A92}.tab-todas.active{background:var(--accent)}
 .table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.table-head{display:grid;grid-template-columns:120px 120px 1fr 120px 90px 100px 90px;border-bottom:1px solid var(--border);padding:0 14px}
+
+/* COLUNAS: codigo 110 | processo 160 | subop 140 | cliente 150 | operador 150 | status 110 | tempo 80 */
+.table-head{display:grid;grid-template-columns:110px 160px 140px 150px 150px 110px 80px;border-bottom:1px solid var(--border);padding:0 14px}
 .th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);padding:9px 6px}
-.table-body{display:flex;flex-direction:column;max-height:calc(100vh - 280px);overflow-y:auto}
-.tr{display:grid;grid-template-columns:120px 120px 1fr 120px 90px 100px 90px;padding:0 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s}
+.table-body{display:flex;flex-direction:column;max-height:calc(100vh - 290px);overflow-y:auto}
+.tr{display:grid;grid-template-columns:110px 160px 140px 150px 150px 110px 80px;padding:0 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s}
 .tr:last-child{border-bottom:none}
 .tr:hover{background:var(--bg3)}
 .td{font-size:12px;color:var(--text2);padding:10px 6px;display:flex;align-items:center;overflow:hidden}
 .td.mono{font-family:var(--mono);color:var(--text)}
-.status-chip{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:10px;white-space:nowrap;font-weight:500}
+.status-chip{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:10px;white-space:nowrap;font-weight:500}
 .dias-chip{font-size:10px;font-family:var(--mono);font-weight:500;padding:2px 7px;border-radius:10px;white-space:nowrap}
 .dias-ok{background:rgba(45,191,126,0.12);color:var(--ok)}
 .dias-warn{background:rgba(245,166,35,0.12);color:var(--warn)}
@@ -92,8 +100,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
 .loading{display:flex;align-items:center;justify-content:center;padding:80px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
 .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-
-/* DETALHE */
 .detail-panel{display:none;position:fixed;right:0;top:56px;bottom:0;width:460px;background:var(--bg2);border-left:1px solid var(--border);z-index:100;overflow-y:auto;animation:slideIn 0.18s ease}
 .detail-panel.open{display:block}
 @keyframes slideIn{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
@@ -138,6 +144,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
     <button class="nav-btn" onclick="navTo('paradas.html')">Peças paradas</button>
   </div>
   <div class="topbar-right">
+    <button class="btn-refresh" onclick="atualizar()">↻ atualizar</button>
     <div class="sync-dot"></div>
     <span class="sync-label" id="sync-label">carregando...</span>
   </div>
@@ -148,7 +155,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
       <div class="label">buscar peça</div>
       <div class="search-wrap">
         <span class="search-icon">⌕</span>
-        <input class="search-input" id="search" placeholder="Pedido ou código..." autocomplete="off">
+        <input class="search-input" id="search" placeholder="Código ou pedido..." autocomplete="off">
       </div>
       <div class="search-results" id="search-results"></div>
     </div>
@@ -183,7 +190,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
   </div>
 </div>
 </div>
-
 <div class="detail-panel" id="detail-panel">
   <div class="detail-header">
     <div id="detail-title"></div>
@@ -191,73 +197,57 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
   </div>
   <div class="detail-body" id="detail-body"></div>
 </div>
-
 <script src="status.js"></script>
 <script>
-const SUPABASE_URL = "https://hjvlznijsgdwurtsyukl.supabase.co";
-const SUPABASE_KEY = "sb_publishable_3N0kbWDpJ542n_aWeFzUqQ_pmVGrFiB";
+let TODOS=[];
+let POSICAO_MAPA={};
+let filtroProcesso="",filtroCliente="",filtroStatus="todas";
 
-let TODOS = [];
-let POSICAO_MAPA = {};
-let filtroProcesso="", filtroCliente="", filtroStatus="todas";
-
-async function fetchSupabase(path){
-  const r = await fetch(SUPABASE_URL+path,{headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY}});
-  return r.json();
-}
-
-async function carregarDados(){
-  let todos=[], offset=0;
-  while(true){
-    const chunk = await fetchSupabase(`/rest/v1/producao_eventos?select=id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,sequencial_operacao,observacao,retrabalho,prazo_entrega,quantidade_produzida,quantidade_solicitada,operacao_retifica_plana,operacao_retifica_cilindrica_interna,operacao_retifica_cilindrica_externa,operacao_erosao_fio,operacao_forma,operacao_polimento,operacao_brunidora,operacao_prensa,operacao_torno,operacao_qualidade,operacao_administrativo,operacao_servico_externo,operacao_erosao_penetracao&order=id.asc&limit=1000&offset=${offset}`);
-    if(!Array.isArray(chunk)||chunk.length===0) break;
-    todos=todos.concat(chunk);
-    if(chunk.length<1000) break;
-    offset+=1000;
-  }
-  TODOS=todos;
-  POSICAO_MAPA=calcularPosicaoTodos(todos);
+async function init(force){
+  document.getElementById("sync-label").textContent="carregando...";
+  TODOS = await carregarEventos(force);
+  POSICAO_MAPA = calcularPosicaoTodos(TODOS);
   popularFiltros();
   renderStatusTabs();
   renderTabela();
   renderProcessList();
   renderStats();
-  document.getElementById("sync-label").textContent=`${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
+  const ts=new Date().toLocaleTimeString("pt-BR");
+  document.getElementById("sync-label").textContent=`${TODOS.length} eventos · ${ts}`;
 }
+
+function atualizar(){ limparCache(); init(true); }
 
 function pecasFiltradas(){
   return Object.values(POSICAO_MAPA).filter(row=>{
     const proc=String(row.processo||"").trim().toUpperCase();
     const cli=String(row.cliente||"").trim();
     const st=calcularStatus(row).status;
-    if(filtroProcesso && proc!==filtroProcesso) return false;
-    if(filtroCliente  && cli!==filtroCliente)   return false;
-    if(filtroStatus!=="todas" && st!==filtroStatus) return false;
+    if(filtroProcesso&&proc!==filtroProcesso) return false;
+    if(filtroCliente&&cli!==filtroCliente) return false;
+    if(filtroStatus!=="todas"&&st!==filtroStatus) return false;
     return true;
   }).sort((a,b)=>diasDesde(b)-diasDesde(a));
 }
 
 function renderStatusTabs(){
-  const contagem={todas:0,em_producao:0,em_estoque:0,aguardando:0,liberada:0,aprovada:0};
+  const cnt={todas:0,em_producao:0,em_estoque:0,aguardando:0,liberada:0,aprovada:0};
   Object.values(POSICAO_MAPA).forEach(r=>{
     const st=calcularStatus(r).status;
-    contagem.todas++;
-    if(contagem[st]!==undefined) contagem[st]++;
+    cnt.todas++;
+    if(cnt[st]!==undefined) cnt[st]++;
   });
   const tabs=[
-    {key:"todas",      label:"Todas",           extra:""},
-    {key:"em_producao",label:"Em produção",      extra:""},
-    {key:"aguardando", label:"Aguard. operador", extra:""},
-    {key:"em_estoque", label:"Em estoque",       extra:""},
-    {key:"aprovada",   label:"Aprovadas",        extra:""},
-    {key:"liberada",   label:"Entre processos",  extra:""},
+    {key:"todas",label:"Todas"},{key:"em_producao",label:"Em produção"},
+    {key:"aguardando",label:"Aguard. operador"},{key:"em_estoque",label:"Em estoque"},
+    {key:"aprovada",label:"Aprovadas"},{key:"liberada",label:"Entre processos"},
   ];
   document.getElementById("status-tabs").innerHTML=tabs.map(t=>
-    `<button class="status-tab tab-${t.key}${filtroStatus===t.key?" active":""}" onclick="setFiltroStatus('${t.key}')">${t.label} <span style="opacity:0.7">(${contagem[t.key]})</span></button>`
+    `<button class="status-tab tab-${t.key}${filtroStatus===t.key?" active":""}" onclick="setFiltroStatus('${t.key}')">${t.label} <span style="opacity:0.7">(${cnt[t.key]})</span></button>`
   ).join("");
 }
 
-function setFiltroStatus(s){ filtroStatus=s; renderStatusTabs(); renderTabela(); }
+function setFiltroStatus(s){filtroStatus=s;renderStatusTabs();renderTabela();}
 
 function renderTabela(){
   const pecas=pecasFiltradas();
@@ -271,21 +261,18 @@ function renderTabela(){
     const proc=String(row.processo||"").trim();
     const subop=getSubop(row);
     return `<div class="tr" onclick="abrirDetalhe('${esc(row.pedido)}','${esc(row.codigo_peca)}')">
-      <div class="td mono">${row.pedido||"—"}</div>
-      <div class="td mono">${row.codigo_peca||"—"}</div>
-      <div class="td" style="flex-direction:column;align-items:flex-start;gap:2px">
-        <span style="font-size:12px;color:var(--text)">${proc||"—"}</span>
-        <span style="font-size:10px;color:var(--text3)">${subop}</span>
-      </div>
-      <div class="td" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.cliente||"—"}</div>
-      <div class="td" style="font-size:11px">${row.operador||"—"}</div>
+      <div class="td mono" style="font-weight:600;color:var(--text)">${row.codigo_peca||"—"}</div>
+      <div class="td" style="font-size:11px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${proc||"—"}</div>
+      <div class="td" style="font-size:10px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${subop}</div>
+      <div class="td" style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.cliente||"—"}</div>
+      <div class="td" style="font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.operador||"—"}</div>
       <div class="td"><span class="status-chip" style="background:${st.cor}22;color:${st.cor}">${st.icone} ${st.label.split("—")[0].trim()}</span></div>
       <div class="td"><span class="dias-chip dias-${dc}">${diasLabel(dias)}</span></div>
     </div>`;
   }).join("");
   area.innerHTML=`<div class="table-wrap">
     <div class="table-head">
-      <div class="th">Pedido</div><div class="th">Código</div><div class="th">Processo / Subop.</div>
+      <div class="th">Código</div><div class="th">Processo</div><div class="th">Suboperação</div>
       <div class="th">Cliente</div><div class="th">Operador</div><div class="th">Status</div><div class="th">Tempo</div>
     </div>
     <div class="table-body">${rows}</div>
@@ -309,7 +296,7 @@ function renderProcessList(){
   });
   const max=Math.max(...Object.values(cnt),1);
   document.getElementById("process-list").innerHTML=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([proc,c])=>{
-    const cor=COR_PROCESSO[proc]||"#4E5A72";
+    const cor=COR_PROCESSO[proc]||"#6E7A92";
     return `<div class="proc-row" onclick="filtrarPorProcesso('${proc}')">
       <div style="width:7px;height:7px;border-radius:50%;background:${cor};flex-shrink:0"></div>
       <span class="proc-name">${proc}</span>
@@ -326,15 +313,15 @@ function popularFiltros(){
   document.getElementById("f-cliente").innerHTML='<option value="">Todos os clientes</option>'+clis.map(c=>`<option>${c}</option>`).join("");
 }
 
-function filtrarPorProcesso(p){ filtroProcesso=filtroProcesso===p?"":p; document.getElementById("f-processo").value=filtroProcesso; renderTabela(); }
-function limparFiltros(){ filtroProcesso="";filtroCliente="";filtroStatus="todas"; document.getElementById("f-processo").value=""; document.getElementById("f-cliente").value=""; renderStatusTabs(); renderTabela(); }
+function filtrarPorProcesso(p){filtroProcesso=filtroProcesso===p?"":p;document.getElementById("f-processo").value=filtroProcesso;renderTabela();}
+function limparFiltros(){filtroProcesso="";filtroCliente="";filtroStatus="todas";document.getElementById("f-processo").value="";document.getElementById("f-cliente").value="";renderStatusTabs();renderTabela();}
 
 document.getElementById("search").addEventListener("input",function(){
   const q=this.value.trim().toUpperCase();
   const res=document.getElementById("search-results");
   if(q.length<2){res.innerHTML="";return;}
   const vistos={},unicos=[];
-  TODOS.filter(r=>(String(r.pedido||"").toUpperCase().includes(q)||String(r.codigo_peca||"").toUpperCase().includes(q))).forEach(r=>{
+  TODOS.filter(r=>(String(r.codigo_peca||"").toUpperCase().includes(q)||String(r.pedido||"").toUpperCase().includes(q))).forEach(r=>{
     const k=r.pedido+"|"+r.codigo_peca;
     if(!vistos[k]){vistos[k]=true;unicos.push(r);}
   });
@@ -342,8 +329,8 @@ document.getElementById("search").addEventListener("input",function(){
   res.innerHTML=unicos.slice(0,6).map(r=>{
     const st=calcularStatus(POSICAO_MAPA[r.pedido+"||"+r.codigo_peca]);
     return `<div class="result-card" onclick="abrirDetalhe('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
-      <div class="result-pedido">${r.pedido}</div>
       <div class="result-codigo">${r.codigo_peca}</div>
+      <div class="result-pedido">${r.pedido}</div>
       <div class="result-proc" style="color:${st.cor}">${st.icone} ${st.label.split("—")[0].trim()}</div>
     </div>`;
   }).join("");
@@ -354,7 +341,9 @@ function abrirDetalhe(pedido,codigo){
   const body=document.getElementById("detail-body");
   panel.classList.add("open");
   body.innerHTML=`<div class="loading"><div class="spinner"></div>carregando...</div>`;
-  document.getElementById("detail-title").innerHTML=`<div style="font-size:15px;font-weight:600;color:var(--text);font-family:var(--mono)">${pedido}</div><div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px">${codigo}</div>`;
+  document.getElementById("detail-title").innerHTML=
+    `<div style="font-size:15px;font-weight:700;color:var(--text);font-family:var(--mono)">${codigo}</div>
+     <div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px">${pedido}</div>`;
   const eventos=TODOS.filter(r=>r.pedido===pedido&&r.codigo_peca===codigo).sort((a,b)=>a.id-b.id);
   if(!eventos.length){body.innerHTML="<p style='color:var(--text3);font-size:13px'>Sem eventos.</p>";return;}
   const ultimo=eventos[eventos.length-1];
@@ -365,11 +354,10 @@ function abrirDetalhe(pedido,codigo){
     const evtStr=String(ev.evento||"").trim().toUpperCase();
     const isEnt=evtStr==="ENTRADA";
     const dotC=isUlt&&isEnt?"atual":isEnt?"entrada":"saida";
-    const cardC=isUlt&&isEnt?"atual":"";
     const subop=getSubop(ev);
     return `<li class="tl-item">
       <div class="tl-dot ${dotC}"></div>
-      <div class="tl-card ${cardC}">
+      <div class="tl-card${isUlt&&isEnt?" atual":""}">
         <div class="tl-top">
           <span class="tl-proc">${ev.processo||"—"}</span>
           <span class="tl-evt ${isEnt?"evt-entrada":"evt-saida"}">${evtStr}</span>
@@ -401,7 +389,7 @@ function fecharDetalhe(){document.getElementById("detail-panel").classList.remov
 function navTo(p){window.location.href=p;}
 document.getElementById("f-processo").addEventListener("change",function(){filtroProcesso=this.value;renderTabela();});
 document.getElementById("f-cliente").addEventListener("change",function(){filtroCliente=this.value;renderTabela();});
-carregarDados();
+init(false);
 </script>
 </body>
 </html>

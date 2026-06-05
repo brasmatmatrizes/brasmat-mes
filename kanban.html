@@ -10,7 +10,7 @@
 :root{
   --bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;
   --border:#2A3045;--border2:#3A4560;
-  --text:#E8ECF5;--text2:#8892AA;--text3:#4E5A72;
+  --text:#E8ECF5;--text2:#A8B2C8;--text3:#6E7A92;
   --accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;
   --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
 }
@@ -186,6 +186,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
   </div>
   <div class="topbar-right">
     <div class="sync-dot"></div>
+    <button style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--mono)" onclick="limparCacheERecarregar()">↻ atualizar</button>
     <span class="sync-label" id="sync-label">carregando...</span>
   </div>
 </div>
@@ -264,17 +265,9 @@ async function fetchSupabase(path){
   return r.json();
 }
 
-async function carregarDados(){
-  let todos=[],offset=0;
-  while(true){
-    const chunk=await fetchSupabase(
-      `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,sequencial_operacao,observacao,retrabalho,prazo_entrega,operacao_retifica_plana,operacao_retifica_cilindrica_interna,operacao_retifica_cilindrica_externa,operacao_erosao_fio,operacao_forma,operacao_polimento,operacao_brunidora,operacao_prensa,operacao_torno,operacao_qualidade,operacao_administrativo,operacao_servico_externo,operacao_erosao_penetracao&order=id.asc&limit=1000&offset=${offset}`
-    );
-    if(!Array.isArray(chunk)||chunk.length===0) break;
-    todos=todos.concat(chunk);
-    if(chunk.length<1000) break;
-    offset+=1000;
-  }
+async function carregarDados(force){
+  document.getElementById("sync-label").textContent="carregando...";
+  const todos = await carregarEventos(force);
   TODOS=todos;
   popularFiltros();
   renderBoard();
@@ -363,8 +356,8 @@ function renderBoard(){
           const subop=getSubop(p);
           const diasStr=dias===0?"hoje":dias===1?"1 dia":dias+"d";
           return `<div class="card card-${cat}" onclick="abrirDetalhe('${esc(p.pedido)}','${esc(p.codigo_peca)}')">
-            <div class="card-pedido">${p.pedido||"—"}</div>
-            <div class="card-codigo">${p.codigo_peca||"—"}</div>
+            <div class="card-pedido">${p.codigo_peca||"—"}</div>
+            <div class="card-codigo">Ped: ${p.pedido||"—"}</div>
             <div class="card-subop">${subop}</div>
             <div class="card-footer">
               <span class="card-cliente">${p.cliente||"—"}</span>
@@ -447,7 +440,8 @@ function navTo(p){window.location.href=p;}
 document.getElementById("f-operador").addEventListener("change",renderBoard);
 document.getElementById("f-cliente").addEventListener("change",renderBoard);
 
-carregarDados();
+function limparCacheERecarregar(){ limparCache(); carregarDados(true); }
+carregarDados(false);
 </script>
 </body>
 </html>

@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#8892AA;--text3:#4E5A72;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#A8B2C8;--text3:#6E7A92;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
 .topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;gap:16px;flex-shrink:0}
@@ -158,16 +158,9 @@ async function fetchSupabase(path){
   return r.json();
 }
 
-async function carregarDados(){
-  let todos=[],offset=0;
-  while(true){
-    const chunk=await fetchSupabase(`/rest/v1/producao_eventos?select=id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,sequencial_operacao,observacao,retrabalho,prazo_entrega,quantidade_produzida,quantidade_solicitada,operacao_retifica_plana,operacao_retifica_cilindrica_interna,operacao_retifica_cilindrica_externa,operacao_erosao_fio,operacao_forma,operacao_polimento,operacao_brunidora,operacao_prensa,operacao_torno,operacao_qualidade,operacao_administrativo,operacao_servico_externo,operacao_erosao_penetracao&order=id.asc&limit=1000&offset=${offset}`);
-    if(!Array.isArray(chunk)||chunk.length===0) break;
-    todos=todos.concat(chunk);
-    if(chunk.length<1000) break;
-    offset+=1000;
-  }
-  TODOS=todos;
+async function carregarDados(force){
+  document.getElementById("sync-label").textContent="carregando...";
+  TODOS = await carregarEventos(false);
   document.getElementById("sync-label").textContent=`${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
   document.getElementById("search-hint").textContent=`${todos.length} eventos carregados`;
 }
@@ -200,8 +193,8 @@ document.getElementById("search").addEventListener("input",function(){
     return `<div class="result-item${isSelected?" selected":""}" onclick="selecionarPeca('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
       <div class="result-stripe" style="background:${st.cor}"></div>
       <div class="result-info">
-        <div class="result-pedido">${r.pedido||"—"}</div>
-        <div class="result-codigo">${r.codigo_peca||"—"}</div>
+        <div class="result-pedido">${r.codigo_peca||"—"}</div>
+        <div class="result-codigo">Ped: ${r.pedido||"—"}</div>
         <div class="result-meta">${r.cliente||""} ${r.operador?"· "+r.operador:""}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
@@ -290,7 +283,7 @@ function selecionarPeca(pedido,codigo){
 
   right.innerHTML=`<div class="detail">
     <div class="detail-topbar">
-      <div><div class="detail-id">${pedido}</div><div class="detail-codigo">${codigo}</div></div>
+      <div><div class="detail-id">${codigo}</div><div class="detail-codigo">Pedido: ${pedido}</div></div>
       <span class="status-pill" style="background:${st.cor}22;color:${st.cor};border-color:${st.cor}44">${st.icone} ${st.label}</span>
     </div>
     <div class="metrics">
@@ -317,7 +310,8 @@ function selecionarPeca(pedido,codigo){
 }
 
 function navTo(p){window.location.href=p;}
-carregarDados();
+function limparCacheERecarregar(){ limparCache(); carregarDados(true); }
+carregarDados(false);
 </script>
 </body>
 </html>

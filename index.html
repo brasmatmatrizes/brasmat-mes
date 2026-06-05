@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#A8B2C8;--text3:#6E7A92;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#C4CBDA;--text3:#8E9AB0;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
 .topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px}
 .brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
@@ -18,13 +18,13 @@
 .tr-right{display:flex;align-items:center;gap:8px}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-.sync-lbl{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.sync-lbl{font-size:11px;color:var(--text2);font-family:var(--mono)}
 .btn-sm{background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--mono)}
 .btn-sm:hover{border-color:var(--border2);color:var(--text2)}
 .main{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 56px);overflow:hidden}
 .sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .sb{padding:14px}.sb+.sb{border-top:1px solid var(--border)}
-.lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:10px}
+.lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);margin-bottom:10px}
 .si-wrap{position:relative}
 .si-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px 9px 32px;font-size:13px;color:var(--text);outline:none;transition:border-color 0.15s}
 .si-input:focus{border-color:var(--accent)}.si-input::placeholder{color:var(--text3)}
@@ -34,7 +34,7 @@
 .rc:hover{border-color:var(--accent)}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .stat{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
-.sv{font-size:20px;font-weight:600;font-family:var(--mono);line-height:1}.sl{font-size:10px;color:var(--text3);margin-top:3px}
+.sv{font-size:20px;font-weight:600;font-family:var(--mono);line-height:1}.sl{font-size:10px;color:var(--text2);margin-top:3px}
 .sv.ok{color:var(--ok)}.sv.warn{color:var(--warn)}.sv.danger{color:var(--danger)}.sv.accent{color:var(--accent)}
 .proc-list{display:flex;flex-direction:column;gap:2px;overflow-y:auto;flex:1}
 .pr{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background 0.1s}
@@ -58,7 +58,7 @@
 .tab-aprovada.active{background:#2DBF7E}.tab-liberada.active{background:#6E7A92}
 .tw{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .thead{display:grid;grid-template-columns:120px 155px 140px 155px 155px 100px 75px;border-bottom:1px solid var(--border);padding:0 14px}
-.th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);padding:8px 6px}
+.th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);padding:8px 6px}
 .tbody{display:flex;flex-direction:column;max-height:calc(100vh - 280px);overflow-y:auto}
 .tr{display:grid;grid-template-columns:120px 155px 140px 155px 155px 100px 75px;padding:0 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s}
 .tr:last-child{border-bottom:none}.tr:hover{background:var(--bg3)}

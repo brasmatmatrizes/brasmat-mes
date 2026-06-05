@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#A8B2C8;--text3:#6E7A92;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#C4CBDA;--text3:#8E9AB0;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
 .topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
 .brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
@@ -29,7 +29,7 @@
 .fsel:focus,.fdate:focus{border-color:var(--accent)}
 .btn-g{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer}
 .btn-g:hover{border-color:var(--border2);color:var(--text)}
-.obs-banner{background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.2);border-radius:8px;padding:8px 14px;font-size:11px;color:var(--warn);line-height:1.5;margin-left:auto;max-width:420px}
+
 
 /* LAYOUT */
 .main{display:grid;grid-template-columns:340px 1fr;height:calc(100vh - 108px);overflow:hidden}
@@ -47,7 +47,7 @@
 .rank-num.gold{color:#F59E0B}.rank-num.silver{color:#94A3B8}.rank-num.bronze{color:#92400E}
 .rank-info{flex:1;min-width:0}
 .rank-nome{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rank-meta{font-size:11px;color:var(--text2);margin-top:2px}
+.rank-meta{font-size:11px;color:var(--text);margin-top:2px}
 .rank-badge{font-size:10px;padding:2px 8px;border-radius:10px;white-space:nowrap;flex-shrink:0;font-family:var(--mono);font-weight:500}
 .badge-ok{background:rgba(45,191,126,0.12);color:var(--ok)}
 .badge-warn{background:rgba(245,166,35,0.12);color:var(--warn)}
@@ -69,8 +69,8 @@
 .met{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
 .mv{font-size:22px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:4px}
 .mv.ok{color:var(--ok)}.mv.warn{color:var(--warn)}.mv.danger{color:var(--danger)}.mv.accent{color:var(--accent)}.mv.text{color:var(--text)}
-.ml{font-size:10px;color:var(--text3)}
-.met-tip{font-size:10px;color:var(--text3);margin-top:4px;line-height:1.4;border-top:1px solid var(--border);padding-top:4px}
+.ml{font-size:10px;color:var(--text2)}
+.met-tip{font-size:10px;color:var(--text2);margin-top:4px;line-height:1.4;border-top:1px solid var(--border);padding-top:4px}
 
 /* ALERTAS */
 .alertas{margin-bottom:20px}
@@ -92,7 +92,7 @@
 /* TABELA DE OPERAÇÕES */
 .op-table{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px}
 .op-thead{display:grid;grid-template-columns:110px 100px 130px 90px 80px 90px 100px;border-bottom:1px solid var(--border);padding:0 14px}
-.op-th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);padding:8px 6px}
+.op-th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);padding:8px 6px}
 .op-tbody{display:flex;flex-direction:column;max-height:280px;overflow-y:auto}
 .op-tr{display:grid;grid-template-columns:110px 100px 130px 90px 80px 90px 100px;padding:0 14px;border-bottom:1px solid var(--border);transition:background 0.1s}
 .op-tr:last-child{border-bottom:none}.op-tr:hover{background:var(--bg3)}
@@ -156,9 +156,7 @@
   <span class="flbl">Filtros:</span>
   <button class="flag-btn on" id="tog-dia" onclick="toggleFiltro('dia')" title="Desconsiderar operações com duração acima de 24h">🔴 Ignorar &gt;1 dia</button>
   <button class="flag-btn on" id="tog-min" onclick="toggleFiltro('min')" title="Desconsiderar operações com duração abaixo de 5 minutos">⚡ Ignorar &lt;5 min</button>
-  <div class="obs-banner">
-    ⚠ Operações em fins de semana e feriados podem ter tempo inflado por esquecimento de apontamento. Operações com menos de 2 minutos podem ser erro ou teste.
-  </div>
+
 </div>
 
 <!-- MAIN -->
@@ -376,17 +374,18 @@ function renderRanking(analises, todosDados){
   document.getElementById("rank-list").innerHTML = analises.map((an,i)=>{
     const nc = i<3 ? numClasses[i] : "";
     const medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
-    const badgeCls = an.score==="ok"?"badge-ok":an.score==="warn"?"badge-warn":"badge-danger";
-    const badgeTxt = an.score==="ok"?"✓ regular":an.score==="warn"?"⚠ atenção":"🔴 suspeito";
+    // Cor do índice de apontamento — vermelho se muito baixo, amarelo se médio, verde se bom
+    const apCor = an.indiceApontamento>=85?"var(--ok)":an.indiceApontamento>=70?"var(--warn)":"var(--danger)";
+    const semSaidaInfo = an.semSaida>0 ? ` · ${an.semSaida} sem saída` : "";
     return `<div class="rank-item${opSelecionado===an.nome?" selected":""}" onclick="selOp('${esc(an.nome)}')">
       <div class="rank-num ${nc}">${medal||("#"+(i+1))}</div>
       <div class="rank-info">
         <div class="rank-nome">${an.nome}</div>
-        <div class="rank-meta">${an.totalPares} operações · ${an.indiceApontamento}% apontamento</div>
+        <div class="rank-meta">${an.totalPares} operações${semSaidaInfo}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div class="rank-vol">${an.totalPecas} pç</div>
-        <div class="rank-badge ${badgeCls}" style="margin-top:3px">${badgeTxt}</div>
+        <div style="font-size:11px;font-family:var(--mono);font-weight:600;color:${apCor};margin-top:3px">${an.indiceApontamento}% apontamento</div>
       </div>
     </div>`;
   }).join("");
@@ -454,8 +453,11 @@ function renderDetalhe(an, todosDados){
   let alertasHtml = "";
   const alertas = [];
 
+  // Nota fixa sobre fins de semana — sempre aparece
+  alertas.unshift({tipo:"info",ico:"📅",titulo:"Sobre fins de semana e filtros ativos",desc:`Operações iniciadas em fim de semana são excluídas automaticamente dos cálculos. ${filtros.ignorarMaisUmDia?"Operações acima de 24h estão sendo ignoradas.":""} ${filtros.ignorarMenosCincoMin?"Operações abaixo de 5 min estão sendo ignoradas.":""}`});
+
   if(an.semSaida>0){
-    alertas.push({tipo:"danger",ico:"🚨",titulo:`${an.semSaida} entrada(s) sem saída registrada`,desc:"O operador deu entrada mas nunca fechou a operação. Pode ser esquecimento ou tentativa de ocultar o horário de término. Verifique cada caso listado abaixo."});
+    alertas.push({tipo:"warn",ico:"⚠",titulo:`${an.semSaida} entrada(s) sem saída registrada`,desc:"O operador deu entrada mas nunca fechou a operação. Isso é comum e pode ser esquecimento pontual. Fique atento se esse número for recorrente ou muito alto em relação ao total de operações."});
   }
   if(an.muitoRapidos>0){
     alertas.push({tipo:"danger",ico:"⚡",titulo:`${an.muitoRapidos} operação(ões) com menos de 2 minutos`,desc:"Entrada e saída registradas em menos de 2 minutos. Pode ser erro de apontamento ou tentativa de inflar a contagem de peças produzidas sem trabalho real."});
@@ -484,9 +486,15 @@ function renderDetalhe(an, todosDados){
   }
 
   // TABELA DE OPERAÇÕES
-  const linhas = an.pares.sort((a,b)=>new Date(b.entrada.data_evento)-new Date(a.entrada.data_evento)).map(p=>{
-    const filtrado = (filtros.ignorarMaisUmDia&&p.maisUmDia)||(filtros.ignorarMenosCincoMin&&p.menosCincoMin&&!p.semSaida);
-    const cls = p.semSaida?"suspeito":p.muitoRapido?"atencao":filtrado?"atencao":"";
+  const linhas = an.pares
+    .filter(p=>{
+      // Aplica os mesmos filtros do ranking no histórico
+      if(!p.semSaida && filtros.ignorarMaisUmDia && p.maisUmDia) return false;
+      if(!p.semSaida && filtros.ignorarMenosCincoMin && p.menosCincoMin) return false;
+      return true;
+    })
+    .sort((a,b)=>new Date(b.entrada.data_evento)-new Date(a.entrada.data_evento)).map(p=>{
+    const cls = p.semSaida?"suspeito":"";
     const tempoStr = p.semSaida?"sem saída":fmtTempo(p.durMs);
     const tempoCor = p.semSaida?"var(--danger)":p.muitoRapido?"var(--warn)":"var(--text2)";
     const fds = p.fimDeSemana?`<span class="op-chip" style="background:rgba(99,102,241,0.12);color:#818CF8">fds</span>`:"";

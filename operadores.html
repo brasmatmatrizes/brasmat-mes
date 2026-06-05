@@ -115,6 +115,9 @@
 .comp-row.pior .comp-tempo{color:var(--danger)}
 
 /* LOADING */
+.flag-btn{display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;white-space:nowrap;height:28px;transition:all 0.15s}
+.flag-btn:hover{border-color:var(--border2);color:var(--text2)}
+.flag-btn.on{background:var(--bg4);border-color:var(--border2);color:var(--text)}
 .loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
 .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -149,6 +152,10 @@
   <select class="fsel" id="fproc"><option value="">Todos os processos</option></select>
   <button class="btn-g" onclick="aplicarFiltro()">Aplicar</button>
   <button class="btn-g" onclick="limpar()">Limpar</button>
+  <div class="sep" style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
+  <span class="flbl">Filtros:</span>
+  <button class="flag-btn on" id="tog-dia" onclick="toggleFiltro('dia')" title="Desconsiderar operações com duração acima de 24h">🔴 Ignorar &gt;1 dia</button>
+  <button class="flag-btn on" id="tog-min" onclick="toggleFiltro('min')" title="Desconsiderar operações com duração abaixo de 5 minutos">⚡ Ignorar &lt;5 min</button>
   <div class="obs-banner">
     ⚠ Operações em fins de semana e feriados podem ter tempo inflado por esquecimento de apontamento. Operações com menos de 2 minutos podem ser erro ou teste.
   </div>
@@ -183,6 +190,7 @@
 <script>
 let TODOS = [];
 let opSelecionado = null;
+const filtros = { ignorarMaisUmDia: true, ignorarMenosCincoMin: true };
 
 // Datas padrão: mês atual
 const hoje = new Date();
@@ -190,6 +198,17 @@ const iniMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 function fmtD(d){ return d.toISOString().slice(0,10); }
 document.getElementById("di").value = fmtD(iniMes);
 document.getElementById("df").value = fmtD(hoje);
+
+function toggleFiltro(tipo){
+  if(tipo==="dia"){
+    filtros.ignorarMaisUmDia = !filtros.ignorarMaisUmDia;
+    document.getElementById("tog-dia").classList.toggle("on", filtros.ignorarMaisUmDia);
+  } else {
+    filtros.ignorarMenosCincoMin = !filtros.ignorarMenosCincoMin;
+    document.getElementById("tog-min").classList.toggle("on", filtros.ignorarMenosCincoMin);
+  }
+  aplicarFiltro();
+}
 
 async function init(){
   document.getElementById("slbl").textContent = "carregando...";
@@ -296,6 +315,8 @@ function calcularPares(eventos){
         qtd,
         semSaida: !prox,
         muitoRapido: prox && durMs>=0 && durMs < 2*60*1000,
+        menosCincoMin: prox && durMs>=0 && durMs < 5*60*1000,
+        maisUmDia: prox && durMs >= 24*60*60*1000,
         fimDeSemana: [0,6].includes(new Date(ev.data_evento).getDay())
       });
     }
@@ -309,8 +330,9 @@ function analisarOperador(nome, eventos){
   const comSaida = pares.filter(p=>!p.semSaida).length;
   const semSaida = pares.filter(p=>p.semSaida).length;
   const muitoRapidos = pares.filter(p=>p.muitoRapido).length;
-  const totalPecas = pares.filter(p=>!p.semSaida).reduce((s,p)=>s+p.qtd,0);
-  const duracoes = pares.filter(p=>!p.semSaida&&p.durMs>0&&!p.muitoRapido&&!p.fimDeSemana).map(p=>p.durMs);
+  const maisUmDiaCount = pares.filter(p=>p.maisUmDia).length;
+  const totalPecas = pares.filter(p=>!p.semSaida&&!(filtros.ignorarMenosCincoMin&&p.menosCincoMin)&&!(filtros.ignorarMaisUmDia&&p.maisUmDia)).reduce((s,p)=>s+p.qtd,0);
+  const duracoes = pares.filter(p=>!p.semSaida&&p.durMs>0&&!p.muitoRapido&&!p.fimDeSemana&&!(filtros.ignorarMaisUmDia&&p.maisUmDia)&&!(filtros.ignorarMenosCincoMin&&p.menosCincoMin)).map(p=>p.durMs);
   const tempoMedio = duracoes.length ? duracoes.reduce((s,d)=>s+d,0)/duracoes.length : 0;
   const indiceApontamento = totalPares>0 ? Math.round(comSaida/totalPares*100) : 100;
 
@@ -445,6 +467,9 @@ function renderDetalhe(an, todosDados){
   if(fdsCount>0){
     alertas.push({tipo:"info",ico:"📅",titulo:`${fdsCount} operação(ões) em fim de semana ou feriado`,desc:"Operações iniciadas em fim de semana podem ter tempo inflado por esquecimento de fechar no dia. O tempo médio já exclui esses casos automaticamente."});
   }
+  if(an.maisUmDiaCount>0){
+    alertas.push({tipo:"warn",ico:"⏰",titulo:`${an.maisUmDiaCount} operação(ões) com duração acima de 24 horas`,desc:"Provavelmente o operador esqueceu de fechar o apontamento. ${filtros.ignorarMaisUmDia?'Essas operações estão sendo desconsideradas nos cálculos.':'Ative o filtro Ignorar >1 dia para excluí-las da análise.'}"});
+  }
   if(an.totalPecas===0&&an.totalPares>0){
     alertas.push({tipo:"warn",ico:"📦",titulo:"Nenhuma peça produzida registrada",desc:"O operador tem operações lançadas mas a quantidade produzida está zerada em todas. Verifique se está preenchendo corretamente o campo de quantidade no formulário."});
   }
@@ -460,7 +485,8 @@ function renderDetalhe(an, todosDados){
 
   // TABELA DE OPERAÇÕES
   const linhas = an.pares.sort((a,b)=>new Date(b.entrada.data_evento)-new Date(a.entrada.data_evento)).map(p=>{
-    const cls = p.semSaida?"suspeito":p.muitoRapido?"atencao":"";
+    const filtrado = (filtros.ignorarMaisUmDia&&p.maisUmDia)||(filtros.ignorarMenosCincoMin&&p.menosCincoMin&&!p.semSaida);
+    const cls = p.semSaida?"suspeito":p.muitoRapido?"atencao":filtrado?"atencao":"";
     const tempoStr = p.semSaida?"sem saída":fmtTempo(p.durMs);
     const tempoCor = p.semSaida?"var(--danger)":p.muitoRapido?"var(--warn)":"var(--text2)";
     const fds = p.fimDeSemana?`<span class="op-chip" style="background:rgba(99,102,241,0.12);color:#818CF8">fds</span>`:"";
@@ -536,7 +562,7 @@ function renderComparativo(an, todosDados){
     const operadores = [];
     Object.entries(porOp).forEach(([op,evs])=>{
       const pares = calcularPares(evs);
-      const validos = pares.filter(p=>!p.semSaida&&!p.muitoRapido&&!p.fimDeSemana&&p.durMs>0);
+      const validos = pares.filter(p=>!p.semSaida&&!p.muitoRapido&&!p.fimDeSemana&&p.durMs>0&&!(filtros.ignorarMaisUmDia&&p.maisUmDia)&&!(filtros.ignorarMenosCincoMin&&p.menosCincoMin));
       if(validos.length===0) return;
 
       const ocorrencias = validos.map(p=>({

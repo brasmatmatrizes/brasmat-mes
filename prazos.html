@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRASMAT MES — Prazos em Risco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#C4CBDA;--text3:#8E9AB0;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--orange:#F97316;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
+.bn{font-size:14px;font-weight:600;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.nav{display:flex;gap:4px}
+.nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
+.tr-right{display:flex;align-items:center;gap:8px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-lbl{font-size:11px;color:var(--text2);font-family:var(--mono)}
+.btn-sm{background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--mono)}
+.btn-sm:hover{border-color:var(--border2);color:var(--text)}
+
+/* TOOLBAR */
+.toolbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:0 20px;flex-shrink:0}
+.flbl{font-size:11px;color:var(--text2);font-family:var(--mono);white-space:nowrap}
+.fsel{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--text2);outline:none;height:32px;cursor:pointer}
+.fsel:focus{border-color:var(--accent)}
+.btn-g{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;height:32px}
+.btn-g:hover{border-color:var(--border2);color:var(--text)}
+.sep{width:1px;height:20px;background:var(--border);margin:0 4px}
+
+/* CONTENT */
+.content{overflow-y:auto;height:calc(100vh - 108px);padding:20px 24px}
+
+/* INDICADORES TOPO */
+.ind-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.ind-card{border-radius:12px;padding:20px;border:1px solid;position:relative;overflow:hidden;cursor:pointer;transition:transform 0.15s}
+.ind-card:hover{transform:translateY(-2px)}
+.ind-card.vencido{background:rgba(240,69,69,0.08);border-color:rgba(240,69,69,0.3)}
+.ind-card.critico{background:rgba(249,115,22,0.08);border-color:rgba(249,115,22,0.3)}
+.ind-card.atencao{background:rgba(245,166,35,0.08);border-color:rgba(245,166,35,0.3)}
+.ind-card.ok{background:rgba(45,191,126,0.08);border-color:rgba(45,191,126,0.3)}
+.ind-num{font-size:48px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:6px}
+.ind-card.vencido .ind-num{color:var(--danger)}
+.ind-card.critico .ind-num{color:var(--orange)}
+.ind-card.atencao .ind-num{color:var(--warn)}
+.ind-card.ok .ind-num{color:var(--ok)}
+.ind-label{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px}
+.ind-desc{font-size:11px;color:var(--text3);line-height:1.5}
+.ind-ico{position:absolute;right:16px;top:16px;font-size:28px;opacity:0.3}
+.ind-card.active-filter{transform:translateY(-2px);box-shadow:0 0 0 2px}
+.ind-card.vencido.active-filter{box-shadow:0 0 0 2px var(--danger)}
+.ind-card.critico.active-filter{box-shadow:0 0 0 2px var(--orange)}
+.ind-card.atencao.active-filter{box-shadow:0 0 0 2px var(--warn)}
+.ind-card.ok.active-filter{box-shadow:0 0 0 2px var(--ok)}
+
+/* TIMELINE VISUAL */
+.timeline-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:20px}
+.ts-title{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--mono);margin-bottom:16px}
+.timeline-wrap{position:relative;overflow-x:auto;padding-bottom:8px}
+.timeline-wrap::-webkit-scrollbar{height:4px}
+.timeline-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.tl-axis{display:flex;gap:0;margin-bottom:8px;min-width:800px}
+.tl-day{flex:1;text-align:center;font-size:10px;color:var(--text3);font-family:var(--mono);padding-bottom:6px;border-bottom:1px solid var(--border)}
+.tl-day.hoje{color:var(--accent);font-weight:600}
+.tl-day.passado{color:var(--danger);opacity:0.6}
+.tl-bars{min-width:800px;display:flex;flex-direction:column;gap:4px;padding-top:8px}
+.tl-bar-row{display:flex;align-items:center;gap:8px}
+.tl-bar-label{font-size:10px;color:var(--text2);font-family:var(--mono);width:100px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+.tl-bar-track{flex:1;height:20px;position:relative;border-radius:4px}
+.tl-bar-fill{position:absolute;height:100%;border-radius:4px;display:flex;align-items:center;padding-left:6px;font-size:10px;font-family:var(--mono);color:#fff;white-space:nowrap;overflow:hidden;min-width:4px}
+.tl-hoje-line{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--accent);z-index:10;border-radius:1px}
+.tl-hoje-label{position:absolute;top:-18px;font-size:9px;color:var(--accent);font-family:var(--mono);transform:translateX(-50%)}
+
+/* TABELA */
+.table-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.table-hdr-row{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)}
+.table-title{font-size:13px;font-weight:600;color:var(--text)}
+.table-count{font-size:12px;color:var(--text3);font-family:var(--mono)}
+.tw-head{display:grid;grid-template-columns:120px 120px 1fr 140px 110px 90px 100px 80px;border-bottom:1px solid var(--border);padding:0 16px}
+.th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);padding:9px 6px}
+.tw-body{display:flex;flex-direction:column;max-height:480px;overflow-y:auto}
+.tr{display:grid;grid-template-columns:120px 120px 1fr 140px 110px 90px 100px 80px;padding:0 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s}
+.tr:last-child{border-bottom:none}.tr:hover{background:var(--bg3)}
+.tr.vencido{border-left:3px solid var(--danger)}
+.tr.critico{border-left:3px solid var(--orange)}
+.tr.atencao{border-left:3px solid var(--warn)}
+.tr.ok-row{border-left:3px solid var(--ok)}
+.td{font-size:12px;color:var(--text2);padding:10px 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.chip{font-size:10px;font-family:var(--mono);font-weight:600;padding:3px 9px;border-radius:10px;white-space:nowrap}
+.chip-vencido{background:rgba(240,69,69,0.15);color:var(--danger)}
+.chip-critico{background:rgba(249,115,22,0.15);color:var(--orange)}
+.chip-atencao{background:rgba(245,166,35,0.15);color:var(--warn)}
+.chip-ok{background:rgba(45,191,126,0.15);color:var(--ok)}
+
+/* RISCO SCORE */
+.risco-bar{width:60px;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.risco-fill{height:100%;border-radius:3px}
+
+/* DETALHE LATERAL */
+.det-panel{display:none;position:fixed;right:0;top:56px;bottom:0;width:440px;background:var(--bg2);border-left:1px solid var(--border);z-index:100;overflow-y:auto;animation:si 0.18s ease}
+.det-panel.open{display:block}
+@keyframes si{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+.det-hdr{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--bg2);z-index:1}
+.det-close{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer}
+.det-body{padding:16px 20px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.mb{background:var(--bg3);border-radius:8px;padding:10px 12px}
+.ml{font-size:10px;color:var(--text2);font-family:var(--mono);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.07em}
+.mv{font-size:13px;font-weight:500;color:var(--text)}
+.tl-lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);margin-bottom:12px}
+.timeline{list-style:none;position:relative;padding-left:28px}
+.timeline::before{content:"";position:absolute;left:9px;top:0;bottom:0;width:1px;background:var(--border)}
+.tl-item{position:relative;margin-bottom:12px}.tl-item:last-child{margin-bottom:0}
+.tl-dot{position:absolute;left:-28px;top:4px;width:13px;height:13px;border-radius:50%;border:2px solid var(--bg2)}
+.tl-dot.entrada{background:var(--accent)}.tl-dot.saida{background:var(--ok)}.tl-dot.atual{background:var(--warn);box-shadow:0 0 0 3px rgba(245,166,35,0.2)}
+.tl-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.tl-card.atual{border-color:rgba(245,166,35,0.4)}
+.tl-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.tl-proc{font-size:12px;font-weight:500;color:var(--text)}
+.tl-evt{font-size:10px;padding:1px 7px;border-radius:8px}
+.ent{background:rgba(59,127,255,0.12);color:var(--accent)}.sai{background:rgba(45,191,126,0.1);color:var(--ok)}
+.tl-tag{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(245,166,35,0.12);color:var(--warn)}
+.tl-sub{font-size:11px;color:var(--text2);margin-bottom:6px}
+.tl-foot{display:flex;gap:12px;flex-wrap:wrap}.tl-m{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;color:var(--text3)}
+.empty-ico{font-size:36px;margin-bottom:10px}
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div style="display:grid;grid-template-rows:56px 52px 1fr;height:100vh">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand"><div class="bm">BM</div><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="nav">
+    <button class="nb" onclick="navTo('index.html')">Posição</button>
+    <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
+    <button class="nb" onclick="navTo('peca.html')">Buscar peça</button>
+    <button class="nb" onclick="navTo('paradas.html')">Peças paradas</button>
+    <button class="nb" onclick="navTo('operadores.html')">Operadores</button>
+    <button class="nb active">Prazos</button>
+  </div>
+  <div class="tr-right">
+    <button class="btn-sm" onclick="init()">↻ atualizar</button>
+    <div class="sync-dot"></div>
+    <span class="sync-lbl" id="slbl">carregando...</span>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <span class="flbl">Cliente</span>
+  <select class="fsel" id="fcli"><option value="">Todos os clientes</option></select>
+  <span class="flbl">Processo</span>
+  <select class="fsel" id="fproc"><option value="">Todos os processos</option></select>
+  <div class="sep"></div>
+  <button class="btn-g" onclick="limpar()">Limpar filtros</button>
+  <div style="margin-left:auto;font-size:11px;color:var(--text3);font-family:var(--mono)" id="toolbar-info"></div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- INDICADORES -->
+  <div class="ind-row" id="ind-row">
+    <div class="ind-card vencido"><div class="ind-ico">🔴</div><div class="ind-num" id="n-vencido">—</div><div class="ind-label">Vencidos</div><div class="ind-desc">Prazo já passou — peça ainda em produção</div></div>
+    <div class="ind-card critico"><div class="ind-ico">🟠</div><div class="ind-num" id="n-critico">—</div><div class="ind-label">Crítico</div><div class="ind-desc">Vence em até 2 dias</div></div>
+    <div class="ind-card atencao"><div class="ind-ico">🟡</div><div class="ind-num" id="n-atencao">—</div><div class="ind-label">Atenção</div><div class="ind-desc">Vence em 3 a 7 dias</div></div>
+    <div class="ind-card ok"><div class="ind-ico">🟢</div><div class="ind-num" id="n-ok">—</div><div class="ind-label">No prazo</div><div class="ind-desc">Mais de 7 dias restantes</div></div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div class="timeline-section">
+    <div class="ts-title">distribuição de prazos — próximos 30 dias</div>
+    <div class="timeline-wrap" id="tl-wrap">
+      <div class="loading"><div class="spinner"></div>carregando...</div>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <div class="table-section">
+    <div class="table-hdr-row">
+      <div class="table-title">Detalhamento por peça</div>
+      <div class="table-count" id="tbl-count">—</div>
+    </div>
+    <div class="tw-head">
+      <div class="th">Código</div>
+      <div class="th">Pedido</div>
+      <div class="th">Cliente</div>
+      <div class="th">Processo atual</div>
+      <div class="th">Prazo</div>
+      <div class="th">Dias rest.</div>
+      <div class="th">Urgência</div>
+      <div class="th">Risco</div>
+    </div>
+    <div class="tw-body" id="tw-body">
+      <div class="loading"><div class="spinner"></div>carregando...</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- DETALHE -->
+<div class="det-panel" id="dp">
+  <div class="det-hdr"><div id="dt"></div><button class="det-close" onclick="fechar()">✕ fechar</button></div>
+  <div class="det-body" id="db"></div>
+</div>
+
+<script src="status.js"></script>
+<script>
+let POS = [];
+let filtroAtivo = null; // vencido | critico | atencao | ok | null
+
+// Processos considerados "próximos do fim" — peça já está quase pronta
+const PROCESSOS_AVANCADOS = ["QUALIDADE","ADMINISTRATIVO"];
+
+async function init(){
+  document.getElementById("slbl").textContent = "carregando...";
+  POS = await buscarPosicao();
+
+  // Filtra só peças EM PRODUÇÃO com prazo definido
+  // Exclui: expedidas, em estoque, aprovadas (já prontas)
+  POS = POS.filter(r=>{
+    const st = status(r).s;
+    if(["expedida","em_estoque","aprovada"].includes(st)) return false;
+    if(!r.prazo_entrega || String(r.prazo_entrega).trim()==="") return false;
+    return true;
+  });
+
+  popularFiltros();
+  render();
+  document.getElementById("slbl").textContent = `${POS.length} peças com prazo · ${new Date().toLocaleTimeString("pt-BR")}`;
+}
+
+function diasRestantes(row){
+  const prazo = new Date(row.prazo_entrega);
+  const hoje  = new Date();
+  hoje.setHours(0,0,0,0);
+  prazo.setHours(0,0,0,0);
+  return Math.round((prazo - hoje) / (1000*60*60*24));
+}
+
+function urgencia(dias){
+  if(dias < 0)  return "vencido";
+  if(dias <= 2) return "critico";
+  if(dias <= 7) return "atencao";
+  return "ok";
+}
+
+// Índice de risco: combina dias restantes + posição no processo
+// Quanto maior o número (0-100), maior o risco
+function calcRisco(row, dias){
+  const proc = String(row.processo||"").trim().toUpperCase();
+  const avancado = PROCESSOS_AVANCADOS.some(p=>proc.includes(p));
+
+  // Base pelo prazo
+  let base = 0;
+  if(dias < 0)   base = 100;
+  else if(dias===0) base = 90;
+  else if(dias<=2)  base = 70 + (2-dias)*10;
+  else if(dias<=7)  base = 40 + (7-dias)*5;
+  else              base = Math.max(0, 40 - (dias-7)*3);
+
+  // Desconto se já está em processo avançado (quase pronto)
+  if(avancado && dias > 0) base = Math.max(0, base - 20);
+
+  return Math.min(100, Math.round(base));
+}
+
+function corRisco(r){
+  if(r>=80) return "var(--danger)";
+  if(r>=50) return "var(--orange)";
+  if(r>=30) return "var(--warn)";
+  return "var(--ok)";
+}
+
+function pecasFiltradas(){
+  const cli  = document.getElementById("fcli").value.trim();
+  const proc = document.getElementById("fproc").value.trim().toUpperCase();
+  return POS.filter(r=>{
+    if(cli  && String(r.cliente||"").trim()!==cli) return false;
+    if(proc && String(r.processo||"").trim().toUpperCase()!==proc) return false;
+    if(filtroAtivo){
+      const dias = diasRestantes(r);
+      if(urgencia(dias) !== filtroAtivo) return false;
+    }
+    return true;
+  }).sort((a,b)=>diasRestantes(a)-diasRestantes(b));
+}
+
+function popularFiltros(){
+  const clis  = [...new Set(POS.map(r=>String(r.cliente||"").trim()).filter(Boolean))].sort();
+  const procs = [...new Set(POS.map(r=>String(r.processo||"").trim()).filter(Boolean))].sort();
+  document.getElementById("fcli").innerHTML  = '<option value="">Todos os clientes</option>'  + clis.map(c=>`<option value="${c}">${c}</option>`).join("");
+  document.getElementById("fproc").innerHTML = '<option value="">Todos os processos</option>' + procs.map(p=>`<option value="${p}">${p}</option>`).join("");
+}
+
+function render(){
+  const pecas = pecasFiltradas();
+  renderIndicadores();
+  renderTimeline(pecas);
+  renderTabela(pecas);
+  document.getElementById("tbl-count").textContent = `${pecas.length} peça(s)`;
+}
+
+function renderIndicadores(){
+  const todos = POS;
+  const cnt = {vencido:0, critico:0, atencao:0, ok:0};
+  todos.forEach(r=>{ const d=diasRestantes(r); cnt[urgencia(d)]++; });
+  document.getElementById("n-vencido").textContent = cnt.vencido;
+  document.getElementById("n-critico").textContent = cnt.critico;
+  document.getElementById("n-atencao").textContent = cnt.atencao;
+  document.getElementById("n-ok").textContent      = cnt.ok;
+
+  // Clique nos cards para filtrar
+  ["vencido","critico","atencao","ok"].forEach(u=>{
+    const el = document.querySelector(`.ind-card.${u}`);
+    el.onclick = ()=>{
+      filtroAtivo = filtroAtivo===u ? null : u;
+      document.querySelectorAll(".ind-card").forEach(c=>c.classList.remove("active-filter"));
+      if(filtroAtivo) el.classList.add("active-filter");
+      render();
+    };
+  });
+
+  if(filtroAtivo) document.querySelector(`.ind-card.${filtroAtivo}`).classList.add("active-filter");
+}
+
+function renderTimeline(pecas){
+  const wrap = document.getElementById("tl-wrap");
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+
+  // Gera 30 dias a partir de hoje - 5 dias
+  const inicio = new Date(hoje); inicio.setDate(hoje.getDate()-5);
+  const DIAS = 35;
+  const dias = Array.from({length:DIAS},(_,i)=>{
+    const d = new Date(inicio); d.setDate(inicio.getDate()+i); return d;
+  });
+
+  // Conta peças por dia de prazo
+  const porDia = {};
+  pecas.forEach(r=>{
+    const p = new Date(r.prazo_entrega); p.setHours(0,0,0,0);
+    const k = p.toISOString().slice(0,10);
+    if(!porDia[k]) porDia[k]=[];
+    porDia[k].push(r);
+  });
+
+  const max = Math.max(...Object.values(porDia).map(v=>v.length), 1);
+  const hojeIdx = 5; // índice do dia de hoje no array
+
+  // Eixo de datas
+  const axisHtml = dias.map((d,i)=>{
+    const isHoje = i===hojeIdx;
+    const isPast = i<hojeIdx;
+    const label  = d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
+    return `<div class="tl-day${isHoje?" hoje":isPast?" passado":""}">${label}</div>`;
+  }).join("");
+
+  // Barras — uma por dia com peças
+  const diasComPecas = dias.filter(d=>{
+    const k = d.toISOString().slice(0,10);
+    return porDia[k]&&porDia[k].length>0;
+  });
+
+  if(diasComPecas.length===0){
+    wrap.innerHTML=`<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">Nenhuma peça com prazo nos próximos 30 dias.</div>`;
+    return;
+  }
+
+  const barsHtml = dias.map((d,i)=>{
+    const k = d.toISOString().slice(0,10);
+    const itens = porDia[k]||[];
+    if(itens.length===0) return "";
+    const pct = Math.round(itens.length/max*100);
+    const diasR = Math.round((d-hoje)/(1000*60*60*24));
+    const urg = urgencia(diasR);
+    const corBar = urg==="vencido"?"var(--danger)":urg==="critico"?"var(--orange)":urg==="atencao"?"var(--warn)":"var(--ok)";
+    const posLeft = (i/DIAS*100)+"%";
+    const width   = (1/DIAS*100)+"%";
+    return `<div style="position:absolute;left:${posLeft};width:${width};bottom:0;height:${Math.max(8,pct)}%;background:${corBar};opacity:0.8;border-radius:3px 3px 0 0;cursor:pointer;transition:opacity 0.1s" title="${itens.length} peça(s) — ${d.toLocaleDateString('pt-BR')}" onclick="filtrarPorData('${k}')"></div>`;
+  }).join("");
+
+  const hojeLeft = (hojeIdx/DIAS*100)+"%";
+
+  wrap.innerHTML=`
+    <div class="tl-axis">${axisHtml}</div>
+    <div style="position:relative;height:80px;min-width:800px;background:var(--bg3);border-radius:6px;overflow:hidden;margin-top:4px">
+      <div style="position:absolute;left:${hojeLeft};top:0;bottom:0;width:2px;background:var(--accent);z-index:2;opacity:0.8"></div>
+      <div style="position:absolute;left:${hojeLeft};top:4px;font-size:9px;color:var(--accent);font-family:var(--mono);transform:translateX(-50%)">hoje</div>
+      ${barsHtml}
+    </div>
+    <div style="font-size:10px;color:var(--text3);margin-top:6px;font-family:var(--mono)">← clique em uma barra para filtrar por data de prazo</div>`;
+}
+
+function filtrarPorData(dataISO){
+  // Filtra tabela para mostrar só peças com prazo naquele dia
+  const pecas = POS.filter(r=>{
+    const p = new Date(r.prazo_entrega); p.setHours(0,0,0,0);
+    return p.toISOString().slice(0,10)===dataISO;
+  }).sort((a,b)=>diasRestantes(a)-diasRestantes(b));
+  renderTabela(pecas);
+  document.getElementById("tbl-count").textContent = `${pecas.length} peça(s) com prazo em ${new Date(dataISO+"T12:00:00").toLocaleDateString("pt-BR")}`;
+}
+
+function renderTabela(pecas){
+  const body = document.getElementById("tw-body");
+  if(!pecas.length){
+    body.innerHTML=`<div class="empty"><div class="empty-ico">✅</div><p style="font-size:13px">Nenhuma peça encontrada com os filtros selecionados.</p></div>`;
+    return;
+  }
+  body.innerHTML = pecas.map(r=>{
+    const dias  = diasRestantes(r);
+    const urg   = urgencia(dias);
+    const risco = calcRisco(r, dias);
+    const proc  = String(r.processo||"").trim();
+    const subop = getSubop(r);
+    const prazoFmt = r.prazo_entrega ? new Date(r.prazo_entrega).toLocaleDateString("pt-BR") : "—";
+    const diasStr  = dias<0 ? `${Math.abs(dias)}d atraso` : dias===0 ? "hoje" : `${dias}d`;
+    const chipCls  = `chip-${urg}`;
+    const urgStr   = urg==="vencido"?"VENCIDO":urg==="critico"?"CRÍTICO":urg==="atencao"?"ATENÇÃO":"NO PRAZO";
+    const corRiscoFill = corRisco(risco);
+
+    // Indicador visual do processo — se está avançado, mostra ícone
+    const avancado = PROCESSOS_AVANCADOS.some(p=>proc.toUpperCase().includes(p));
+    const procDisplay = avancado ? `✓ ${proc}` : proc;
+    const procCor = avancado ? "var(--ok)" : "var(--text)";
+
+    return `<div class="tr ${urg==="ok"?"ok-row":urg}" onclick="abrirDet('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
+      <div class="td" style="font-family:var(--mono);font-weight:700;color:var(--text)">${r.codigo_peca||"—"}</div>
+      <div class="td" style="font-family:var(--mono);font-size:11px">${r.pedido||"—"}</div>
+      <div class="td" style="font-size:11px;overflow:hidden;text-overflow:ellipsis">${r.cliente||"—"}</div>
+      <div class="td" style="flex-direction:column;align-items:flex-start;gap:2px">
+        <span style="font-size:11px;color:${procCor};font-weight:500">${procDisplay||"—"}</span>
+        <span style="font-size:10px;color:var(--text3)">${subop}</span>
+      </div>
+      <div class="td" style="font-family:var(--mono);font-size:11px">${prazoFmt}</div>
+      <div class="td" style="font-family:var(--mono);font-weight:600;color:${urg==="vencido"?"var(--danger)":urg==="critico"?"var(--orange)":urg==="atencao"?"var(--warn)":"var(--ok)"}">${diasStr}</div>
+      <div class="td"><span class="chip ${chipCls}">${urgStr}</span></div>
+      <div class="td">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="risco-bar"><div class="risco-fill" style="width:${risco}%;background:${corRiscoFill}"></div></div>
+          <span style="font-size:10px;font-family:var(--mono);color:${corRiscoFill}">${risco}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function limpar(){
+  filtroAtivo = null;
+  document.getElementById("fcli").value  = "";
+  document.getElementById("fproc").value = "";
+  document.querySelectorAll(".ind-card").forEach(c=>c.classList.remove("active-filter"));
+  render();
+}
+
+async function abrirDet(pedido, codigo){
+  document.getElementById("dp").classList.add("open");
+  await abrirPainelDetalhe(pedido, codigo, "dp", "dt", "db");
+}
+function fechar(){ document.getElementById("dp").classList.remove("open"); }
+function navTo(p){ window.location.href=p; }
+
+["fcli","fproc"].forEach(id=>document.getElementById(id).addEventListener("change",render));
+init();
+</script>
+</body>
+</html>

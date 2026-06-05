@@ -520,9 +520,12 @@ function renderComparativo(an, todosDados){
     const tempos = [];
     Object.entries(porOp).forEach(([op,evs])=>{
       const pares = calcularPares(evs);
-      pares.filter(p=>!p.semSaida&&!p.muitoRapido&&!p.fimDeSemana&&p.durMs>0).forEach(p=>{
-        tempos.push({op, durMs:p.durMs, qtd:p.qtd});
-      });
+      const validos = pares.filter(p=>!p.semSaida&&!p.muitoRapido&&!p.fimDeSemana&&p.durMs>0);
+      if(validos.length===0) return;
+      // Usa a MÉDIA dos tempos do operador para aquela peça+subop — evita duplicatas
+      const mediaMs = validos.reduce((s,p)=>s+p.durMs,0)/validos.length;
+      const totalQtd = validos.reduce((s,p)=>s+p.qtd,0);
+      tempos.push({op, durMs:Math.round(mediaMs), qtd:totalQtd, ocorrencias:validos.length});
     });
 
     if(tempos.length<2) return; // só aparece se mais de 1 operador fez
@@ -545,7 +548,7 @@ function renderComparativo(an, todosDados){
       const isPior   = t===pior&&c.tempos.length>1;
       return `<div class="comp-row ${isEste?"destaque":""} ${isMelhor?"melhor":isPior?"pior":""}">
         <span class="comp-op">${isEste?"→ "+t.op:t.op}</span>
-        <span class="comp-tempo">${fmtTempo(t.durMs)}</span>
+        <span class="comp-tempo">${fmtTempo(t.durMs)}${t.ocorrencias>1?" <span style=\"font-size:9px;opacity:0.6\">×"+t.ocorrencias+"</span>":""}</span>
       </div>`;
     }).join("");
     return `<div class="comp-card">

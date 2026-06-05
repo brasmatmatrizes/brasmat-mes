@@ -7,493 +7,283 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#A8B2C8;--text3:#6E7A92;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
-.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;gap:16px}
-.topbar-brand{display:flex;align-items:center;gap:10px}
-.brand-mark{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
-.brand-name{font-size:14px;font-weight:600;letter-spacing:0.04em}
-.brand-sub{font-size:11px;color:var(--text3);font-family:var(--mono)}
-.topbar-nav{display:flex;gap:4px}
-.nav-btn{font-size:12px;padding:6px 14px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s}
-.nav-btn:hover{background:var(--bg3);color:var(--text)}
-.nav-btn.active{background:var(--accent);color:#fff}
-.topbar-right{display:flex;align-items:center;gap:8px}
+:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#A8B2C8;--text3:#6E7A92;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px}
+.brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
+.bn{font-size:14px;font-weight:600;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.nav{display:flex;gap:4px}
+.nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
+.tr-right{display:flex;align-items:center;gap:8px}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-.sync-label{font-size:11px;color:var(--text3);font-family:var(--mono)}
-
-.page{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 56px)}
-
-/* CONFIG SIDEBAR */
-.config-panel{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:16px}
-.config-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
-.config-desc{font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:14px}
-.label{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:8px}
-.proc-config{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
-.proc-config-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px}
-.proc-config-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.proc-config-name{font-size:11px;color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.proc-config-input{width:44px;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:12px;color:var(--text);font-family:var(--mono);text-align:center;outline:none}
-.proc-config-input:focus{border-color:var(--accent)}
-.proc-config-unit{font-size:10px;color:var(--text3);white-space:nowrap}
-.btn-salvar{width:100%;background:var(--accent);border:none;border-radius:8px;padding:9px;font-size:13px;color:#fff;font-family:var(--sans);font-weight:500;cursor:pointer;transition:background 0.15s;margin-bottom:8px}
-.btn-salvar:hover{background:#1A4FCC}
-.btn-reset-cfg{width:100%;background:transparent;border:1px solid var(--border);border-radius:8px;padding:7px;font-size:12px;color:var(--text2);font-family:var(--sans);cursor:pointer;transition:all 0.15s}
-.btn-reset-cfg:hover{border-color:var(--border2);color:var(--text)}
-.saved-msg{font-size:11px;color:var(--ok);text-align:center;margin-top:6px;height:16px;font-family:var(--mono)}
-
+.sync-lbl{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.btn-sm{background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--mono)}
+.btn-sm:hover{border-color:var(--border2);color:var(--text2)}
+.page{display:grid;grid-template-columns:260px 1fr;height:calc(100vh - 56px)}
+/* CONFIG */
+.cfg{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:16px}
+.cfg-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.cfg-desc{font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:14px}
+.lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:8px}
+.pc-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin-bottom:5px}
+.pc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pc-name{font-size:11px;color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc-input{width:40px;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:12px;color:var(--text);font-family:var(--mono);text-align:center;outline:none}
+.pc-input:focus{border-color:var(--accent)}
+.pc-unit{font-size:10px;color:var(--text3);white-space:nowrap}
+.btn-save{width:100%;background:var(--accent);border:none;border-radius:8px;padding:9px;font-size:13px;color:#fff;font-family:var(--sans);font-weight:500;cursor:pointer;margin-bottom:6px}
+.btn-save:hover{background:#1A4FCC}
+.btn-rst{width:100%;background:transparent;border:1px solid var(--border);border-radius:8px;padding:7px;font-size:12px;color:var(--text2);font-family:var(--sans);cursor:pointer}
+.btn-rst:hover{border-color:var(--border2);color:var(--text)}
+.saved{font-size:11px;color:var(--ok);text-align:center;margin-top:6px;height:16px;font-family:var(--mono)}
 /* CONTENT */
-.content{overflow-y:auto;padding:20px}
-.content-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-.content-title{font-size:17px;font-weight:600;color:var(--text)}
-.content-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
-.filter-row{display:flex;gap:6px;flex-wrap:wrap}
-.filter-select{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--text2);font-family:var(--sans);outline:none;cursor:pointer}
-.filter-select:focus{border-color:var(--accent)}
-.btn-ghost{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;transition:all 0.15s}
-.btn-ghost:hover{border-color:var(--border2);color:var(--text)}
-
-/* MÉTRICAS */
-.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
-.metric{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
-.metric-val{font-size:26px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:4px}
-.metric-val.danger{color:var(--danger)}.metric-val.warn{color:var(--warn)}.metric-val.ok{color:var(--ok)}.metric-val.accent{color:var(--accent)}
-.metric-label{font-size:11px;color:var(--text3)}
-
-/* GRÁFICO POR PROCESSO */
-.chart-section{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:18px}
-.chart-title{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.07em;font-family:var(--mono)}
-.bar-rows{display:flex;flex-direction:column;gap:7px}
-.bar-row{display:flex;align-items:center;gap:10px}
-.bar-label{font-size:11px;color:var(--text2);width:160px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.bar-track{flex:1;height:8px;background:var(--bg3);border-radius:4px;overflow:hidden}
-.bar-fill{height:100%;border-radius:4px;transition:width 0.5s}
-.bar-count{font-size:11px;font-family:var(--mono);color:var(--text2);width:24px;text-align:right}
-
-/* TABELA */
-.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.table-head{display:grid;grid-template-columns:120px 120px 140px 120px 90px 110px 100px;border-bottom:1px solid var(--border);padding:0 14px}
-.th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);padding:9px 6px}
-.table-body{display:flex;flex-direction:column;max-height:400px;overflow-y:auto}
-.tr{display:grid;grid-template-columns:120px 120px 140px 120px 90px 110px 100px;padding:0 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s}
-.tr:last-child{border-bottom:none}
-.tr:hover{background:var(--bg3)}
-.tr.critico{border-left:2px solid var(--danger)}
-.tr.atencao{border-left:2px solid var(--warn)}
-.td{font-size:12px;color:var(--text2);padding:10px 6px;display:flex;align-items:center;overflow:hidden}
-.td.mono{font-family:var(--mono);color:var(--text)}
-.dias-chip{font-size:11px;font-family:var(--mono);font-weight:500;padding:3px 9px;border-radius:10px;white-space:nowrap}
-.dias-warn{background:rgba(245,166,35,0.12);color:var(--warn)}
-.dias-danger{background:rgba(240,69,69,0.12);color:var(--danger)}
-.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;color:var(--text3)}
-.empty-icon{font-size:36px;margin-bottom:10px}
-.empty-state p{font-size:13px;text-align:center;line-height:1.6}
-.loading{display:flex;align-items:center;justify-content:center;padding:80px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.content{overflow-y:auto;padding:16px 20px}
+.chdr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.ctitle{font-size:16px;font-weight:600;color:var(--text)}.csub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+.frow{display:flex;gap:6px;flex-wrap:wrap}
+.fsel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--text2);outline:none;cursor:pointer}
+.fsel:focus{border-color:var(--accent)}
+.btn-g{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer}
+.btn-g:hover{border-color:var(--border2);color:var(--text)}
+.mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.met{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.mv{font-size:26px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:4px}
+.mv.danger{color:var(--danger)}.mv.warn{color:var(--warn)}.mv.ok{color:var(--ok)}.mv.accent{color:var(--accent)}
+.ml2{font-size:11px;color:var(--text3)}
+.chart{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:14px}
+.chart-title{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.07em;font-family:var(--mono)}
+.br{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.br:last-child{margin-bottom:0}
+.br-lbl{font-size:11px;color:var(--text2);width:150px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.br-track{flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.br-fill{height:100%;border-radius:4px}
+.br-cnt{font-size:11px;font-family:var(--mono);color:var(--text2);width:24px;text-align:right}
+.tw{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.thead{display:grid;grid-template-columns:120px 120px 150px 130px 90px 90px 90px;border-bottom:1px solid var(--border);padding:0 14px}
+.th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);padding:8px 6px}
+.tbody{display:flex;flex-direction:column;max-height:380px;overflow-y:auto}
+.tr{display:grid;grid-template-columns:120px 120px 150px 130px 90px 90px 90px;padding:0 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s}
+.tr:last-child{border-bottom:none}.tr:hover{background:var(--bg3)}
+.tr.crit{border-left:2px solid var(--danger)}.tr.aten{border-left:2px solid var(--warn)}
+.td{font-size:12px;color:var(--text2);padding:9px 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.chip{font-size:10px;font-family:var(--mono);font-weight:500;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;color:var(--text3)}
+.empty-ico{font-size:36px;margin-bottom:10px}.empty p{font-size:13px;text-align:center;line-height:1.6}
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
 .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-
 /* DETALHE */
-.detail-panel{display:none;position:fixed;right:0;top:56px;bottom:0;width:440px;background:var(--bg2);border-left:1px solid var(--border);z-index:100;overflow-y:auto;animation:slideIn 0.18s ease}
-.detail-panel.open{display:block}
-@keyframes slideIn{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
-.detail-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--bg2)}
-.detail-close{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer}
-.detail-body{padding:16px 20px}
-.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
-.meta-box{background:var(--bg3);border-radius:8px;padding:10px 12px}
-.meta-label{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.07em}
-.meta-val{font-size:13px;font-weight:500;color:var(--text)}
-.tl-label{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:12px}
+.det-panel{display:none;position:fixed;right:0;top:56px;bottom:0;width:440px;background:var(--bg2);border-left:1px solid var(--border);z-index:100;overflow-y:auto;animation:si 0.18s ease}
+.det-panel.open{display:block}
+@keyframes si{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+.det-hdr{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--bg2)}
+.det-close{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer}
+.det-body{padding:16px 20px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.mb{background:var(--bg3);border-radius:8px;padding:10px 12px}.ml{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.07em}.mv2{font-size:13px;font-weight:500;color:var(--text)}
+.pos-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px}
+.tl-lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:12px}
 .timeline{list-style:none;position:relative;padding-left:28px}
 .timeline::before{content:"";position:absolute;left:9px;top:0;bottom:0;width:1px;background:var(--border)}
-.tl-item{position:relative;margin-bottom:12px}
-.tl-item:last-child{margin-bottom:0}
+.tl-item{position:relative;margin-bottom:12px}.tl-item:last-child{margin-bottom:0}
 .tl-dot{position:absolute;left:-28px;top:4px;width:13px;height:13px;border-radius:50%;border:2px solid var(--bg2)}
-.tl-dot.entrada{background:var(--accent)}.tl-dot.saida{background:var(--ok)}.tl-dot.limbo{background:var(--danger);box-shadow:0 0 0 3px rgba(240,69,69,0.2)}
+.tl-dot.entrada{background:var(--accent)}.tl-dot.saida{background:var(--ok)}.tl-dot.atual{background:var(--warn);box-shadow:0 0 0 3px rgba(245,166,35,0.2)}
 .tl-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
-.tl-card.limbo-card{border-color:rgba(240,69,69,0.4);background:rgba(240,69,69,0.03)}
+.tl-card.atual{border-color:rgba(245,166,35,0.4)}
 .tl-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
 .tl-proc{font-size:12px;font-weight:500;color:var(--text)}
 .tl-evt{font-size:10px;padding:1px 7px;border-radius:8px}
-.evt-entrada{background:rgba(59,127,255,0.12);color:var(--accent)}
-.evt-saida{background:rgba(45,191,126,0.1);color:var(--ok)}
-.tl-limbo-tag{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(240,69,69,0.12);color:var(--danger)}
+.ent{background:rgba(59,127,255,0.12);color:var(--accent)}.sai{background:rgba(45,191,126,0.1);color:var(--ok)}
+.tl-tag{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(245,166,35,0.12);color:var(--warn)}
+.tl-ret{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(240,69,69,0.12);color:var(--danger)}
 .tl-sub{font-size:11px;color:var(--text2);margin-bottom:6px}
-.tl-foot{display:flex;gap:12px;flex-wrap:wrap}
-.tl-meta{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.tl-foot{display:flex;gap:12px;flex-wrap:wrap}.tl-m{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.tl-obs{margin-top:6px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:6px;line-height:1.5}
 </style>
 </head>
 <body>
 <div style="display:grid;grid-template-rows:56px 1fr;height:100vh">
-
 <div class="topbar">
-  <div class="topbar-brand">
-    <div class="brand-mark">BM</div>
-    <div><div class="brand-name">BRASMAT MES</div><div class="brand-sub">sistema de execução de manufatura</div></div>
+  <div class="brand"><div class="bm">BM</div><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="nav">
+    <button class="nb" onclick="navTo('index.html')">Posição</button>
+    <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
+    <button class="nb" onclick="navTo('peca.html')">Buscar peça</button>
+    <button class="nb active">Peças paradas</button>
   </div>
-  <div class="topbar-nav">
-    <button class="nav-btn" onclick="navTo('index.html')">Posição</button>
-    <button class="nav-btn" onclick="navTo('kanban.html')">Kanban</button>
-    <button class="nav-btn" onclick="navTo('peca.html')">Buscar peça</button>
-    <button class="nav-btn active">Peças paradas</button>
-  </div>
-  <div class="topbar-right">
+  <div class="tr-right">
+    <button class="btn-sm" onclick="init()">↻ atualizar</button>
     <div class="sync-dot"></div>
-    <span class="sync-label" id="sync-label">carregando...</span>
+    <span class="sync-lbl" id="slbl">carregando...</span>
   </div>
 </div>
-
 <div class="page">
-
-  <!-- CONFIG -->
-  <div class="config-panel">
-    <div class="config-title">⚙️ Tempo máximo por processo</div>
-    <div class="config-desc">Defina quantos dias é aceitável uma peça ficar sem movimentação após sair de cada processo. Peças que ultrapassarem esse limite aparecem como paradas.</div>
-    <div class="label">configuração de limites</div>
-    <div class="proc-config" id="proc-config"></div>
-    <button class="btn-salvar" onclick="salvarConfig()">Salvar configuração</button>
-    <button class="btn-reset-cfg" onclick="resetarConfig()">Restaurar padrões (3 dias)</button>
-    <div class="saved-msg" id="saved-msg"></div>
+  <div class="cfg">
+    <div class="cfg-title">⚙️ Tempo máximo por processo</div>
+    <div class="cfg-desc">Dias aceitáveis sem movimentação após a saída de cada processo. Peças que ultrapassarem aparecem como paradas.</div>
+    <div class="lbl">limites</div>
+    <div id="pc-list"></div>
+    <button class="btn-save" onclick="salvar()">Salvar configuração</button>
+    <button class="btn-rst" onclick="resetar()">Restaurar padrões (3 dias)</button>
+    <div class="saved" id="saved-msg"></div>
   </div>
-
-  <!-- CONTENT -->
   <div class="content">
-    <div class="content-header">
-      <div>
-        <div class="content-title">Peças no limbo</div>
-        <div class="content-sub">Peças com SAÍDA registrada sem nova ENTRADA além do tempo configurado</div>
-      </div>
-      <div class="filter-row">
-        <select class="filter-select" id="f-processo"><option value="">Todos os processos</option></select>
-        <select class="filter-select" id="f-cliente"><option value="">Todos os clientes</option></select>
-        <select class="filter-select" id="f-subop"><option value="">Todas as suboperações</option></select>
-        <select class="filter-select" id="f-urgencia">
-          <option value="">Toda urgência</option>
-          <option value="critico">Crítico (&gt; 2x limite)</option>
-          <option value="atencao">Atenção (1x a 2x limite)</option>
-        </select>
-        <button class="btn-ghost" onclick="limparFiltros()">Limpar</button>
+    <div class="chdr">
+      <div><div class="ctitle">Peças no limbo</div><div class="csub">Saída registrada sem nova entrada além do tempo configurado</div></div>
+      <div class="frow">
+        <select class="fsel" id="fp"><option value="">Todos os processos</option></select>
+        <select class="fsel" id="fc"><option value="">Todos os clientes</option></select>
+        <select class="fsel" id="fs"><option value="">Todas as suboperações</option></select>
+        <select class="fsel" id="fu"><option value="">Toda urgência</option><option value="crit">Crítico (&gt;2x limite)</option><option value="aten">Atenção (1x–2x)</option></select>
+        <button class="btn-g" onclick="limpar()">Limpar</button>
       </div>
     </div>
-
-    <div class="metrics-row" id="metrics-row">
-      <div class="metric"><div class="metric-val danger" id="m-total">—</div><div class="metric-label">peças no limbo</div></div>
-      <div class="metric"><div class="metric-val danger" id="m-critico">—</div><div class="metric-label">críticas (&gt;2x limite)</div></div>
-      <div class="metric"><div class="metric-val warn" id="m-atencao">—</div><div class="metric-label">atenção (1x a 2x)</div></div>
-      <div class="metric"><div class="metric-val accent" id="m-gargalo" style="font-size:14px;padding-top:4px">—</div><div class="metric-label">processo com mais paradas</div></div>
+    <div class="mrow">
+      <div class="met"><div class="mv danger" id="m1">—</div><div class="ml2">peças no limbo</div></div>
+      <div class="met"><div class="mv danger" id="m2">—</div><div class="ml2">críticas (&gt;2x limite)</div></div>
+      <div class="met"><div class="mv warn" id="m3">—</div><div class="ml2">atenção (1x–2x)</div></div>
+      <div class="met"><div class="mv accent" id="m4" style="font-size:14px;padding-top:4px">—</div><div class="ml2">maior gargalo</div></div>
     </div>
-
-    <div class="chart-section">
-      <div class="chart-title">peças no limbo por processo de saída</div>
-      <div class="bar-rows" id="bar-rows"></div>
-    </div>
-
-    <div class="chart-section" style="margin-bottom:18px">
-      <div class="chart-title">peças no limbo por suboperação</div>
-      <div class="bar-rows" id="bar-rows-subop"></div>
-    </div>
-    <div id="content-area"><div class="loading"><div class="spinner"></div>carregando dados...</div></div>
+    <div class="chart"><div class="chart-title">por processo de saída</div><div id="chart-proc"></div></div>
+    <div class="chart"><div class="chart-title">por suboperação</div><div id="chart-sub"></div></div>
+    <div id="area"><div class="loading"><div class="spinner"></div>carregando dados...</div></div>
   </div>
 </div>
 </div>
-
-<!-- DETALHE -->
-<div class="detail-panel" id="detail-panel">
-  <div class="detail-header">
-    <div id="detail-title"></div>
-    <button class="detail-close" onclick="fecharDetalhe()">✕ fechar</button>
-  </div>
-  <div class="detail-body" id="detail-body"></div>
+<div class="det-panel" id="dp">
+  <div class="det-hdr"><div id="dt"></div><button class="det-close" onclick="fechar()">✕ fechar</button></div>
+  <div class="det-body" id="db"></div>
 </div>
-
 <script src="status.js"></script>
 <script>
-const SUPABASE_URL = "https://hjvlznijsgdwurtsyukl.supabase.co";
-const SUPABASE_KEY = "sb_publishable_3N0kbWDpJ542n_aWeFzUqQ_pmVGrFiB";
+const PROCS_CFG=["RETÍFICA PLANA","RETÍFICA CILÍNDRICA INTERNA","RETÍFICA CILÍNDRICA EXTERNA","TORNO","EROSÃO A FIO","EROSÃO PENETRAÇÃO","FORMA","BRUNIDORA","POLIMENTO","PRENSA","QUALIDADE","SERVIÇO EXTERNO","ADMINISTRATIVO"];
+const CFG_KEY="brasmat_limites";
+let POS=[];
+let fP="",fC="",fS="",fU="";
 
-// Config padrão: 3 dias para todos os processos
-const PROCESSOS_CONFIG = [
-  "RETÍFICA PLANA","RETÍFICA CILÍNDRICA INTERNA","RETÍFICA CILÍNDRICA EXTERNA",
-  "TORNO","EROSÃO A FIO","EROSÃO PENETRAÇÃO","FORMA","BRUNIDORA",
-  "POLIMENTO","PRENSA","QUALIDADE","SERVIÇO EXTERNO","ADMINISTRATIVO"
-];
-const STORAGE_KEY = "brasmat_limites_processo";
+function loadCfg(){ try{return JSON.parse(localStorage.getItem(CFG_KEY))||{};}catch(e){return{};} }
+function getLimite(proc){ const c=loadCfg(); return c[proc.trim().toUpperCase()]||3; }
 
-function carregarConfig(){
-  try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
-  catch(e){ return {}; }
+function renderCfg(){
+  const cfg=loadCfg();
+  document.getElementById("pc-list").innerHTML=PROCS_CFG.map(p=>{
+    const cor=COR[p]||"#6E7A92";
+    const id="cfg_"+p.replace(/[^a-zA-Z0-9]/g,"_");
+    return `<div class="pc-row"><div class="pc-dot" style="background:${cor}"></div><span class="pc-name">${p.charAt(0)+p.slice(1).toLowerCase()}</span><input class="pc-input" id="${id}" type="number" min="1" max="60" value="${cfg[p]||3}"><span class="pc-unit">dias</span></div>`;
+  }).join("");
 }
 
-function salvarConfig(){
+function salvar(){
   const cfg={};
-  PROCESSOS_CONFIG.forEach(p=>{
-    const el=document.getElementById("cfg_"+p.replace(/\s/g,"_").replace(/[^a-zA-Z0-9_]/g,""));
-    cfg[p]=parseInt(el?el.value:3)||3;
-  });
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(cfg));
-  document.getElementById("saved-msg").textContent="✓ configuração salva";
+  PROCS_CFG.forEach(p=>{const id="cfg_"+p.replace(/[^a-zA-Z0-9]/g,"_");const el=document.getElementById(id);cfg[p]=parseInt(el?el.value:3)||3;});
+  localStorage.setItem(CFG_KEY,JSON.stringify(cfg));
+  document.getElementById("saved-msg").textContent="✓ salvo";
   setTimeout(()=>document.getElementById("saved-msg").textContent="",2000);
-  calcularERenderar();
+  render();
 }
-
-function resetarConfig(){
-  localStorage.removeItem(STORAGE_KEY);
-  renderConfigPanel();
-  calcularERenderar();
+function resetar(){
+  localStorage.removeItem(CFG_KEY);renderCfg();render();
   document.getElementById("saved-msg").textContent="✓ padrões restaurados";
   setTimeout(()=>document.getElementById("saved-msg").textContent="",2000);
 }
 
-function getLimite(processo){
-  const cfg=carregarConfig();
-  return cfg[processo.trim().toUpperCase()] || 3;
+async function init(){
+  document.getElementById("slbl").textContent="carregando...";
+  POS=await buscarPosicao();
+  popularFiltros();renderCfg();render();
+  document.getElementById("slbl").textContent=`${POS.length} peças · ${new Date().toLocaleTimeString("pt-BR")}`;
 }
 
-function renderConfigPanel(){
-  const cfg=carregarConfig();
-  document.getElementById("proc-config").innerHTML=PROCESSOS_CONFIG.map(p=>{
-    const cor=COR_PROCESSO[p]||"#4E5A72";
-    const id="cfg_"+p.replace(/\s/g,"_").replace(/[^a-zA-Z0-9_]/g,"");
-    const val=cfg[p]||3;
-    return `<div class="proc-config-row">
-      <div class="proc-config-dot" style="background:${cor}"></div>
-      <span class="proc-config-name">${p.charAt(0)+p.slice(1).toLowerCase()}</span>
-      <input class="proc-config-input" id="${id}" type="number" min="1" max="60" value="${val}">
-      <span class="proc-config-unit">dias</span>
-    </div>`;
-  }).join("");
-}
-
-let TODOS=[];
-let filtroProcesso="",filtroCliente="",filtroUrgencia="",filtroSubop="";
-
-async function fetchSupabase(path){
-  const r=await fetch(SUPABASE_URL+path,{headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY}});
-  return r.json();
-}
-
-async function carregarDados(){
-  document.getElementById("sync-label").textContent="carregando...";
-  TODOS = await carregarEventos();
-  popularFiltros();
-  calcularERenderar();
-  document.getElementById("sync-label").textContent=`${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
-}
-
-/*
-  LÓGICA DE PEÇA NO LIMBO:
-  Para cada pedido+codigo_peca, pega o último evento.
-  Se o último evento for SAÍDA E não for:
-    - SAÍDA Administrativo 11.4 (expedida — ciclo encerrado)
-    - SAÍDA Administrativo 11.3 (elaboração — início do ciclo, não é limbo)
-  Então calcula quantos dias se passaram desde essa SAÍDA.
-  Se dias > limite configurado para aquele processo → está no limbo.
-*/
-function calcularLimbo(){
-  const posicao=calcularPosicaoTodos(TODOS);
-  const limbo=[];
-
-  Object.values(posicao).forEach(row=>{
-    const evt=String(row.evento||"").trim().toUpperCase();
-    const isSaida=evt==="SAÍDA"||evt==="SAIDA";
-    if(!isSaida) return;
-
-    const proc=String(row.processo||"").trim().toUpperCase();
-    const subop=getSubop(row);
-
-    // Ignora: expedida (11.4 saída) e elaboração de processo (11.3)
-    if(proc.includes("ADMINISTRATIVO")){
-      if(subop.includes(SUBOP_ALMOXARIFADO)) return; // expedida
-      if(subop.includes(SUBOP_ELABORACAO))   return; // largada normal
-    }
-
-    const dias=diasDesde(row);
-    const limite=getLimite(proc);
-    if(dias<=limite) return; // dentro do prazo
-
-    const urgencia=dias>=(limite*2)?"critico":"atencao";
-    limbo.push({row, dias, limite, urgencia, proc});
-  });
-
-  return limbo.sort((a,b)=>b.dias-a.dias);
-}
-
-function calcularERenderar(){
-  const limbo=calcularLimbo().filter(item=>{
-    if(filtroProcesso && item.proc!==filtroProcesso) return false;
-    if(filtroCliente  && String(item.row.cliente||"").trim()!==filtroCliente) return false;
-    if(filtroUrgencia && item.urgencia!==filtroUrgencia) return false;
-    if(filtroSubop    && getSubop(item.row)!==filtroSubop) return false;
-    return true;
-  });
-  renderMetricas(limbo);
-  renderGrafico(limbo);
-  renderGraficoSubop(limbo);
-  renderTabela(limbo);
-}
-
-function renderGraficoSubop(limbo){
-  const cnt={};
-  limbo.forEach(i=>{ const s=getSubop(i.row); if(s&&s!=="—") cnt[s]=(cnt[s]||0)+1; });
-  const itens=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const max=itens[0]?itens[0][1]:1;
-  document.getElementById("bar-rows-subop").innerHTML=itens.length===0
-    ?`<p style="font-size:12px;color:var(--text3)">Nenhum dado disponível.</p>`
-    :itens.map(([sub,c])=>{
-      const pct=Math.round(c/max*100);
-      return `<div class="bar-row">
-        <span class="bar-label" title="${sub}">${sub}</span>
-        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:#F5A623"></div></div>
-        <span class="bar-count">${c}</span>
-      </div>`;
-    }).join("");
-}
-
-function renderMetricas(limbo){
-  const critico=limbo.filter(i=>i.urgencia==="critico").length;
-  const atencao=limbo.filter(i=>i.urgencia==="atencao").length;
-  const cnt={};
-  limbo.forEach(i=>{ cnt[i.proc]=(cnt[i.proc]||0)+1; });
-  const gargalo=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById("m-total").textContent=limbo.length;
-  document.getElementById("m-critico").textContent=critico;
-  document.getElementById("m-atencao").textContent=atencao;
-  document.getElementById("m-gargalo").textContent=gargalo?gargalo[0].charAt(0)+gargalo[0].slice(1).toLowerCase()+" ("+gargalo[1]+")":"—";
-}
-
-function renderGrafico(limbo){
-  const cnt={};
-  limbo.forEach(i=>{ cnt[i.proc]=(cnt[i.proc]||0)+1; });
-  const itens=Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
-  const max=itens[0]?itens[0][1]:1;
-  document.getElementById("bar-rows").innerHTML=itens.length===0
-    ?`<p style="font-size:12px;color:var(--text3)">Nenhuma peça no limbo com os filtros selecionados.</p>`
-    :itens.map(([proc,cnt])=>{
-      const cor=COR_PROCESSO[proc]||"#4E5A72";
-      const pct=Math.round(cnt/max*100);
-      return `<div class="bar-row">
-        <span class="bar-label">${proc.charAt(0)+proc.slice(1).toLowerCase()}</span>
-        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${cor}"></div></div>
-        <span class="bar-count">${cnt}</span>
-      </div>`;
-    }).join("");
-}
-
-function renderTabela(limbo){
-  const area=document.getElementById("content-area");
-  if(!limbo.length){
-    area.innerHTML=`<div class="empty-state"><div class="empty-icon">✅</div><p>Nenhuma peça no limbo com os filtros selecionados.<br>Todos os processos estão dentro do tempo configurado.</p></div>`;
-    return;
-  }
-  const rows=limbo.map(item=>{
-    const {row,dias,limite,urgencia,proc}=item;
-    const excesso=dias-limite;
-    const dc=urgencia==="critico"?"danger":"warn";
-    const subop=getSubop(row);
-    return `<div class="tr ${urgencia}" onclick="abrirDetalhe('${esc(row.pedido)}','${esc(row.codigo_peca)}')">
-      <div class="td mono" style="font-weight:600">${row.codigo_peca||"—"}</div>
-      <div class="td" style="font-size:11px;color:var(--text2)">${row.pedido||"—"}</div>
-      <div class="td" style="flex-direction:column;align-items:flex-start;gap:2px">
-        <span style="font-size:11px;color:var(--text)">${proc.charAt(0)+proc.slice(1).toLowerCase()}</span>
-        <span style="font-size:10px;color:var(--text3)">${subop}</span>
-      </div>
-      <div class="td" style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${row.cliente||"—"}</div>
-      <div class="td" style="font-size:11px">${row.operador||"—"}</div>
-      <div class="td"><span class="dias-chip dias-${dc}">${dias} dias</span></div>
-      <div class="td" style="font-size:11px;color:var(--${dc})">+${excesso}d do limite</div>
-    </div>`;
-  }).join("");
-  area.innerHTML=`<div class="table-wrap">
-    <div class="table-head">
-      <div class="th">Código</div><div class="th">Pedido</div><div class="th">Saiu de</div>
-      <div class="th">Cliente</div><div class="th">Operador</div><div class="th">Dias parada</div><div class="th">Excesso</div>
-    </div>
-    <div class="table-body">${rows}</div>
-  </div>`;
+function calcLimbo(){
+  return POS.filter(r=>{
+    const evt=String(r.evento||"").trim().toUpperCase();
+    const isSai=evt==="SAÍDA"||evt==="SAIDA";
+    if(!isSai) return false;
+    const proc=String(r.processo||"").trim().toUpperCase();
+    const sub=getSubop(r);
+    if(proc.includes("ADMINISTRATIVO")&&(sub.includes(SUBOP_ALMO)||sub.includes(SUBOP_ELAB))) return false;
+    const d=diasDesde(r);
+    return d>getLimite(proc);
+  }).map(r=>{
+    const proc=String(r.processo||"").trim().toUpperCase();
+    const d=diasDesde(r);const lim=getLimite(proc);
+    return {r,d,lim,urg:d>=lim*2?"crit":"aten",proc};
+  }).sort((a,b)=>b.d-a.d);
 }
 
 function popularFiltros(){
-  const posicao=calcularPosicaoTodos(TODOS);
-  const procs=[...new Set(Object.values(posicao).map(r=>String(r.processo||"").trim().toUpperCase()).filter(Boolean))].sort();
-  const clis=[...new Set(Object.values(posicao).map(r=>String(r.cliente||"").trim()).filter(Boolean))].sort();
-  const subops=[...new Set(Object.values(posicao).map(r=>getSubop(r)).filter(s=>s&&s!=="—"))].sort();
-  document.getElementById("f-processo").innerHTML='<option value="">Todos os processos</option>'+procs.map(p=>`<option value="${p}">${p}</option>`).join("");
-  document.getElementById("f-cliente").innerHTML='<option value="">Todos os clientes</option>'+clis.map(c=>`<option>${c}</option>`).join("");
-  document.getElementById("f-subop").innerHTML='<option value="">Todas as suboperações</option>'+subops.map(s=>`<option value="${s}">${s}</option>`).join("");
+  const procs=[...new Set(POS.map(r=>String(r.processo||"").trim().toUpperCase()).filter(Boolean))].sort();
+  const clis=[...new Set(POS.map(r=>String(r.cliente||"").trim()).filter(Boolean))].sort();
+  const subs=[...new Set(POS.map(r=>getSubop(r)).filter(s=>s&&s!=="—"))].sort();
+  document.getElementById("fp").innerHTML='<option value="">Todos os processos</option>'+procs.map(p=>`<option value="${p}">${p}</option>`).join("");
+  document.getElementById("fc").innerHTML='<option value="">Todos os clientes</option>'+clis.map(c=>`<option>${c}</option>`).join("");
+  document.getElementById("fs").innerHTML='<option value="">Todas as suboperações</option>'+subs.map(s=>`<option value="${s}">${s}</option>`).join("");
 }
 
-function limparFiltros(){
-  filtroProcesso="";filtroCliente="";filtroUrgencia="";filtroSubop="";
-  document.getElementById("f-processo").value="";
-  document.getElementById("f-cliente").value="";
-  document.getElementById("f-urgencia").value="";
-  document.getElementById("f-subop").value="";
-  calcularERenderar();
-}
-
-function abrirDetalhe(pedido,codigo){
-  const panel=document.getElementById("detail-panel");
-  const body=document.getElementById("detail-body");
-  panel.classList.add("open");
-  body.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:40px;color:var(--text3);font-family:var(--mono);font-size:12px"><div class="spinner"></div>carregando...</div>`;
-  document.getElementById("detail-title").innerHTML=`<div style="font-size:15px;font-weight:600;color:var(--text);font-family:var(--mono)">${pedido}</div><div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px">${codigo}</div>`;
-
-  const eventos=TODOS.filter(r=>r.pedido===pedido&&r.codigo_peca===codigo).sort((a,b)=>a.id-b.id);
-  if(!eventos.length){body.innerHTML="<p style='color:var(--text3);font-size:13px'>Sem eventos.</p>";return;}
-
-  const ultimo=eventos[eventos.length-1];
-  const diasLimbo=diasDesde(ultimo);
-  const proc=String(ultimo.processo||"").trim().toUpperCase();
-  const limite=getLimite(proc);
-
-  const tl=eventos.map((ev,i)=>{
-    const isUlt=i===eventos.length-1;
-    const evtStr=String(ev.evento||"").trim().toUpperCase();
-    const isEnt=evtStr==="ENTRADA";
-    const dotC=isUlt?"limbo":isEnt?"entrada":"saida";
-    const cardC=isUlt?"limbo-card":"";
-    const subop=getSubop(ev);
-    return `<li class="tl-item">
-      <div class="tl-dot ${dotC}"></div>
-      <div class="tl-card ${cardC}">
-        <div class="tl-top">
-          <span class="tl-proc">${ev.processo||"—"}</span>
-          <span class="tl-evt ${isEnt?"evt-entrada":"evt-saida"}">${evtStr}</span>
-          ${isUlt?`<span class="tl-limbo-tag">⚠ no limbo há ${diasLimbo} dias (limite: ${limite}d)</span>`:""}
-        </div>
-        <div class="tl-sub">${subop}</div>
-        <div class="tl-foot">
-          <span class="tl-meta">👤 ${ev.operador||"—"}</span>
-          <span class="tl-meta">📅 ${fmtData(ev.data_evento)}</span>
-        </div>
-        ${ev.observacao&&String(ev.observacao).trim()?`<div style="margin-top:6px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:5px">${ev.observacao}</div>`:""}
-      </div>
-    </li>`;
+function render(){
+  const limbo=calcLimbo().filter(it=>{
+    if(fP&&it.proc!==fP) return false;
+    if(fC&&String(it.r.cliente||"").trim()!==fC) return false;
+    if(fS&&getSubop(it.r)!==fS) return false;
+    if(fU&&it.urg!==fU) return false;
+    return true;
+  });
+  // métricas
+  const crit=limbo.filter(i=>i.urg==="crit").length;
+  const aten=limbo.filter(i=>i.urg==="aten").length;
+  const cnt={};limbo.forEach(i=>cnt[i.proc]=(cnt[i.proc]||0)+1);
+  const garg=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById("m1").textContent=limbo.length;
+  document.getElementById("m2").textContent=crit;
+  document.getElementById("m3").textContent=aten;
+  document.getElementById("m4").textContent=garg?garg[0].charAt(0)+garg[0].slice(1).toLowerCase()+" ("+garg[1]+")":"—";
+  // gráfico proc
+  const itensP=Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
+  const maxP=itensP[0]?itensP[0][1]:1;
+  document.getElementById("chart-proc").innerHTML=itensP.length===0?`<p style="font-size:12px;color:var(--text3)">Nenhum dado.</p>`
+    :itensP.map(([p,c])=>{const cor=COR[p]||"#6E7A92";return `<div class="br"><span class="br-lbl">${p.charAt(0)+p.slice(1).toLowerCase()}</span><div class="br-track"><div class="br-fill" style="width:${Math.round(c/maxP*100)}%;background:${cor}"></div></div><span class="br-cnt">${c}</span></div>`;}).join("");
+  // gráfico subop
+  const cntS={};limbo.forEach(i=>{const s=getSubop(i.r);if(s&&s!=="—")cntS[s]=(cntS[s]||0)+1;});
+  const itensS=Object.entries(cntS).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxS=itensS[0]?itensS[0][1]:1;
+  document.getElementById("chart-sub").innerHTML=itensS.length===0?`<p style="font-size:12px;color:var(--text3)">Nenhum dado.</p>`
+    :itensS.map(([s,c])=>`<div class="br"><span class="br-lbl" title="${s}">${s}</span><div class="br-track"><div class="br-fill" style="width:${Math.round(c/maxS*100)}%;background:#F5A623"></div></div><span class="br-cnt">${c}</span></div>`).join("");
+  // tabela
+  if(!limbo.length){document.getElementById("area").innerHTML=`<div class="empty"><div class="empty-ico">✅</div><p>Nenhuma peça no limbo com os filtros selecionados.</p></div>`;return;}
+  const rows=limbo.map(it=>{
+    const {r,d,lim,urg,proc}=it;
+    const sub=getSubop(r);const excesso=d-lim;
+    return `<div class="tr ${urg}" onclick="abrirDet('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
+      <div class="td" style="font-family:var(--mono);font-weight:700;color:var(--text)">${r.codigo_peca||"—"}</div>
+      <div class="td" style="font-size:11px;color:var(--text2)">${r.pedido||"—"}</div>
+      <div class="td" style="flex-direction:column;align-items:flex-start;gap:2px"><span style="font-size:11px;color:var(--text)">${proc.charAt(0)+proc.slice(1).toLowerCase()}</span><span style="font-size:10px;color:var(--text3)">${sub}</span></div>
+      <div class="td" style="font-size:11px">${r.cliente||"—"}</div>
+      <div class="td" style="font-size:11px">${r.operador||"—"}</div>
+      <div class="td"><span class="chip" style="background:rgba(${urg==="crit"?"240,69,69":"245,166,35"},0.12);color:var(--${urg==="crit"?"danger":"warn"})">${d} dias</span></div>
+      <div class="td" style="font-size:11px;color:var(--${urg==="crit"?"danger":"warn"})">+${excesso}d</div>
+    </div>`;
   }).join("");
-
-  body.innerHTML=`
-    <div class="meta-grid">
-      <div class="meta-box"><div class="meta-label">cliente</div><div class="meta-val">${ultimo.cliente||"—"}</div></div>
-      <div class="meta-box"><div class="meta-label">prazo entrega</div><div class="meta-val">${ultimo.prazo_entrega||"—"}</div></div>
-      <div class="meta-box"><div class="meta-label">dias no limbo</div><div class="meta-val" style="color:var(--danger)">${diasLimbo} dias</div></div>
-      <div class="meta-box"><div class="meta-label">limite configurado</div><div class="meta-val">${limite} dias</div></div>
-    </div>
-    <div class="tl-label">linha do tempo</div>
-    <ul class="timeline">${tl}</ul>`;
+  document.getElementById("area").innerHTML=`<div class="tw"><div class="thead"><div class="th">Código</div><div class="th">Pedido</div><div class="th">Saiu de / Subop.</div><div class="th">Cliente</div><div class="th">Operador</div><div class="th">Dias parada</div><div class="th">Excesso</div></div><div class="tbody">${rows}</div></div>`;
 }
 
-function fecharDetalhe(){document.getElementById("detail-panel").classList.remove("open");}
+function limpar(){fP="";fC="";fS="";fU="";document.getElementById("fp").value="";document.getElementById("fc").value="";document.getElementById("fs").value="";document.getElementById("fu").value="";render();}
+
+async function abrirDet(pedido,codigo){
+  document.getElementById("dp").classList.add("open");
+  await abrirPainelDetalhe(pedido,codigo,"dp","dt","db");
+}
+function fechar(){document.getElementById("dp").classList.remove("open");}
 function navTo(p){window.location.href=p;}
-
-document.getElementById("f-processo").addEventListener("change",function(){filtroProcesso=this.value;calcularERenderar();});
-document.getElementById("f-cliente").addEventListener("change",function(){filtroCliente=this.value;calcularERenderar();});
-document.getElementById("f-urgencia").addEventListener("change",function(){filtroUrgencia=this.value;calcularERenderar();});
-document.getElementById("f-subop").addEventListener("change",function(){filtroSubop=this.value;calcularERenderar();});
-
-renderConfigPanel();
-carregarDados();
+["fp","fc","fs","fu"].forEach(id=>document.getElementById(id).addEventListener("change",function(){
+  if(id==="fp") fP=this.value;
+  if(id==="fc") fC=this.value;
+  if(id==="fs") fS=this.value;
+  if(id==="fu") fU=this.value;
+  render();
+}));
+init();
 </script>
 </body>
 </html>

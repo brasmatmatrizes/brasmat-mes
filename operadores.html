@@ -102,7 +102,7 @@
 .op-chip{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:8px;white-space:nowrap}
 
 /* COMPARATIVO */
-.comp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:20px}
+.comp-grid{display:flex;flex-direction:column;gap:0;margin-bottom:20px}
 .comp-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
 .comp-peca{font-size:13px;font-weight:600;color:var(--text);font-family:var(--mono);margin-bottom:2px}
 .comp-subop{font-size:11px;color:var(--text3);margin-bottom:10px}
@@ -493,7 +493,6 @@ function renderDetalhe(an, todosDados){
 }
 
 function renderComparativo(an, todosDados){
-  // Pega as peças que este operador trabalhou
   const pecasOp = new Set();
   an.pares.filter(p=>!p.semSaida&&!p.muitoRapido&&p.durMs>0).forEach(p=>{
     pecasOp.add(p.entrada.codigo_peca+"||"+getSubop(p.entrada));
@@ -501,14 +500,12 @@ function renderComparativo(an, todosDados){
 
   if(pecasOp.size===0) return "";
 
-  // Para cada peça+subop, busca todos os eventos de outros operadores
   const comparativos = [];
 
   pecasOp.forEach(chave=>{
     const [codigo, subop] = chave.split("||");
     if(!codigo||subop==="—") return;
 
-    // Busca pares de todos os operadores para essa peça+subop
     const evsPeca = todosDados.filter(r=>r.codigo_peca===codigo&&getSubop(r)===subop);
     const porOp = {};
     evsPeca.forEach(r=>{
@@ -517,51 +514,100 @@ function renderComparativo(an, todosDados){
       porOp[op].push(r);
     });
 
-    const tempos = [];
+    // Cada operador tem uma lista de ocorrências individuais
+    const operadores = [];
     Object.entries(porOp).forEach(([op,evs])=>{
       const pares = calcularPares(evs);
       const validos = pares.filter(p=>!p.semSaida&&!p.muitoRapido&&!p.fimDeSemana&&p.durMs>0);
       if(validos.length===0) return;
-      // Usa a MÉDIA dos tempos do operador para aquela peça+subop — evita duplicatas
-      const mediaMs = validos.reduce((s,p)=>s+p.durMs,0)/validos.length;
-      const totalQtd = validos.reduce((s,p)=>s+p.qtd,0);
-      tempos.push({op, durMs:Math.round(mediaMs), qtd:totalQtd, ocorrencias:validos.length});
+
+      const ocorrencias = validos.map(p=>({
+        durMs: p.durMs,
+        qtd: p.qtd,
+        data: new Date(p.entrada.data_evento).toLocaleDateString("pt-BR")
+      }));
+
+      const mediaMs = ocorrencias.reduce((s,o)=>s+o.durMs,0)/ocorrencias.length;
+      const totalQtd = ocorrencias.reduce((s,o)=>s+o.qtd,0);
+
+      operadores.push({op, ocorrencias, mediaMs, totalQtd, isEste: op===an.nome});
     });
 
-    if(tempos.length<2) return; // só aparece se mais de 1 operador fez
+    if(operadores.length<2) return;
 
-    // Ordena por tempo (mais rápido primeiro)
-    tempos.sort((a,b)=>a.durMs-b.durMs);
-    comparativos.push({codigo, subop, tempos});
+    // Ordena por média (mais rápido primeiro)
+    operadores.sort((a,b)=>a.mediaMs-b.mediaMs);
+    comparativos.push({codigo, subop, operadores});
   });
 
   if(comparativos.length===0) return `
     <div class="sec-title">comparativo com outros operadores</div>
     <p style="font-size:12px;color:var(--text3);margin-bottom:20px">Não há dados suficientes para comparativo — nenhuma peça deste operador foi feita por outros no período.</p>`;
 
-  const cards = comparativos.slice(0,6).map(c=>{
-    const melhor = c.tempos[0];
-    const pior   = c.tempos[c.tempos.length-1];
-    const rows = c.tempos.map(t=>{
-      const isEste = t.op===an.nome;
-      const isMelhor = t===melhor;
-      const isPior   = t===pior&&c.tempos.length>1;
-      return `<div class="comp-row ${isEste?"destaque":""} ${isMelhor?"melhor":isPior?"pior":""}">
-        <span class="comp-op">${isEste?"→ "+t.op:t.op}</span>
-        <span class="comp-tempo">${fmtTempo(t.durMs)}${t.ocorrencias>1?" <span style=\"font-size:9px;opacity:0.6\">×"+t.ocorrencias+"</span>":""}</span>
+  const cards = comparativos.map(comp=>{
+    const melhorMedia = comp.operadores[0].mediaMs;
+    const piorMedia   = comp.operadores[comp.operadores.length-1].mediaMs;
+
+    const blocos = comp.operadores.map(op=>{
+      const isMelhor = op.mediaMs===melhorMedia;
+      const isPior   = op.mediaMs===piorMedia && comp.operadores.length>1;
+      const corNome  = op.isEste?"var(--accent)":isMelhor?"var(--ok)":isPior?"var(--danger)":"var(--text2)";
+      const prefix   = op.isEste?"→ ":"";
+
+      // Linha de resumo do operador
+      const resumo = `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg3);border-radius:6px;margin-bottom:4px;gap:8px">
+        <span style="font-size:12px;font-weight:600;color:${corNome};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">${prefix}${op.op}</span>
+        <div style="display:flex;gap:10px;flex-shrink:0;align-items:center">
+          <span style="font-size:10px;color:var(--text3)">média</span>
+          <span style="font-size:12px;font-family:var(--mono);font-weight:600;color:${isMelhor?"var(--ok)":isPior?"var(--danger)":"var(--text)"}">${fmtTempo(op.mediaMs)}</span>
+          <span style="font-size:10px;color:var(--text3)">total</span>
+          <span style="font-size:12px;font-family:var(--mono);color:var(--text)">${op.totalQtd}pç</span>
+        </div>
       </div>`;
+
+      // Ocorrências individuais
+      const ocRows = op.ocorrencias.map((oc,idx)=>`
+        <div style="display:grid;grid-template-columns:20px 80px 1fr 60px 50px;gap:6px;align-items:center;padding:4px 10px;border-bottom:1px solid var(--border);font-size:11px">
+          <span style="color:var(--text3);font-family:var(--mono)">${idx+1}</span>
+          <span style="color:var(--text3)">${oc.data}</span>
+          <div style="height:4px;background:var(--bg4);border-radius:2px;overflow:hidden">
+            <div style="height:100%;border-radius:2px;background:${corNome};width:${Math.min(100,Math.round(oc.durMs/Math.max(...comp.operadores.flatMap(o=>o.ocorrencias.map(x=>x.durMs)))*100))}%"></div>
+          </div>
+          <span style="font-family:var(--mono);color:var(--text);text-align:right">${fmtTempo(oc.durMs)}</span>
+          <span style="font-family:var(--mono);color:var(--text3);text-align:right">${oc.qtd}pç</span>
+        </div>`).join("");
+
+      return resumo + `<div style="border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:10px">${ocRows}</div>`;
     }).join("");
-    return `<div class="comp-card">
-      <div class="comp-peca">${c.codigo}</div>
-      <div class="comp-subop">${c.subop}</div>
-      ${rows}
+
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--mono)">${comp.codigo}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${comp.subop} · ${comp.operadores.length} operador(es)</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:20px 80px 1fr 60px 50px;gap:6px;padding:4px 10px;margin-bottom:4px">
+        <span style="font-size:10px;color:var(--text3)">#</span>
+        <span style="font-size:10px;color:var(--text3)">Data</span>
+        <span style="font-size:10px;color:var(--text3)">Tempo visual</span>
+        <span style="font-size:10px;color:var(--text3);text-align:right">Duração</span>
+        <span style="font-size:10px;color:var(--text3);text-align:right">Qtd</span>
+      </div>
+      ${blocos}
     </div>`;
   }).join("");
 
   return `
     <div class="sec-title">comparativo com outros operadores (mesma peça + suboperação)</div>
-    <p style="font-size:11px;color:var(--text3);margin-bottom:12px">Verde = mais rápido no grupo · Vermelho = mais lento · → = este operador. Apenas operações válidas (excluindo fins de semana e menos de 2min).</p>
-    <div class="comp-grid">${cards}</div>`;
+    <p style="font-size:11px;color:var(--text3);margin-bottom:14px">
+      Cada operador mostra a média e todas as ocorrências individuais. 
+      <span style="color:var(--ok)">Verde</span> = mais rápido · 
+      <span style="color:var(--danger)">Vermelho</span> = mais lento · 
+      <span style="color:var(--accent)">→ Azul</span> = operador selecionado.
+      Barra visual proporcional ao tempo de cada ocorrência.
+    </p>
+    ${cards}`;
 }
 
 function limpar(){

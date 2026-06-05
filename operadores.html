@@ -562,7 +562,14 @@ function renderComparativo(an, todosDados){
     const operadores = [];
     Object.entries(porOp).forEach(([op,evs])=>{
       const pares = calcularPares(evs);
-      const validos = pares.filter(p=>!p.semSaida&&!p.muitoRapido&&!p.fimDeSemana&&p.durMs>0&&!(filtros.ignorarMaisUmDia&&p.maisUmDia)&&!(filtros.ignorarMenosCincoMin&&p.menosCincoMin));
+      const validos = pares.filter(p=>{
+        if(p.semSaida) return false;           // sem saída: descarta
+        if(p.durMs<=0) return false;           // duração inválida
+        if(p.fimDeSemana) return false;        // fim de semana: descarta
+        if(p.durMs < 5*60*1000) return false;  // SEMPRE ignora < 5 min no comparativo
+        if(p.durMs >= 24*60*60*1000) return false; // SEMPRE ignora > 24h no comparativo
+        return true;
+      });
       if(validos.length===0) return;
 
       const ocorrencias = validos.map(p=>({

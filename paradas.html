@@ -168,6 +168,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
       <div class="filter-row">
         <select class="filter-select" id="f-processo"><option value="">Todos os processos</option></select>
         <select class="filter-select" id="f-cliente"><option value="">Todos os clientes</option></select>
+        <select class="filter-select" id="f-subop"><option value="">Todas as suboperações</option></select>
         <select class="filter-select" id="f-urgencia">
           <option value="">Toda urgência</option>
           <option value="critico">Crítico (&gt; 2x limite)</option>
@@ -189,6 +190,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--s
       <div class="bar-rows" id="bar-rows"></div>
     </div>
 
+    <div class="chart-section" style="margin-bottom:18px">
+      <div class="chart-title">peças no limbo por suboperação</div>
+      <div class="bar-rows" id="bar-rows-subop"></div>
+    </div>
     <div id="content-area"><div class="loading"><div class="spinner"></div>carregando dados...</div></div>
   </div>
 </div>
@@ -262,7 +267,7 @@ function renderConfigPanel(){
 }
 
 let TODOS=[];
-let filtroProcesso="",filtroCliente="",filtroUrgencia="";
+let filtroProcesso="",filtroCliente="",filtroUrgencia="",filtroSubop="";
 
 async function fetchSupabase(path){
   const r=await fetch(SUPABASE_URL+path,{headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+SUPABASE_KEY}});
@@ -327,11 +332,30 @@ function calcularERenderar(){
     if(filtroProcesso && item.proc!==filtroProcesso) return false;
     if(filtroCliente  && String(item.row.cliente||"").trim()!==filtroCliente) return false;
     if(filtroUrgencia && item.urgencia!==filtroUrgencia) return false;
+    if(filtroSubop    && getSubop(item.row)!==filtroSubop) return false;
     return true;
   });
   renderMetricas(limbo);
   renderGrafico(limbo);
+  renderGraficoSubop(limbo);
   renderTabela(limbo);
+}
+
+function renderGraficoSubop(limbo){
+  const cnt={};
+  limbo.forEach(i=>{ const s=getSubop(i.row); if(s&&s!=="—") cnt[s]=(cnt[s]||0)+1; });
+  const itens=Object.entries(cnt).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const max=itens[0]?itens[0][1]:1;
+  document.getElementById("bar-rows-subop").innerHTML=itens.length===0
+    ?`<p style="font-size:12px;color:var(--text3)">Nenhum dado disponível.</p>`
+    :itens.map(([sub,c])=>{
+      const pct=Math.round(c/max*100);
+      return `<div class="bar-row">
+        <span class="bar-label" title="${sub}">${sub}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:#F5A623"></div></div>
+        <span class="bar-count">${c}</span>
+      </div>`;
+    }).join("");
 }
 
 function renderMetricas(limbo){
@@ -401,15 +425,18 @@ function popularFiltros(){
   const posicao=calcularPosicaoTodos(TODOS);
   const procs=[...new Set(Object.values(posicao).map(r=>String(r.processo||"").trim().toUpperCase()).filter(Boolean))].sort();
   const clis=[...new Set(Object.values(posicao).map(r=>String(r.cliente||"").trim()).filter(Boolean))].sort();
+  const subops=[...new Set(Object.values(posicao).map(r=>getSubop(r)).filter(s=>s&&s!=="—"))].sort();
   document.getElementById("f-processo").innerHTML='<option value="">Todos os processos</option>'+procs.map(p=>`<option value="${p}">${p}</option>`).join("");
   document.getElementById("f-cliente").innerHTML='<option value="">Todos os clientes</option>'+clis.map(c=>`<option>${c}</option>`).join("");
+  document.getElementById("f-subop").innerHTML='<option value="">Todas as suboperações</option>'+subops.map(s=>`<option value="${s}">${s}</option>`).join("");
 }
 
 function limparFiltros(){
-  filtroProcesso="";filtroCliente="";filtroUrgencia="";
+  filtroProcesso="";filtroCliente="";filtroUrgencia="";filtroSubop="";
   document.getElementById("f-processo").value="";
   document.getElementById("f-cliente").value="";
   document.getElementById("f-urgencia").value="";
+  document.getElementById("f-subop").value="";
   calcularERenderar();
 }
 
@@ -470,6 +497,7 @@ function navTo(p){window.location.href=p;}
 document.getElementById("f-processo").addEventListener("change",function(){filtroProcesso=this.value;calcularERenderar();});
 document.getElementById("f-cliente").addEventListener("change",function(){filtroCliente=this.value;calcularERenderar();});
 document.getElementById("f-urgencia").addEventListener("change",function(){filtroUrgencia=this.value;calcularERenderar();});
+document.getElementById("f-subop").addEventListener("change",function(){filtroSubop=this.value;calcularERenderar();});
 
 renderConfigPanel();
 carregarDados();

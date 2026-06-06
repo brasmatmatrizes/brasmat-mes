@@ -188,18 +188,20 @@ async function buscar(){
   document.getElementById("content").innerHTML =
     `<div class="loading"><div class="spinner"></div>carregando apontamentos...</div>`;
 
-  // Busca só os eventos do operador no período — direto no Supabase
-  // O operador pode ter prefixo numérico (ex: "7_FELIPE") — busca por ilike
-  let eventos = [], offset = 0;
+  // Busca eventos do período — filtra por operador no browser
+  // (necessário pois nome pode ter prefixo numérico: "7_FELIPE")
+  let todos = [], offset = 0;
   while(true){
     const chunk = await supaFetch(
-      `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,processo,operador,evento,data_evento,quantidade_produzida,retrabalho,operacao_retifica_plana,operacao_retifica_cilindrica_interna,operacao_retifica_cilindrica_externa,operacao_erosao_fio,operacao_forma,operacao_polimento,operacao_brunidora,operacao_prensa,operacao_torno,operacao_qualidade,operacao_administrativo,operacao_servico_externo,operacao_erosao_penetracao&operador=ilike.*${encodeURIComponent(op)}*&data_evento=gte.${diISO}&data_evento=lte.${dfISO}&order=data_evento.desc&limit=1000&offset=${offset}`
+      `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,processo,operador,evento,data_evento,quantidade_produzida,retrabalho,operacao_retifica_plana,operacao_retifica_cilindrica_interna,operacao_retifica_cilindrica_externa,operacao_erosao_fio,operacao_forma,operacao_polimento,operacao_brunidora,operacao_prensa,operacao_torno,operacao_qualidade,operacao_administrativo,operacao_servico_externo,operacao_erosao_penetracao&data_evento=gte.${diISO}&data_evento=lte.${dfISO}&order=data_evento.desc&limit=1000&offset=${offset}`
     );
     if(!Array.isArray(chunk)||chunk.length===0) break;
-    eventos = eventos.concat(chunk);
+    todos = todos.concat(chunk);
     if(chunk.length<1000) break;
     offset+=1000;
   }
+  // Filtra pelo operador selecionado (ignora prefixo numérico)
+  const eventos = todos.filter(r=>nomeOp(r.operador)===op);
 
   const diDate = new Date(di+"T00:00:00");
   const dfDate = new Date(df+"T23:59:59");

@@ -136,6 +136,15 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
         if(ms>0){const h=Math.floor(ms/3600000);const d=Math.floor(h/24);dur=`<span style="font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:6px;background:var(--bg3);color:var(--text2)">${d>0?d+"d ":""}${h%24}h</span>`;}
       }
     }
+
+    // Cor da data — vermelho se o evento aconteceu depois do prazo de entrega
+    const prazoRef = eventos.find(e=>e.prazo_entrega&&String(e.prazo_entrega).trim());
+    const prazoDate = prazoRef ? new Date(prazoRef.prazo_entrega) : null;
+    const evDate = ev.data_evento ? new Date(ev.data_evento) : null;
+    const dataVencida = prazoDate && evDate && evDate > prazoDate;
+    const dataCor = dataVencida ? "var(--danger)" : "var(--text3)";
+    const dataIco = dataVencida ? "⚠" : "📅";
+
     return `<li class="tl-item">
       <div class="tl-dot ${dot}"></div>
       <div class="tl-card${isUlt&&isEnt?" atual":""}">
@@ -144,11 +153,12 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
           <span class="tl-evt ${isEnt?"ent":"sai"}">${evtS}</span>
           ${isUlt?`<span class="tl-tag">${st.ico} ${st.label}</span>`:""}
           ${ev.retrabalho&&String(ev.retrabalho).trim()?`<span class="tl-ret">retrabalho</span>`:""}
+          ${dataVencida?`<span style="font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(240,69,69,0.12);color:var(--danger)">fora do prazo</span>`:""}
         </div>
         <div class="tl-sub">${sub}</div>
         <div class="tl-foot">
           <span class="tl-m">👤 ${ev.operador||"—"}</span>
-          <span class="tl-m">📅 ${fmtDt(ev.data_evento)}</span>
+          <span style="font-size:11px;font-family:var(--mono);color:${dataCor}">${dataIco} ${fmtDt(ev.data_evento)}</span>
           ${ev.sequencial_operacao?`<span class="tl-m">op. ${ev.sequencial_operacao}</span>`:""}
           ${dur}
         </div>

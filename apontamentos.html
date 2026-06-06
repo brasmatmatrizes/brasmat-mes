@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRASMAT MES — Apontamentos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#C4CBDA;--text3:#8E9AB0;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.nav{display:flex;gap:4px}
+.nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
+.tr-right{display:flex;align-items:center;gap:8px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-lbl{font-size:11px;color:var(--text2);font-family:var(--mono)}
+.btn-sm{background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text2);cursor:pointer;font-family:var(--mono)}
+.btn-sm:hover{border-color:var(--border2);color:var(--text)}
+
+/* LAYOUT */
+.shell{display:grid;grid-template-columns:300px 1fr;height:calc(100vh - 56px);overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;padding:16px}
+.sb-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px}
+.sb-desc{font-size:11px;color:var(--text3);margin-bottom:14px;line-height:1.5}
+.lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);margin-bottom:8px}
+.fsel{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text);outline:none;cursor:pointer;margin-bottom:14px}
+.fsel:focus{border-color:var(--accent)}
+.fdate-row{display:flex;gap:8px;margin-bottom:6px;align-items:center}
+.fdate{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;color:var(--text2);outline:none;flex:1}
+.fdate:focus{border-color:var(--accent)}
+.flbl{font-size:11px;color:var(--text3);font-family:var(--mono);white-space:nowrap}
+.btn-buscar{width:100%;background:var(--accent);border:none;border-radius:8px;padding:9px;font-size:13px;color:#fff;cursor:pointer;font-family:var(--sans);font-weight:500;margin-bottom:6px}
+.btn-buscar:hover{background:#1A4FCC}
+.btn-hoje{width:100%;background:transparent;border:1px solid var(--border);border-radius:8px;padding:7px;font-size:12px;color:var(--text2);cursor:pointer;font-family:var(--sans)}
+.btn-hoje:hover{border-color:var(--border2);color:var(--text)}
+
+/* CONTENT */
+.content{overflow-y:auto;padding:20px 24px}
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);gap:12px}
+.ph-ico{font-size:48px;opacity:0.3}.ph-txt{font-size:14px;text-align:center;line-height:1.6;max-width:280px}
+
+/* ÚLTIMO APONTAMENTO */
+.ultimo-card{border-radius:12px;padding:20px 24px;margin-bottom:20px;border:1px solid}
+.ultimo-card.entrada{background:rgba(59,127,255,0.06);border-color:rgba(59,127,255,0.3)}
+.ultimo-card.saida{background:rgba(45,191,126,0.06);border-color:rgba(45,191,126,0.3)}
+.ultimo-label{font-size:11px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;font-family:var(--mono);margin-bottom:12px}
+.ultimo-card.entrada .ultimo-label{color:var(--accent)}
+.ultimo-card.saida .ultimo-label{color:var(--ok)}
+.ultimo-evt{font-size:28px;font-weight:500;margin-bottom:6px}
+.ultimo-card.entrada .ultimo-evt{color:var(--accent)}
+.ultimo-card.saida .ultimo-evt{color:var(--ok)}
+.ultimo-info{display:flex;gap:20px;flex-wrap:wrap;margin-top:10px}
+.ultimo-item{font-size:12px;color:var(--text2)}
+.ultimo-item strong{color:var(--text);font-weight:500}
+.aberto-aviso{display:inline-flex;align-items:center;gap:6px;background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);border-radius:8px;padding:6px 12px;font-size:12px;color:var(--warn);margin-top:10px}
+
+/* RESUMO DO DIA */
+.resumo-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.res-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.res-val{font-size:24px;font-weight:500;font-family:var(--mono);line-height:1;margin-bottom:4px}
+.res-val.accent{color:var(--accent)}.res-val.ok{color:var(--ok)}.res-val.warn{color:var(--warn)}.res-val.danger{color:var(--danger)}
+.res-lbl{font-size:11px;color:var(--text3)}
+
+/* TABELA DE APONTAMENTOS */
+.sec-title{font-size:11px;font-weight:500;letter-spacing:0.09em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec-title::after{content:"";flex:1;height:1px;background:var(--border)}
+.ap-list{display:flex;flex-direction:column;gap:6px}
+.ap-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:grid;grid-template-columns:80px 120px 1fr 140px 80px;gap:8px;align-items:center;transition:background 0.1s}
+.ap-item:hover{background:var(--bg3)}
+.ap-item.aberto{border-color:rgba(245,166,35,0.4);background:rgba(245,166,35,0.03)}
+.ap-hora{font-size:13px;font-weight:500;font-family:var(--mono);color:var(--text)}
+.ap-tipo{font-size:11px;padding:3px 10px;border-radius:8px;font-family:var(--mono);text-align:center;white-space:nowrap}
+.ap-tipo.entrada{background:rgba(59,127,255,0.12);color:var(--accent)}
+.ap-tipo.saida{background:rgba(45,191,126,0.1);color:var(--ok)}
+.ap-peca{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ap-codigo{font-size:13px;font-weight:500;font-family:var(--mono);color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ap-pedido{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.ap-proc{font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ap-subop{font-size:10px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ap-status{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:8px;text-align:center;white-space:nowrap}
+.ap-status.ok{background:rgba(45,191,126,0.12);color:var(--ok)}
+.ap-status.aberto{background:rgba(245,166,35,0.12);color:var(--warn)}
+.ap-status.rapido{background:rgba(240,69,69,0.12);color:var(--danger)}
+
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;color:var(--text3)}
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div style="display:grid;grid-template-rows:56px 1fr;height:100vh">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand"><div class="bm">BM</div><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="nav">
+    <button class="nb" onclick="navTo('index.html')">Posição</button>
+    <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
+    <button class="nb" onclick="navTo('paradas.html')">Peças paradas</button>
+    <button class="nb active">Apontamentos</button>
+    <button class="nb" onclick="navTo('operadores.html')">Performance</button>
+    <button class="nb" onclick="navTo('prazos.html')">Prazos</button>
+    <button class="nb" onclick="navTo('otd.html')">OTD</button>
+  </div>
+  <div class="tr-right">
+    <button class="btn-sm" onclick="init()">↻ atualizar</button>
+    <div class="sync-dot"></div>
+    <span class="sync-lbl" id="slbl">carregando...</span>
+  </div>
+</div>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sb-title">Consulta de apontamentos</div>
+    <div class="sb-desc">Selecione o operador para ver o último apontamento e o histórico do dia.</div>
+
+    <div class="lbl">operador</div>
+    <select class="fsel" id="sel-op">
+      <option value="">Selecione o operador...</option>
+    </select>
+
+    <div class="lbl">período</div>
+    <div class="fdate-row">
+      <input type="date" class="fdate" id="di">
+      <span class="flbl">até</span>
+      <input type="date" class="fdate" id="df">
+    </div>
+    <button class="btn-buscar" onclick="buscar()">Ver apontamentos</button>
+    <button class="btn-hoje" onclick="buscarHoje()">📅 Só hoje</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content" id="content">
+    <div class="placeholder">
+      <div class="ph-ico">👷</div>
+      <div class="ph-txt">Selecione um operador e clique em "Ver apontamentos".</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="status.js"></script>
+<script>
+let TODOS = [];
+
+const hoje = new Date();
+function fmtD(d){ return d.toISOString().slice(0,10); }
+document.getElementById("di").value = fmtD(hoje);
+document.getElementById("df").value = fmtD(hoje);
+
+function nomeOp(raw){ return String(raw||"").replace(/^\d+_/,"").trim(); }
+
+async function init(){
+  document.getElementById("slbl").textContent = "carregando...";
+  let todos=[], offset=0;
+  while(true){
+    const chunk = await supaFetch(
+      `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,processo,operador,evento,data_evento,quantidade_produzida,retrabalho,operacao_retifica_plana,operacao_retifica_cilindrica_interna,operacao_retifica_cilindrica_externa,operacao_erosao_fio,operacao_forma,operacao_polimento,operacao_brunidora,operacao_prensa,operacao_torno,operacao_qualidade,operacao_administrativo,operacao_servico_externo,operacao_erosao_penetracao&order=id.asc&limit=1000&offset=${offset}`
+    );
+    if(!Array.isArray(chunk)||chunk.length===0) break;
+    todos=todos.concat(chunk);
+    if(chunk.length<1000) break;
+    offset+=1000;
+  }
+  TODOS=todos;
+  popularOperadores();
+  document.getElementById("slbl").textContent=`${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
+}
+
+function popularOperadores(){
+  const ops=[...new Set(TODOS.map(r=>nomeOp(r.operador)).filter(Boolean))].sort();
+  const sel=document.getElementById("sel-op");
+  sel.innerHTML='<option value="">Selecione o operador...</option>'+
+    ops.map(o=>`<option value="${o}">${o}</option>`).join("");
+}
+
+function buscarHoje(){
+  document.getElementById("di").value = fmtD(hoje);
+  document.getElementById("df").value = fmtD(hoje);
+  buscar();
+}
+
+function buscar(){
+  const op = document.getElementById("sel-op").value.trim();
+  if(!op){ alert("Selecione um operador."); return; }
+
+  const di = new Date(document.getElementById("di").value+"T00:00:00");
+  const df = new Date(document.getElementById("df").value+"T23:59:59");
+
+  // Filtra eventos do operador no período
+  const eventos = TODOS.filter(r=>{
+    if(nomeOp(r.operador)!==op) return false;
+    const dt = r.data_evento ? new Date(r.data_evento) : null;
+    if(!dt||dt<di||dt>df) return false;
+    return true;
+  }).sort((a,b)=>new Date(b.data_evento)-new Date(a.data_evento)); // mais recente primeiro
+
+  renderResultado(op, eventos, di, df);
+}
+
+function renderResultado(op, eventos, di, df){
+  const content = document.getElementById("content");
+
+  if(!eventos.length){
+    content.innerHTML=`<div class="empty"><div style="font-size:36px;margin-bottom:10px">📭</div><p style="font-size:13px;text-align:center">Nenhum apontamento encontrado para <strong>${op}</strong> no período selecionado.</p></div>`;
+    return;
+  }
+
+  // Último apontamento
+  const ultimo = eventos[0];
+  const evtStr = String(ultimo.evento||"").trim().toUpperCase();
+  const isEnt = evtStr==="ENTRADA";
+  const subop = getSubop(ultimo);
+  const horaUltimo = new Date(ultimo.data_evento).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+  const dataUltimo = new Date(ultimo.data_evento).toLocaleDateString("pt-BR");
+
+  // Verifica se o último apontamento é ENTRADA sem SAÍDA correspondente
+  // (entrada em aberto)
+  const ultimoAberto = isEnt;
+
+  // Resumo do período
+  const totalEventos = eventos.length;
+  const totalEntradas = eventos.filter(r=>String(r.evento||"").trim().toUpperCase()==="ENTRADA").length;
+  const totalSaidas = eventos.filter(r=>{const e=String(r.evento||"").trim().toUpperCase();return e==="SAÍDA"||e==="SAIDA";}).length;
+  const totalPecas = eventos.filter(r=>{const e=String(r.evento||"").trim().toUpperCase();return e==="SAÍDA"||e==="SAIDA";}).reduce((s,r)=>s+Number(r.quantidade_produzida||0),0);
+  const emAberto = totalEntradas - totalSaidas;
+
+  // Período formatado
+  const periodoStr = di.toLocaleDateString("pt-BR")===df.toLocaleDateString("pt-BR")
+    ? di.toLocaleDateString("pt-BR")
+    : `${di.toLocaleDateString("pt-BR")} a ${df.toLocaleDateString("pt-BR")}`;
+
+  // HTML do último apontamento
+  const ultimoHtml = `
+    <div class="ultimo-card ${isEnt?"entrada":"saida"}">
+      <div class="ultimo-label">último apontamento — ${dataUltimo} às ${horaUltimo}</div>
+      <div class="ultimo-evt">${isEnt?"⬆ ENTRADA":"⬇ SAÍDA"}</div>
+      <div class="ultimo-info">
+        <div class="ultimo-item"><strong>${ultimo.codigo_peca||"—"}</strong> · ${ultimo.pedido||"—"}</div>
+        <div class="ultimo-item">${String(ultimo.processo||"").trim()}</div>
+        <div class="ultimo-item">${subop}</div>
+      </div>
+      ${ultimoAberto?`<div class="aberto-aviso">⚠ Entrada em aberto — saída ainda não registrada para esta peça</div>`:""}
+    </div>`;
+
+  // Resumo
+  const resumoHtml = `
+    <div class="resumo-row">
+      <div class="res-card"><div class="res-val accent">${totalPecas}</div><div class="res-lbl">peças produzidas</div></div>
+      <div class="res-card"><div class="res-val ok">${totalSaidas}</div><div class="res-lbl">saídas registradas</div></div>
+      <div class="res-card"><div class="res-val">${totalEntradas}</div><div class="res-lbl">entradas registradas</div></div>
+      <div class="res-card"><div class="res-val ${emAberto>0?"warn":"ok"}">${emAberto}</div><div class="res-lbl">entradas em aberto</div></div>
+    </div>`;
+
+  // Lista de apontamentos
+  const listaHtml = eventos.map((ev,i)=>{
+    const evS = String(ev.evento||"").trim().toUpperCase();
+    const isE = evS==="ENTRADA";
+    const sub = getSubop(ev);
+    const hora = new Date(ev.data_evento).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+    const data = new Date(ev.data_evento).toLocaleDateString("pt-BR");
+
+    // Verifica se é entrada em aberto (próximo evento não é saída da mesma peça)
+    let statusAp = "";
+    if(isE){
+      // Procura saída correspondente nos eventos seguintes
+      const temSaida = eventos.slice(0,i).some(e=>{
+        const eS=String(e.evento||"").trim().toUpperCase();
+        return (eS==="SAÍDA"||eS==="SAIDA")&&e.pedido===ev.pedido&&e.codigo_peca===ev.codigo_peca;
+      });
+      statusAp = temSaida ? "" : "aberto";
+    } else {
+      // Verifica se saída foi muito rápida (< 5 min)
+      const entradaAnt = eventos.slice(i+1).find(e=>
+        String(e.evento||"").trim().toUpperCase()==="ENTRADA"&&
+        e.pedido===ev.pedido&&e.codigo_peca===ev.codigo_peca
+      );
+      if(entradaAnt){
+        const ms = new Date(ev.data_evento)-new Date(entradaAnt.data_evento);
+        if(ms<5*60*1000) statusAp="rapido";
+      }
+    }
+
+    const statusChip = statusAp==="aberto"
+      ? `<span class="ap-status aberto">⚠ em aberto</span>`
+      : statusAp==="rapido"
+      ? `<span class="ap-status rapido">⚡ &lt;5min</span>`
+      : `<span class="ap-status ok">✓</span>`;
+
+    return `<div class="ap-item${statusAp==="aberto"?" aberto":""}">
+      <div class="ap-hora">${hora}<div style="font-size:10px;color:var(--text3);font-family:var(--mono)">${data}</div></div>
+      <div class="ap-tipo ${isE?"entrada":"saida"}">${isE?"ENTRADA":"SAÍDA"}</div>
+      <div class="ap-peca">
+        <div class="ap-codigo">${ev.codigo_peca||"—"}</div>
+        <div class="ap-pedido">${ev.pedido||"—"}</div>
+      </div>
+      <div>
+        <div class="ap-proc">${String(ev.processo||"").trim()}</div>
+        <div class="ap-subop">${sub}</div>
+      </div>
+      ${statusChip}
+    </div>`;
+  }).join("");
+
+  content.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-size:18px;font-weight:500;color:var(--text)">👷 ${op}</div>
+        <div style="font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:2px">${periodoStr} · ${totalEventos} apontamentos</div>
+      </div>
+    </div>
+    ${ultimoHtml}
+    ${resumoHtml}
+    <div class="sec-title">histórico de apontamentos</div>
+    <div class="ap-list">${listaHtml}</div>`;
+}
+
+function navTo(p){ window.location.href=p; }
+document.getElementById("sel-op").addEventListener("change", ()=>{
+  // Auto-busca ao trocar operador se já tem período definido
+  if(document.getElementById("sel-op").value) buscar();
+});
+init();
+</script>
+</body>
+</html>

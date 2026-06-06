@@ -182,10 +182,11 @@ async function buscar(){
 
   const di = document.getElementById("di").value;
   const df = document.getElementById("df").value;
-  // Datas agora padronizadas em ISO no banco
-  // Ajusta para UTC-3 (Brasília) para cobrir o dia completo
-  const diUTC = new Date(di+"T00:00:00-03:00").toISOString();
-  const dfUTCStr = new Date(df+"T23:59:59-03:00").toISOString();
+  // Todas as datas no banco estão em UTC (Z)
+  // Brasil = UTC-3, então meia-noite BRT = 03:00 UTC
+  // Para cobrir dia completo em BRT: buscar de 03:00 UTC até 02:59 UTC do dia seguinte
+  const diUTC  = di  + "T03:00:00.000Z"; // meia-noite BRT
+  const dfUTCStr = df + "T23:59:59-03:00"; // fim do dia BRT convertido
 
   document.getElementById("content").innerHTML =
     `<div class="loading"><div class="spinner"></div>carregando apontamentos...</div>`;

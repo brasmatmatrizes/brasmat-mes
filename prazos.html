@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#C4CBDA;--text3:#8E9AB0;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--orange:#F97316;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#C4CBDA;--text3:#8E9AB0;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--orange:#F97316;--roxo:#7C3AED;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
 .topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
 .brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
@@ -40,21 +40,22 @@
 .ind-card:hover{transform:translateY(-2px)}
 .ind-card.vencido{background:rgba(240,69,69,0.08);border-color:rgba(240,69,69,0.3)}
 .ind-card.critico{background:rgba(249,115,22,0.08);border-color:rgba(249,115,22,0.3)}
-.ind-card.atencao{background:rgba(245,166,35,0.08);border-color:rgba(245,166,35,0.3)}
+.ind-card.atencao{background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.3)}
 .ind-card.ok{background:rgba(45,191,126,0.08);border-color:rgba(45,191,126,0.3)}
 .ind-num{font-size:48px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:6px}
 .ind-card.vencido .ind-num{color:var(--danger)}
 .ind-card.critico .ind-num{color:var(--orange)}
-.ind-card.atencao .ind-num{color:var(--warn)}
+.ind-card.atencao .ind-num{color:var(--roxo)}
 .ind-card.ok .ind-num{color:var(--ok)}
 .ind-label{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px}
 .ind-desc{font-size:11px;color:var(--text3);line-height:1.5}
+.ind-hint{font-size:10px;color:var(--text3);margin-top:8px;font-family:var(--mono);opacity:0.7}
 .ind-ico{position:absolute;right:16px;top:16px;font-size:28px;opacity:0.3}
-.ind-card.active-filter{transform:translateY(-2px);box-shadow:0 0 0 2px}
-.ind-card.vencido.active-filter{box-shadow:0 0 0 2px var(--danger)}
-.ind-card.critico.active-filter{box-shadow:0 0 0 2px var(--orange)}
-.ind-card.atencao.active-filter{box-shadow:0 0 0 2px var(--warn)}
-.ind-card.ok.active-filter{box-shadow:0 0 0 2px var(--ok)}
+.ind-card.active-filter{transform:translateY(-3px)}
+.ind-card.vencido.active-filter{box-shadow:0 0 0 3px var(--danger);background:rgba(240,69,69,0.15)}
+.ind-card.critico.active-filter{box-shadow:0 0 0 3px var(--orange);background:rgba(249,115,22,0.15)}
+.ind-card.atencao.active-filter{box-shadow:0 0 0 3px var(--roxo);background:rgba(124,58,237,0.15)}
+.ind-card.ok.active-filter{box-shadow:0 0 0 3px var(--ok);background:rgba(45,191,126,0.15)}
 
 /* TIMELINE VISUAL */
 .timeline-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:20px}
@@ -86,13 +87,13 @@
 .tr:last-child{border-bottom:none}.tr:hover{background:var(--bg3)}
 .tr.vencido{border-left:3px solid var(--danger)}
 .tr.critico{border-left:3px solid var(--orange)}
-.tr.atencao{border-left:3px solid var(--warn)}
+.tr.atencao{border-left:3px solid var(--roxo)}
 .tr.ok-row{border-left:3px solid var(--ok)}
 .td{font-size:12px;color:var(--text2);padding:10px 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .chip{font-size:10px;font-family:var(--mono);font-weight:600;padding:3px 9px;border-radius:10px;white-space:nowrap}
 .chip-vencido{background:rgba(240,69,69,0.15);color:var(--danger)}
 .chip-critico{background:rgba(249,115,22,0.15);color:var(--orange)}
-.chip-atencao{background:rgba(245,166,35,0.15);color:var(--warn)}
+.chip-atencao{background:rgba(124,58,237,0.15);color:var(--roxo)}
 .chip-ok{background:rgba(45,191,126,0.15);color:var(--ok)}
 
 /* RISCO SCORE */
@@ -170,10 +171,10 @@
 
   <!-- INDICADORES -->
   <div class="ind-row" id="ind-row">
-    <div class="ind-card vencido"><div class="ind-ico">🔴</div><div class="ind-num" id="n-vencido">—</div><div class="ind-label">Vencidos</div><div class="ind-desc">Prazo já passou — peça ainda em produção</div></div>
-    <div class="ind-card critico"><div class="ind-ico">🟠</div><div class="ind-num" id="n-critico">—</div><div class="ind-label">Crítico</div><div class="ind-desc">Vence em até 2 dias</div></div>
-    <div class="ind-card atencao"><div class="ind-ico">🟡</div><div class="ind-num" id="n-atencao">—</div><div class="ind-label">Atenção</div><div class="ind-desc">Vence em 3 a 7 dias</div></div>
-    <div class="ind-card ok"><div class="ind-ico">🟢</div><div class="ind-num" id="n-ok">—</div><div class="ind-label">No prazo</div><div class="ind-desc">Mais de 7 dias restantes</div></div>
+    <div class="ind-card vencido"><div class="ind-ico">🔴</div><div class="ind-num" id="n-vencido">—</div><div class="ind-label">Vencidos</div><div class="ind-desc">Prazo já passou — peça ainda em produção</div><div class="ind-hint">clique para filtrar</div></div>
+    <div class="ind-card critico"><div class="ind-ico">🟠</div><div class="ind-num" id="n-critico">—</div><div class="ind-label">Crítico</div><div class="ind-desc">Vence em até 2 dias</div><div class="ind-hint">clique para filtrar</div></div>
+    <div class="ind-card atencao"><div class="ind-ico">🟣</div><div class="ind-num" id="n-atencao">—</div><div class="ind-label">Atenção</div><div class="ind-desc">Vence em 3 a 7 dias</div><div class="ind-hint">clique para filtrar</div></div>
+    <div class="ind-card ok"><div class="ind-ico">🟢</div><div class="ind-num" id="n-ok">—</div><div class="ind-label">No prazo</div><div class="ind-desc">Mais de 7 dias restantes</div><div class="ind-hint">clique para filtrar</div></div>
   </div>
 
   <!-- TIMELINE -->
@@ -217,7 +218,7 @@
 <script src="status.js"></script>
 <script>
 let POS = [];
-let filtroAtivo = null; // vencido | critico | atencao | ok | null
+let filtrosAtivos = new Set(); // conjunto de urgências ativas — vazio = todas
 
 // Processos considerados "próximos do fim" — peça já está quase pronta
 const PROCESSOS_AVANCADOS = ["QUALIDADE","ADMINISTRATIVO"];
@@ -288,9 +289,9 @@ function pecasFiltradas(){
   return POS.filter(r=>{
     if(cli  && String(r.cliente||"").trim()!==cli) return false;
     if(proc && String(r.processo||"").trim().toUpperCase()!==proc) return false;
-    if(filtroAtivo){
+    if(filtrosAtivos.size>0){
       const dias = diasRestantes(r);
-      if(urgencia(dias) !== filtroAtivo) return false;
+      if(!filtrosAtivos.has(urgencia(dias))) return false;
     }
     return true;
   }).sort((a,b)=>diasRestantes(a)-diasRestantes(b));
@@ -319,21 +320,32 @@ function renderIndicadores(pecas){
   document.getElementById("n-atencao").textContent = cnt.atencao;
   document.getElementById("n-ok").textContent      = cnt.ok;
 
-  // Clique nos cards para filtrar por urgência (mantém filtros de cliente/processo)
+  // Clique nos cards — seleção múltipla (liga/desliga cada urgência)
   ["vencido","critico","atencao","ok"].forEach(u=>{
     const el = document.querySelector(`.ind-card.${u}`);
     el.onclick = ()=>{
-      filtroAtivo = filtroAtivo===u ? null : u;
-      document.querySelectorAll(".ind-card").forEach(c=>c.classList.remove("active-filter"));
-      if(filtroAtivo) el.classList.add("active-filter");
-      // Não chama render() completo — só atualiza tabela para não piscar indicadores
+      if(filtrosAtivos.has(u)){
+        filtrosAtivos.delete(u);
+        el.classList.remove("active-filter");
+      } else {
+        filtrosAtivos.add(u);
+        el.classList.add("active-filter");
+      }
       const pecas = pecasFiltradas();
+      renderTimeline(pecas);
       renderTabela(pecas);
-      document.getElementById("tbl-count").textContent = `${pecas.length} peça(s)`;
+      const label = filtrosAtivos.size===0 ? "todas as peças" :
+        [...filtrosAtivos].map(f=>f==="vencido"?"vencidos":f==="critico"?"críticos":f==="atencao"?"atenção":"no prazo").join(" + ");
+      document.getElementById("tbl-count").textContent = `${pecas.length} peça(s) — ${label}`;
     };
   });
 
-  if(filtroAtivo) document.querySelector(`.ind-card.${filtroAtivo}`).classList.add("active-filter");
+  // Restaura estado visual dos botões
+  ["vencido","critico","atencao","ok"].forEach(u=>{
+    const el = document.querySelector(`.ind-card.${u}`);
+    if(filtrosAtivos.has(u)) el.classList.add("active-filter");
+    else el.classList.remove("active-filter");
+  });
 }
 
 function renderTimeline(pecas){
@@ -445,7 +457,7 @@ function renderTabela(pecas){
         <span style="font-size:10px;color:var(--text3)">${subop}</span>
       </div>
       <div class="td" style="font-family:var(--mono);font-size:11px">${prazoFmt}</div>
-      <div class="td" style="font-family:var(--mono);font-weight:600;color:${urg==="vencido"?"var(--danger)":urg==="critico"?"var(--orange)":urg==="atencao"?"var(--warn)":"var(--ok)"}">${diasStr}</div>
+      <div class="td" style="font-family:var(--mono);font-weight:600;color:${urg==="vencido"?"var(--danger)":urg==="critico"?"var(--orange)":urg==="atencao"?"var(--roxo)":"var(--ok)"}">${diasStr}</div>
       <div class="td"><span class="chip ${chipCls}">${urgStr}</span></div>
       <div class="td">
         <div style="display:flex;align-items:center;gap:6px">
@@ -458,7 +470,7 @@ function renderTabela(pecas){
 }
 
 function limpar(){
-  filtroAtivo = null;
+  filtrosAtivos.clear();
   document.getElementById("fcli").value  = "";
   document.getElementById("fproc").value = "";
   document.querySelectorAll(".ind-card").forEach(c=>c.classList.remove("active-filter"));

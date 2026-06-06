@@ -11,7 +11,7 @@
 *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
 .topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
 .brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
-.bn{font-size:14px;font-weight:600;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
 .nav{display:flex;gap:4px}
 .nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
 .nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
@@ -42,7 +42,7 @@
 .ind-card.critico{background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.3)}
 .ind-card.atencao{background:rgba(249,115,22,0.08);border-color:rgba(249,115,22,0.3)}
 .ind-card.ok{background:rgba(45,191,126,0.08);border-color:rgba(45,191,126,0.3)}
-.ind-num{font-size:48px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:6px}
+.ind-num{font-size:48px;font-weight:500;font-family:var(--mono);line-height:1;margin-bottom:6px}
 .ind-card.vencido .ind-num{color:var(--danger)}
 .ind-card.critico .ind-num{color:var(--roxo)}
 .ind-card.atencao .ind-num{color:var(--orange)}
@@ -65,7 +65,7 @@
 .timeline-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 .tl-axis{display:flex;gap:0;margin-bottom:8px;min-width:800px}
 .tl-day{flex:1;text-align:center;font-size:10px;color:var(--text3);font-family:var(--mono);padding-bottom:6px;border-bottom:1px solid var(--border)}
-.tl-day.hoje{color:var(--accent);font-weight:600}
+.tl-day.hoje{color:var(--accent);font-weight:500}
 .tl-day.passado{color:var(--danger);opacity:0.6}
 .tl-bars{min-width:800px;display:flex;flex-direction:column;gap:4px;padding-top:8px}
 .tl-bar-row{display:flex;align-items:center;gap:8px}
@@ -78,7 +78,7 @@
 /* TABELA */
 .table-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .table-hdr-row{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)}
-.table-title{font-size:13px;font-weight:600;color:var(--text)}
+.table-title{font-size:13px;font-weight:500;color:var(--text)}
 .table-count{font-size:12px;color:var(--text3);font-family:var(--mono)}
 .tw-head{display:grid;grid-template-columns:120px 120px 1fr 140px 110px 90px 100px 80px;border-bottom:1px solid var(--border);padding:0 16px}
 .th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);padding:9px 6px}
@@ -90,7 +90,7 @@
 .tr.atencao{border-left:3px solid var(--orange)}
 .tr.ok-row{border-left:3px solid var(--ok)}
 .td{font-size:12px;color:var(--text2);padding:10px 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.chip{font-size:10px;font-family:var(--mono);font-weight:600;padding:3px 9px;border-radius:10px;white-space:nowrap}
+.chip{font-size:10px;font-family:var(--mono);font-weight:500;padding:3px 9px;border-radius:10px;white-space:nowrap}
 .chip-vencido{background:rgba(240,69,69,0.15);color:var(--danger)}
 .chip-critico{background:rgba(124,58,237,0.15);color:var(--roxo)}
 .chip-atencao{background:rgba(249,115,22,0.15);color:var(--orange)}
@@ -450,7 +450,7 @@ function renderTabela(pecas){
     const procCor = avancado ? "var(--ok)" : "var(--text)";
 
     return `<div class="tr ${urg==="ok"?"ok-row":urg}" onclick="abrirDet('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
-      <div class="td" style="font-family:var(--mono);font-weight:700;color:var(--text)">${r.codigo_peca||"—"}</div>
+      <div class="td" style="font-family:var(--mono);font-weight:500;color:var(--text)">${r.codigo_peca||"—"}</div>
       <div class="td" style="font-family:var(--mono);font-size:11px">${r.pedido||"—"}</div>
       <div class="td" style="font-size:11px;overflow:hidden;text-overflow:ellipsis">${r.cliente||"—"}</div>
       <div class="td" style="flex-direction:column;align-items:flex-start;gap:2px">
@@ -458,7 +458,7 @@ function renderTabela(pecas){
         <span style="font-size:10px;color:var(--text3)">${subop}</span>
       </div>
       <div class="td" style="font-family:var(--mono);font-size:11px">${prazoFmt}</div>
-      <div class="td" style="font-family:var(--mono);font-weight:600;color:${urg==="vencido"?"var(--danger)":urg==="critico"?"var(--roxo)":urg==="atencao"?"var(--orange)":"var(--ok)"}">${diasStr}</div>
+      <div class="td" style="font-family:var(--mono);font-weight:500;color:${urg==="vencido"?"var(--danger)":urg==="critico"?"var(--roxo)":urg==="atencao"?"var(--orange)":"var(--ok)"}">${diasStr}</div>
       <div class="td"><span class="chip ${chipCls}">${urgStr}</span></div>
       <div class="td">
         <div style="display:flex;align-items:center;gap:6px">

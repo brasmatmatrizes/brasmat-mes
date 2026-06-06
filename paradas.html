@@ -11,7 +11,7 @@
 *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
 .topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px}
 .brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
-.bn{font-size:14px;font-weight:600;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
 .nav{display:flex;gap:4px}
 .nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
 .nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
@@ -24,7 +24,7 @@
 .page{display:grid;grid-template-columns:260px 1fr;height:calc(100vh - 56px)}
 /* CONFIG */
 .cfg{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:16px}
-.cfg-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.cfg-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px}
 .cfg-desc{font-size:11px;color:var(--text3);line-height:1.5;margin-bottom:14px}
 .lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);margin-bottom:8px}
 .pc-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;margin-bottom:5px}
@@ -41,7 +41,7 @@
 /* CONTENT */
 .content{overflow-y:auto;padding:16px 20px}
 .chdr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-.ctitle{font-size:16px;font-weight:600;color:var(--text)}.csub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+.ctitle{font-size:16px;font-weight:500;color:var(--text)}.csub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
 .frow{display:flex;gap:6px;flex-wrap:wrap}
 .fsel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--text2);outline:none;cursor:pointer}
 .fsel:focus{border-color:var(--accent)}
@@ -49,7 +49,7 @@
 .btn-g:hover{border-color:var(--border2);color:var(--text)}
 .mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
 .met{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
-.mv{font-size:26px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:4px}
+.mv{font-size:26px;font-weight:500;font-family:var(--mono);line-height:1;margin-bottom:4px}
 .mv.danger{color:var(--danger)}.mv.warn{color:var(--warn)}.mv.ok{color:var(--ok)}.mv.accent{color:var(--accent)}
 .ml2{font-size:11px;color:var(--text3)}
 .chart{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:14px}
@@ -259,7 +259,7 @@ function render(){
     const {r,d,lim,urg,proc}=it;
     const sub=getSubop(r);const excesso=d-lim;
     return `<div class="tr ${urg}" onclick="abrirDet('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
-      <div class="td" style="font-family:var(--mono);font-weight:700;color:var(--text)">${r.codigo_peca||"—"}</div>
+      <div class="td" style="font-family:var(--mono);font-weight:500;color:var(--text)">${r.codigo_peca||"—"}</div>
       <div class="td" style="font-size:11px;color:var(--text2)">${r.pedido||"—"}</div>
       <div class="td" style="flex-direction:column;align-items:flex-start;gap:2px"><span style="font-size:11px;color:var(--text)">${proc.charAt(0)+proc.slice(1).toLowerCase()}</span><span style="font-size:10px;color:var(--text3)">${sub}</span></div>
       <div class="td" style="font-size:11px">${r.cliente||"—"}</div>

@@ -11,7 +11,7 @@
 *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
 .topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
 .brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
-.bn{font-size:14px;font-weight:600;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
 .nav{display:flex;gap:4px}
 .nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
 .nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
@@ -37,7 +37,7 @@
 /* RANKING SIDEBAR */
 .ranking{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .rank-hdr{padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
-.rank-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px}
+.rank-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:8px}
 .rank-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:6px}
 .rank-btns{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:2px}
 .rank-btn{font-size:10px;padding:3px 9px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
@@ -47,7 +47,7 @@
 .rank-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid transparent;margin-bottom:4px;transition:all 0.12s}
 .rank-item:hover{background:var(--bg3)}
 .rank-item.selected{background:var(--bg3);border-color:var(--accent)}
-.rank-num{font-size:13px;font-weight:700;font-family:var(--mono);color:var(--text3);width:22px;flex-shrink:0;text-align:center}
+.rank-num{font-size:13px;font-weight:500;font-family:var(--mono);color:var(--text3);width:22px;flex-shrink:0;text-align:center}
 .rank-num.gold{color:#F59E0B}.rank-num.silver{color:#94A3B8}.rank-num.bronze{color:#92400E}
 .rank-info{flex:1;min-width:0}
 .rank-nome{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -56,7 +56,7 @@
 .badge-ok{background:rgba(45,191,126,0.12);color:var(--ok)}
 .badge-warn{background:rgba(245,166,35,0.12);color:var(--warn)}
 .badge-danger{background:rgba(240,69,69,0.12);color:var(--danger)}
-.rank-vol{font-size:12px;font-weight:600;font-family:var(--mono);color:var(--text);white-space:nowrap;flex-shrink:0}
+.rank-vol{font-size:12px;font-weight:500;font-family:var(--mono);color:var(--text);white-space:nowrap;flex-shrink:0}
 
 /* DETALHE */
 .detalhe{overflow-y:auto;padding:20px 24px}
@@ -64,14 +64,14 @@
 .ph-ico{font-size:48px;opacity:0.3}.ph-txt{font-size:14px;text-align:center;line-height:1.6;max-width:280px}
 
 .det-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
-.det-nome{font-size:22px;font-weight:600;color:var(--text)}
+.det-nome{font-size:22px;font-weight:500;color:var(--text)}
 .det-periodo{font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:3px}
 .perf-badge{font-size:12px;font-weight:500;padding:6px 14px;border-radius:20px;border:1px solid transparent;flex-shrink:0}
 
 /* MÉTRICAS */
 .mrow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
 .met{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
-.mv{font-size:22px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:4px}
+.mv{font-size:22px;font-weight:500;font-family:var(--mono);line-height:1;margin-bottom:4px}
 .mv.ok{color:var(--ok)}.mv.warn{color:var(--warn)}.mv.danger{color:var(--danger)}.mv.accent{color:var(--accent)}.mv.text{color:var(--text)}
 .ml{font-size:10px;color:var(--text2)}
 .met-tip{font-size:10px;color:var(--text2);margin-top:4px;line-height:1.4;border-top:1px solid var(--border);padding-top:4px}
@@ -86,7 +86,7 @@
 .alerta-item.info{background:rgba(59,127,255,0.05);border-color:rgba(59,127,255,0.15)}
 .alerta-ico{font-size:16px;flex-shrink:0;margin-top:1px}
 .alerta-txt{flex:1}
-.alerta-txt strong{font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:2px}
+.alerta-txt strong{font-size:12px;font-weight:500;color:var(--text);display:block;margin-bottom:2px}
 .alerta-txt span{font-size:11px;color:var(--text2);line-height:1.5}
 
 /* SEÇÕES */
@@ -108,13 +108,13 @@
 /* COMPARATIVO */
 .comp-grid{display:flex;flex-direction:column;gap:0;margin-bottom:20px}
 .comp-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
-.comp-peca{font-size:13px;font-weight:600;color:var(--text);font-family:var(--mono);margin-bottom:2px}
+.comp-peca{font-size:13px;font-weight:500;color:var(--text);font-family:var(--mono);margin-bottom:2px}
 .comp-subop{font-size:11px;color:var(--text3);margin-bottom:10px}
 .comp-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px}
 .comp-row:last-child{border-bottom:none}
 .comp-op{color:var(--text2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .comp-tempo{font-family:var(--mono);font-size:11px;font-weight:500}
-.comp-row.destaque .comp-op{color:var(--accent);font-weight:600}
+.comp-row.destaque .comp-op{color:var(--accent);font-weight:500}
 .comp-row.melhor .comp-tempo{color:var(--ok)}
 .comp-row.pior .comp-tempo{color:var(--danger)}
 
@@ -422,30 +422,30 @@ function renderRanking(analises, todosDados){
     let metricaSec = "";
     switch(rankingAtivo){
       case "volume":
-        metricaPrincipal = `<span style="font-size:15px;font-weight:700;font-family:var(--mono);color:var(--text)">${an.totalPecas} pç</span>`;
+        metricaPrincipal = `<span style="font-size:15px;font-weight:500;font-family:var(--mono);color:var(--text)">${an.totalPecas} pç</span>`;
         metricaSec = `${an.totalPares} operações`;
         break;
       case "apontamento":
         const apCor2 = an.indiceApontamento>=85?"var(--ok)":an.indiceApontamento>=70?"var(--warn)":"var(--danger)";
-        metricaPrincipal = `<span style="font-size:15px;font-weight:700;font-family:var(--mono);color:${apCor2}">${an.indiceApontamento}%</span>`;
+        metricaPrincipal = `<span style="font-size:15px;font-weight:500;font-family:var(--mono);color:${apCor2}">${an.indiceApontamento}%</span>`;
         metricaSec = `${an.semSaida} sem saída`;
         break;
       case "operacoes":
-        metricaPrincipal = `<span style="font-size:15px;font-weight:700;font-family:var(--mono);color:var(--accent)">${an.totalPares}</span>`;
+        metricaPrincipal = `<span style="font-size:15px;font-weight:500;font-family:var(--mono);color:var(--accent)">${an.totalPares}</span>`;
         metricaSec = `operações registradas`;
         break;
       case "velocidade":
-        metricaPrincipal = `<span style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--ok)">${an.tempoMedio>0?fmtTempo(an.tempoMedio):"sem dados"}</span>`;
+        metricaPrincipal = `<span style="font-size:13px;font-weight:500;font-family:var(--mono);color:var(--ok)">${an.tempoMedio>0?fmtTempo(an.tempoMedio):"sem dados"}</span>`;
         metricaSec = `tempo médio por op.`;
         break;
       case "sem_saida":
         const ssCor = an.semSaida>10?"var(--danger)":an.semSaida>3?"var(--warn)":"var(--text3)";
-        metricaPrincipal = `<span style="font-size:15px;font-weight:700;font-family:var(--mono);color:${ssCor}">${an.semSaida}</span>`;
+        metricaPrincipal = `<span style="font-size:15px;font-weight:500;font-family:var(--mono);color:${ssCor}">${an.semSaida}</span>`;
         metricaSec = `sem saída de ${an.totalPares} op.`;
         break;
       case "retrabalho":
         const retCor = an.totalRetrabalhos>5?"var(--danger)":an.totalRetrabalhos>2?"var(--warn)":"var(--text3)";
-        metricaPrincipal = `<span style="font-size:15px;font-weight:700;font-family:var(--mono);color:${retCor}">${an.totalRetrabalhos}</span>`;
+        metricaPrincipal = `<span style="font-size:15px;font-weight:500;font-family:var(--mono);color:${retCor}">${an.totalRetrabalhos}</span>`;
         metricaSec = `retrabalhos registrados`;
         break;
     }
@@ -573,7 +573,7 @@ function renderDetalhe(an, todosDados){
     const dt = new Date(p.entrada.data_evento);
     const dtStr = dt.toLocaleDateString("pt-BR")+" "+dt.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
     return `<div class="op-tr ${cls}">
-      <div class="op-td" style="font-family:var(--mono);font-weight:600;color:var(--text)">${p.entrada.codigo_peca||"—"}</div>
+      <div class="op-td" style="font-family:var(--mono);font-weight:500;color:var(--text)">${p.entrada.codigo_peca||"—"}</div>
       <div class="op-td" style="font-size:10px">${p.entrada.pedido||"—"}</div>
       <div class="op-td" style="font-size:10px;color:var(--text)">${String(p.entrada.processo||"").trim()}</div>
       <div class="op-td" style="font-size:10px">${sub}</div>
@@ -686,10 +686,10 @@ function renderComparativo(an, todosDados){
 
       // Linha de resumo do operador
       const resumo = `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--bg3);border-radius:6px;margin-bottom:4px;gap:8px">
-        <span style="font-size:12px;font-weight:600;color:${corNome};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">${prefix}${op.op}</span>
+        <span style="font-size:12px;font-weight:500;color:${corNome};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px">${prefix}${op.op}</span>
         <div style="display:flex;gap:10px;flex-shrink:0;align-items:center">
           <span style="font-size:10px;color:var(--text3)">média</span>
-          <span style="font-size:12px;font-family:var(--mono);font-weight:600;color:${isMelhor?"var(--ok)":isPior?"var(--danger)":"var(--text)"}">${fmtTempo(op.mediaMs)}</span>
+          <span style="font-size:12px;font-family:var(--mono);font-weight:500;color:${isMelhor?"var(--ok)":isPior?"var(--danger)":"var(--text)"}">${fmtTempo(op.mediaMs)}</span>
           <span style="font-size:10px;color:var(--text3)">total</span>
           <span style="font-size:12px;font-family:var(--mono);color:var(--text)">${op.totalQtd}pç</span>
         </div>
@@ -713,7 +713,7 @@ function renderComparativo(an, todosDados){
     return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
         <div>
-          <div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--mono)">${comp.codigo}</div>
+          <div style="font-size:14px;font-weight:500;color:var(--text);font-family:var(--mono)">${comp.codigo}</div>
           <div style="font-size:11px;color:var(--text3);margin-top:2px">${comp.subop} · ${comp.operadores.length} operador(es)</div>
         </div>
       </div>

@@ -11,7 +11,7 @@
 *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
 .topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
 .brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
-.bn{font-size:14px;font-weight:600;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
 .nav{display:flex;gap:4px}
 .nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
 .nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
@@ -47,7 +47,7 @@
 .otd-card:hover{transform:translateY(-2px);border-color:var(--border2)}
 .otd-card.active-filter{border-color:var(--accent);background:rgba(59,127,255,0.05)}
 .otd-etapa{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:10px}
-.otd-pct{font-size:36px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:4px}
+.otd-pct{font-size:36px;font-weight:500;font-family:var(--mono);line-height:1;margin-bottom:4px}
 .otd-pct.alto{color:var(--ok)}
 .otd-pct.medio{color:var(--warn)}
 .otd-pct.baixo{color:var(--danger)}
@@ -76,7 +76,7 @@
 /* TABELA */
 .table-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .table-hdr-row{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)}
-.table-title{font-size:13px;font-weight:600;color:var(--text)}
+.table-title{font-size:13px;font-weight:500;color:var(--text)}
 .table-sub{font-size:11px;color:var(--text3);font-family:var(--mono)}
 .tw-head{display:grid;grid-template-columns:120px 120px 1fr 100px 80px 80px 80px 80px 80px;border-bottom:1px solid var(--border);padding:0 16px}
 .th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);padding:9px 6px}
@@ -84,7 +84,7 @@
 .tr{display:grid;grid-template-columns:120px 120px 1fr 100px 80px 80px 80px 80px 80px;padding:0 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s}
 .tr:last-child{border-bottom:none}.tr:hover{background:var(--bg3)}
 .td{font-size:12px;color:var(--text2);padding:10px 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.otd-chip{font-size:11px;font-family:var(--mono);font-weight:600;padding:3px 8px;border-radius:8px;white-space:nowrap}
+.otd-chip{font-size:11px;font-family:var(--mono);font-weight:500;padding:3px 8px;border-radius:8px;white-space:nowrap}
 .chip-ok{background:rgba(45,191,126,0.12);color:var(--ok)}
 .chip-fail{background:rgba(240,69,69,0.12);color:var(--danger)}
 .chip-nd{background:var(--bg3);color:var(--text3)}
@@ -610,7 +610,7 @@ function renderTabela(resultados){
     const falhas=[r.planOK,r.prodOK,r.qualOK,r.estOK,r.expOK].filter(v=>v===false).length;
     const rowStyle=falhas>=3?"border-left:3px solid var(--danger)":falhas>=1?"border-left:3px solid var(--warn)":"";
     return `<div class="tr" style="${rowStyle}" onclick="abrirDet('${esc(r.pedido)}','${esc(r.codigo)}')">
-      <div class="td" style="font-family:var(--mono);font-weight:700;color:var(--text)">${r.codigo}</div>
+      <div class="td" style="font-family:var(--mono);font-weight:500;color:var(--text)">${r.codigo}</div>
       <div class="td" style="font-family:var(--mono);font-size:11px">${r.pedido}</div>
       <div class="td" style="font-size:11px">${r.cliente}</div>
       <div class="td" style="font-family:var(--mono);font-size:11px">${prazoFmt}</div>

@@ -107,7 +107,7 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
   const title = document.getElementById(titleId);
   const body  = document.getElementById(bodyId);
   panel.classList.add("open");
-  title.innerHTML = `<div style="font-size:15px;font-weight:700;color:var(--text);font-family:var(--mono)">${codigo}</div><div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px">Pedido: ${pedido}</div>`;
+  title.innerHTML = `<div style="font-size:15px;font-weight:500;color:var(--text);font-family:var(--mono)">${codigo}</div><div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px">Pedido: ${pedido}</div>`;
   body.innerHTML  = `<div class="loading"><div class="spinner"></div>carregando...</div>`;
 
   const eventos = await buscarHistorico(pedido, codigo);
@@ -167,8 +167,8 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
     ${st.s==="em_producao"?`
     <div class="pos-card">
       <div style="width:4px;height:40px;border-radius:2px;background:${COR[String(ultimo.processo||"").trim().toUpperCase()]||"#6E7A92"};flex-shrink:0"></div>
-      <div style="flex:1"><div class="ml">posição atual</div><div style="font-size:14px;font-weight:600;color:var(--text)">${ultimo.processo||"—"}</div><div style="font-size:11px;color:var(--text2);margin-top:2px">${getSubop(ultimo)}</div></div>
-      <div style="text-align:right"><div style="font-size:16px;font-weight:600;font-family:var(--mono);color:var(--${dc})">${diasStr(dias)}</div><div class="ml">neste setor</div></div>
+      <div style="flex:1"><div class="ml">posição atual</div><div style="font-size:14px;font-weight:500;color:var(--text)">${ultimo.processo||"—"}</div><div style="font-size:11px;color:var(--text2);margin-top:2px">${getSubop(ultimo)}</div></div>
+      <div style="text-align:right"><div style="font-size:16px;font-weight:500;font-family:var(--mono);color:var(--${dc})">${diasStr(dias)}</div><div class="ml">neste setor</div></div>
     </div>`:""}
     <div class="tl-lbl">linha do tempo</div>
     <ul class="timeline">${tl}</ul>`;

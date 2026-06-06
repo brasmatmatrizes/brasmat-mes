@@ -65,6 +65,21 @@
 .td{font-size:12px;color:var(--text2);padding:9px 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .chip{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:10px;white-space:nowrap;font-weight:500}
 .loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.tl-item{position:relative;margin-bottom:12px}.tl-item:last-child{margin-bottom:0}
+.tl-dot{position:absolute;left:-28px;top:4px;width:13px;height:13px;border-radius:50%;border:2px solid var(--bg2)}
+.tl-dot.entrada{background:var(--accent)}.tl-dot.saida{background:var(--ok)}.tl-dot.atual{background:var(--warn);box-shadow:0 0 0 3px rgba(245,166,35,0.2)}
+.tl-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.tl-card.atual{border-color:rgba(245,166,35,0.4)}
+.tl-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.tl-proc{font-size:12px;font-weight:500;color:var(--text)}
+.tl-evt{font-size:10px;padding:1px 7px;border-radius:8px}
+.evt-entrada{background:rgba(59,127,255,0.12);color:var(--accent)}
+.evt-saida{background:rgba(45,191,126,0.1);color:var(--ok)}
+.tl-atual-tag{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(245,166,35,0.12);color:var(--warn)}
+.tl-sub{font-size:11px;color:var(--text2);margin-bottom:6px}
+.tl-foot{display:flex;gap:12px;flex-wrap:wrap}.tl-m{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.timeline{list-style:none;position:relative;padding-left:28px}
+.timeline::before{content:"";position:absolute;left:9px;top:0;bottom:0;width:1px;background:var(--border)}
 .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 /* DETALHE */
@@ -103,7 +118,6 @@
   <div class="nav">
     <button class="nb active">Posição</button>
     <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
-    <button class="nb" onclick="navTo('peca.html')">Buscar peça</button>
     <button class="nb" onclick="navTo('paradas.html')">Peças paradas</button>
     <button class="nb" onclick="navTo('operadores.html')">Operadores</button>
     <button class="nb" onclick="navTo('prazos.html')">Prazos</button>
@@ -182,7 +196,7 @@ function filtrados(){
 function renderTabs(){
   const cnt={todas:0,em_producao:0,em_estoque:0,aguardando:0,liberada:0,aprovada:0};
   POS.forEach(r=>{cnt.todas++;const s=status(r).s;if(cnt[s]!==undefined)cnt[s]++;});
-  const ts=[{k:"todas",l:"Todas"},{k:"em_producao",l:"Em produção"},{k:"aguardando",l:"Aguard. operador"},{k:"em_estoque",l:"Em estoque"},{k:"aprovada",l:"Aprovadas"},{k:"liberada",l:"Entre processos"}];
+  const ts=[{k:"em_producao",l:"Em produção"},{k:"aguardando",l:"Aguard. operador"},{k:"em_estoque",l:"Em estoque"},{k:"aprovada",l:"Aprovadas"}];
   document.getElementById("tabs").innerHTML=ts.map(t=>`<button class="tab tab-${t.k}${fS===t.k?" active":""}" onclick="setTab('${t.k}')">${t.l} (${cnt[t.k]})</button>`).join("");
 }
 function setTab(s){fS=s;renderTabs();renderTabela();}
@@ -249,6 +263,99 @@ async function abrirDet(pedido,codigo){
   await abrirPainelDetalhe(pedido,codigo,"dp","dt","db");
 }
 function fechar(){document.getElementById("dp").classList.remove("open");}
+
+async function abrirCentro(pedido,codigo){
+  // Expande linha do tempo no centro da tela — igual buscar peça
+  const area = document.getElementById("area");
+  area.innerHTML = `<div class="loading"><div class="spinner"></div>carregando histórico...</div>`;
+  document.getElementById("sr").innerHTML = "";
+  document.getElementById("search").value = "";
+
+  const eventos = await buscarHistorico(pedido, codigo);
+  if(!eventos.length){ area.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3)">Nenhum evento encontrado.</div>`; return; }
+
+  const ultimo = eventos[eventos.length-1];
+  const st = status(ultimo);
+  const prazoD = ultimo.prazo_entrega ? new Date(ultimo.prazo_entrega) : null;
+  const prazoFmt = prazoD ? prazoD.toLocaleDateString("pt-BR") : "—";
+  const prazoCor = prazoD&&prazoD<new Date() ? "var(--danger)" : "var(--text2)";
+  const prazoOk = prazoD?(prazoD>new Date()?'<span style="color:var(--ok)">✓</span>':'<span style="color:var(--danger)">⚠</span>'):"";
+  const ret = eventos.filter(r=>String(r.retrabalho||"").trim()).length;
+
+  const tl = eventos.map((ev,i)=>{
+    const isUlt=i===eventos.length-1;
+    const evtS=String(ev.evento||"").trim().toUpperCase();
+    const isEnt=evtS==="ENTRADA";
+    const dot=isUlt&&isEnt?"atual":isEnt?"entrada":"saida";
+    const sub=getSubop(ev);
+    const prazoRef=eventos.find(e=>e.prazo_entrega&&String(e.prazo_entrega).trim());
+    const prazoDate=prazoRef?new Date(prazoRef.prazo_entrega):null;
+    const evDate=ev.data_evento?new Date(ev.data_evento):null;
+    const dataVencida=prazoDate&&evDate&&evDate>prazoDate;
+    const dataCor=dataVencida?"var(--danger)":"var(--text3)";
+    const dataIco=dataVencida?"⚠":"📅";
+    let dur="";
+    if(!isEnt&&i>0){
+      const ant=eventos[i-1];
+      if(ant&&String(ant.evento||"").trim().toUpperCase()==="ENTRADA"){
+        const ms=new Date(ev.data_evento)-new Date(ant.data_evento);
+        if(ms>0){const h=Math.floor(ms/3600000);const d=Math.floor(h/24);dur=`<span style="font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:6px;background:var(--bg3);color:var(--text2)">${d>0?d+"d ":""}${h%24}h</span>`;}
+      }
+    }
+    return `<li class="tl-item">
+      <div class="tl-dot ${dot}"></div>
+      <div class="tl-card${isUlt&&isEnt?" atual":""}">
+        <div class="tl-top">
+          <span class="tl-proc">${ev.processo||"—"}</span>
+          <span class="tl-evt ${isEnt?"evt-entrada":"evt-saida"}">${evtS}</span>
+          ${isUlt?`<span class="tl-atual-tag">${st.ico} ${st.label}</span>`:""}
+          ${ev.retrabalho&&String(ev.retrabalho).trim()?`<span style="font-size:10px;padding:1px 6px;border-radius:8px;background:rgba(240,69,69,0.12);color:var(--danger)">retrabalho</span>`:""}
+          ${dataVencida?`<span style="font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(240,69,69,0.12);color:var(--danger)">fora do prazo</span>`:""}
+        </div>
+        <div class="tl-sub">${sub}</div>
+        <div class="tl-foot">
+          <span class="tl-m">👤 ${ev.operador||"—"}</span>
+          <span style="font-size:11px;font-family:var(--mono);color:${dataCor}">${dataIco} ${ev.data_evento?new Date(ev.data_evento).toLocaleDateString("pt-BR")+" "+new Date(ev.data_evento).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"—"}</span>
+          ${ev.sequencial_operacao?`<span class="tl-m">op. ${ev.sequencial_operacao}</span>`:""}
+          ${dur}
+        </div>
+        ${ev.observacao&&String(ev.observacao).trim()?`<div style="margin-top:6px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:6px;line-height:1.5">${ev.observacao}</div>`:""}
+      </div>
+    </li>`;
+  }).join("");
+
+  area.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:18px;font-weight:500;color:var(--text);font-family:var(--mono)">${codigo}</div>
+          <div style="font-size:13px;color:var(--text2);font-family:var(--mono);margin-top:2px">Pedido: ${pedido}</div>
+        </div>
+        <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Prazo</div>
+            <div style="font-size:13px;font-weight:500;color:${prazoCor};font-family:var(--mono)">${prazoFmt} ${prazoOk}</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Cliente</div>
+            <div style="font-size:13px;color:var(--text2)">${ultimo.cliente||"—"}</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Eventos</div>
+            <div style="font-size:13px;color:var(--text2);font-family:var(--mono)">${eventos.length}</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Retrabalhos</div>
+            <div style="font-size:13px;color:${ret>0?"var(--danger)":"var(--ok)"};font-family:var(--mono)">${ret}</div>
+          </div>
+          <span style="font-size:12px;padding:6px 14px;border-radius:20px;border:1px solid ${st.cor}44;background:${st.cor}22;color:${st.cor}">${st.ico} ${st.label}</span>
+          <button onclick="render()" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer">← voltar à lista</button>
+        </div>
+      </div>
+      <div style="font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:14px">linha do tempo</div>
+      <ul class="timeline" style="max-height:calc(100vh - 340px);overflow-y:auto;padding-right:8px">${tl}</ul>
+    </div>`;
+}
 function navTo(p){window.location.href=p;}
 document.getElementById("fp").addEventListener("change",function(){fP=this.value;renderTabela();});
 document.getElementById("fc").addEventListener("change",function(){fC=this.value;renderTabela();});

@@ -39,13 +39,13 @@
 .ind-card{border-radius:12px;padding:20px;border:1px solid;position:relative;overflow:hidden;cursor:pointer;transition:transform 0.15s}
 .ind-card:hover{transform:translateY(-2px)}
 .ind-card.vencido{background:rgba(240,69,69,0.08);border-color:rgba(240,69,69,0.3)}
-.ind-card.critico{background:rgba(249,115,22,0.08);border-color:rgba(249,115,22,0.3)}
-.ind-card.atencao{background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.3)}
+.ind-card.critico{background:rgba(124,58,237,0.08);border-color:rgba(124,58,237,0.3)}
+.ind-card.atencao{background:rgba(249,115,22,0.08);border-color:rgba(249,115,22,0.3)}
 .ind-card.ok{background:rgba(45,191,126,0.08);border-color:rgba(45,191,126,0.3)}
 .ind-num{font-size:48px;font-weight:700;font-family:var(--mono);line-height:1;margin-bottom:6px}
 .ind-card.vencido .ind-num{color:var(--danger)}
-.ind-card.critico .ind-num{color:var(--orange)}
-.ind-card.atencao .ind-num{color:var(--roxo)}
+.ind-card.critico .ind-num{color:var(--roxo)}
+.ind-card.atencao .ind-num{color:var(--orange)}
 .ind-card.ok .ind-num{color:var(--ok)}
 .ind-label{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px}
 .ind-desc{font-size:11px;color:var(--text3);line-height:1.5}
@@ -53,8 +53,8 @@
 .ind-ico{position:absolute;right:16px;top:16px;font-size:28px;opacity:0.3}
 .ind-card.active-filter{transform:translateY(-3px)}
 .ind-card.vencido.active-filter{box-shadow:0 0 0 3px var(--danger);background:rgba(240,69,69,0.15)}
-.ind-card.critico.active-filter{box-shadow:0 0 0 3px var(--orange);background:rgba(249,115,22,0.15)}
-.ind-card.atencao.active-filter{box-shadow:0 0 0 3px var(--roxo);background:rgba(124,58,237,0.15)}
+.ind-card.critico.active-filter{box-shadow:0 0 0 3px var(--roxo);background:rgba(124,58,237,0.15)}
+.ind-card.atencao.active-filter{box-shadow:0 0 0 3px var(--orange);background:rgba(249,115,22,0.15)}
 .ind-card.ok.active-filter{box-shadow:0 0 0 3px var(--ok);background:rgba(45,191,126,0.15)}
 
 /* TIMELINE VISUAL */
@@ -86,14 +86,14 @@
 .tr{display:grid;grid-template-columns:120px 120px 1fr 140px 110px 90px 100px 80px;padding:0 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s}
 .tr:last-child{border-bottom:none}.tr:hover{background:var(--bg3)}
 .tr.vencido{border-left:3px solid var(--danger)}
-.tr.critico{border-left:3px solid var(--orange)}
-.tr.atencao{border-left:3px solid var(--roxo)}
+.tr.critico{border-left:3px solid var(--roxo)}
+.tr.atencao{border-left:3px solid var(--orange)}
 .tr.ok-row{border-left:3px solid var(--ok)}
 .td{font-size:12px;color:var(--text2);padding:10px 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .chip{font-size:10px;font-family:var(--mono);font-weight:600;padding:3px 9px;border-radius:10px;white-space:nowrap}
 .chip-vencido{background:rgba(240,69,69,0.15);color:var(--danger)}
-.chip-critico{background:rgba(249,115,22,0.15);color:var(--orange)}
-.chip-atencao{background:rgba(124,58,237,0.15);color:var(--roxo)}
+.chip-critico{background:rgba(124,58,237,0.15);color:var(--roxo)}
+.chip-atencao{background:rgba(249,115,22,0.15);color:var(--orange)}
 .chip-ok{background:rgba(45,191,126,0.15);color:var(--ok)}
 
 /* RISCO SCORE */
@@ -172,8 +172,8 @@
   <!-- INDICADORES -->
   <div class="ind-row" id="ind-row">
     <div class="ind-card vencido"><div class="ind-ico">🔴</div><div class="ind-num" id="n-vencido">—</div><div class="ind-label">Vencidos</div><div class="ind-desc">Prazo já passou — peça ainda em produção</div><div class="ind-hint">clique para filtrar</div></div>
-    <div class="ind-card critico"><div class="ind-ico">🟠</div><div class="ind-num" id="n-critico">—</div><div class="ind-label">Crítico</div><div class="ind-desc">Vence em até 2 dias</div><div class="ind-hint">clique para filtrar</div></div>
-    <div class="ind-card atencao"><div class="ind-ico">🟣</div><div class="ind-num" id="n-atencao">—</div><div class="ind-label">Atenção</div><div class="ind-desc">Vence em 3 a 7 dias</div><div class="ind-hint">clique para filtrar</div></div>
+    <div class="ind-card critico"><div class="ind-ico">🟣</div><div class="ind-num" id="n-critico">—</div><div class="ind-label">Crítico</div><div class="ind-desc">Vence em até 2 dias</div><div class="ind-hint">clique para filtrar</div></div>
+    <div class="ind-card atencao"><div class="ind-ico">🟠</div><div class="ind-num" id="n-atencao">—</div><div class="ind-label">Atenção</div><div class="ind-desc">Vence em 3 a 7 dias</div><div class="ind-hint">clique para filtrar</div></div>
     <div class="ind-card ok"><div class="ind-ico">🟢</div><div class="ind-num" id="n-ok">—</div><div class="ind-label">No prazo</div><div class="ind-desc">Mais de 7 dias restantes</div><div class="ind-hint">clique para filtrar</div></div>
   </div>
 
@@ -397,7 +397,7 @@ function renderTimeline(pecas){
     const pct = Math.round(itens.length/max*100);
     const diasR = Math.round((d-hoje)/(1000*60*60*24));
     const urg = urgencia(diasR);
-    const corBar = urg==="vencido"?"var(--danger)":urg==="critico"?"var(--orange)":urg==="atencao"?"var(--warn)":"var(--ok)";
+    const corBar = urg==="vencido"?"var(--danger)":urg==="critico"?"var(--roxo)":urg==="atencao"?"var(--orange)":"var(--ok)";
     const posLeft = (i/DIAS*100)+"%";
     const width   = (1/DIAS*100)+"%";
     return `<div style="position:absolute;left:${posLeft};width:${width};bottom:0;height:${Math.max(8,pct)}%;background:${corBar};opacity:0.8;border-radius:3px 3px 0 0;cursor:pointer;transition:opacity 0.1s" title="${itens.length} peça(s) — ${d.toLocaleDateString('pt-BR')}" onclick="filtrarPorData('${k}')"></div>`;
@@ -457,7 +457,7 @@ function renderTabela(pecas){
         <span style="font-size:10px;color:var(--text3)">${subop}</span>
       </div>
       <div class="td" style="font-family:var(--mono);font-size:11px">${prazoFmt}</div>
-      <div class="td" style="font-family:var(--mono);font-weight:600;color:${urg==="vencido"?"var(--danger)":urg==="critico"?"var(--orange)":urg==="atencao"?"var(--roxo)":"var(--ok)"}">${diasStr}</div>
+      <div class="td" style="font-family:var(--mono);font-weight:600;color:${urg==="vencido"?"var(--danger)":urg==="critico"?"var(--roxo)":urg==="atencao"?"var(--orange)":"var(--ok)"}">${diasStr}</div>
       <div class="td"><span class="chip ${chipCls}">${urgStr}</span></div>
       <div class="td">
         <div style="display:flex;align-items:center;gap:6px">

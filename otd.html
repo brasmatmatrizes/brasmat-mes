@@ -390,10 +390,33 @@ function calcularOTDs(dados){
     });
     const expOK=expEv?antesDoP(new Date(expEv.data_evento),prazo):null;
 
+    // Lógica de cascata: quando uma etapa falha (false),
+    // as etapas seguintes ficam null (—) pois já chegaram com atraso herdado
+    // Ordem: plan → prod → qual → est → exp
+    let cascata = false;
+
+    // Planejamento não propaga cascata para as outras etapas
+    // (é falha de planejamento, não impede medir as demais)
+
+    // Produção falhou?
+    let prodFinal = prodOK;
+    if(prodOK===false) cascata=true;
+
+    // Qualidade — se cascata, não avalia
+    let qualFinal = cascata ? null : qualOK;
+    if(qualOK===false && !cascata) cascata=true;
+
+    // Estoque — se cascata, não avalia
+    let estFinal = cascata ? null : estOK;
+    if(estOK===false && !cascata) cascata=true;
+
+    // Expedição — se cascata, não avalia
+    let expFinal = cascata ? null : expOK;
+
     resultados.push({
       pedido,codigo,cliente,
       prazo:prazoEv.prazo_entrega,
-      planOK,prodOK,qualOK,estOK,expOK,
+      planOK, prodOK:prodFinal, qualOK:qualFinal, estOK:estFinal, expOK:expFinal,
       planData,
       ultimaSaidaProd:ultimaSaidaProd?ultimaSaidaProd.data_evento:null,
       qualData:qualEv?qualEv.data_evento:null,
@@ -426,6 +449,14 @@ function clsOTD(pct){
   return "baixo";
 }
 
+const ND_LABELS={
+  plan:"sem elaboração",
+  prod:"ainda em produção",
+  qual:"sem inspeção final",
+  est:"sem entrada no estoque",
+  exp:"ainda não expedidas"
+};
+
 function renderCard(id,campo,resultados,cor){
   const {pct,ok,fail,nd}=calcPct(resultados,campo);
   const el=document.getElementById("pct-"+id);
@@ -436,7 +467,7 @@ function renderCard(id,campo,resultados,cor){
   document.getElementById("cnt-"+id).innerHTML=
     `<span class="otd-count ok">✓ ${ok} no prazo</span>
      <span class="otd-count fail">✗ ${fail} atrasadas</span>
-     ${nd>0?`<span class="otd-count nd">— ${nd} s/dado</span>`:""}`;
+     ${nd>0?`<span class="otd-count nd">— ${nd} ${ND_LABELS[id]||"sem registro"}</span>`:""}`;
 }
 
 let _resultados=[];

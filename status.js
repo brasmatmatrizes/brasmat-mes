@@ -120,7 +120,20 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
   const ret    = eventos.filter(r=>String(r.retrabalho||"").trim()).length;
   const prazo  = ultimo.prazo_entrega||"—";
   const prazoD = prazo!=="—"?new Date(prazo):null;
+  const prazoFmtBR = prazoD ? prazoD.toLocaleDateString("pt-BR") : "—";
   const prazoOk= prazoD?(prazoD>new Date()?`<span style="color:var(--ok)">✓</span>`:`<span style="color:var(--danger)">⚠</span>`):"";
+  const prazoCor = prazoD&&prazoD<new Date() ? "var(--danger)" : "var(--text2)";
+
+  // Atualiza o título para incluir prazo no cabeçalho fixo
+  title.innerHTML = `
+    <div>
+      <div style="font-size:15px;font-weight:500;color:var(--text);font-family:var(--mono)">${codigo}</div>
+      <div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px">Pedido: ${pedido}</div>
+    </div>
+    <div style="text-align:center;padding:0 12px">
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Prazo</div>
+      <div style="font-size:13px;font-weight:500;color:${prazoCor};font-family:var(--mono)">${prazoFmtBR} ${prazoOk}</div>
+    </div>`;
 
   const tl = eventos.map((ev,i)=>{
     const isUlt = i===eventos.length-1;
@@ -170,9 +183,9 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
   body.innerHTML=`
     <div class="mgrid">
       <div class="mb"><div class="ml">cliente</div><div class="mv">${ultimo.cliente||"—"}</div></div>
-      <div class="mb"><div class="ml">prazo</div><div class="mv">${prazo} ${prazoOk}</div></div>
       <div class="mb"><div class="ml">eventos</div><div class="mv">${eventos.length}</div></div>
       <div class="mb"><div class="ml">retrabalhos</div><div class="mv" style="color:${ret>0?"var(--danger)":"var(--ok)"}">${ret}</div></div>
+      <div class="mb"><div class="ml">operador atual</div><div class="mv">${ultimo.operador?String(ultimo.operador).replace(/^\d+_/,""):"—"}</div></div>
     </div>
     ${st.s==="em_producao"?`
     <div class="pos-card">

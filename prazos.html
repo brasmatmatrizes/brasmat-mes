@@ -305,29 +305,31 @@ function popularFiltros(){
 
 function render(){
   const pecas = pecasFiltradas();
-  renderIndicadores();
+  renderIndicadores(pecas);
   renderTimeline(pecas);
   renderTabela(pecas);
   document.getElementById("tbl-count").textContent = `${pecas.length} peça(s)`;
 }
 
-function renderIndicadores(){
-  const todos = POS;
+function renderIndicadores(pecas){
   const cnt = {vencido:0, critico:0, atencao:0, ok:0};
-  todos.forEach(r=>{ const d=diasRestantes(r); cnt[urgencia(d)]++; });
+  (pecas||pecasFiltradas()).forEach(r=>{ const d=diasRestantes(r); cnt[urgencia(d)]++; });
   document.getElementById("n-vencido").textContent = cnt.vencido;
   document.getElementById("n-critico").textContent = cnt.critico;
   document.getElementById("n-atencao").textContent = cnt.atencao;
   document.getElementById("n-ok").textContent      = cnt.ok;
 
-  // Clique nos cards para filtrar
+  // Clique nos cards para filtrar por urgência (mantém filtros de cliente/processo)
   ["vencido","critico","atencao","ok"].forEach(u=>{
     const el = document.querySelector(`.ind-card.${u}`);
     el.onclick = ()=>{
       filtroAtivo = filtroAtivo===u ? null : u;
       document.querySelectorAll(".ind-card").forEach(c=>c.classList.remove("active-filter"));
       if(filtroAtivo) el.classList.add("active-filter");
-      render();
+      // Não chama render() completo — só atualiza tabela para não piscar indicadores
+      const pecas = pecasFiltradas();
+      renderTabela(pecas);
+      document.getElementById("tbl-count").textContent = `${pecas.length} peça(s)`;
     };
   });
 

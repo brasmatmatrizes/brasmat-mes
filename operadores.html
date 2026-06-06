@@ -37,8 +37,12 @@
 /* RANKING SIDEBAR */
 .ranking{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .rank-hdr{padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
-.rank-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
-.rank-sub{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.rank-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px}
+.rank-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:6px}
+.rank-btns{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:2px}
+.rank-btn{font-size:10px;padding:3px 9px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.rank-btn:hover{border-color:var(--border2);color:var(--text)}
+.rank-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .rank-list{overflow-y:auto;flex:1;padding:8px}
 .rank-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid transparent;margin-bottom:4px;transition:all 0.12s}
 .rank-item:hover{background:var(--bg3)}
@@ -167,6 +171,14 @@
   <div class="ranking">
     <div class="rank-hdr">
       <div class="rank-title">Ranking de operadores</div>
+      <div class="rank-btns">
+        <button class="rank-btn active" onclick="setRanking('volume')"     id="rb-volume">🏆 Maior volume</button>
+        <button class="rank-btn"        onclick="setRanking('apontamento')" id="rb-apontamento">✅ Melhor apontamento</button>
+        <button class="rank-btn"        onclick="setRanking('operacoes')"   id="rb-operacoes">⚡ Mais operações</button>
+        <button class="rank-btn"        onclick="setRanking('velocidade')"  id="rb-velocidade">⏱ Mais rápido</button>
+        <button class="rank-btn"        onclick="setRanking('sem_saida')"   id="rb-sem_saida">📋 Mais sem saída</button>
+        <button class="rank-btn"        onclick="setRanking('retrabalho')"  id="rb-retrabalho">🔄 Mais retrabalhos</button>
+      </div>
       <div class="rank-sub" id="rank-sub">clique num operador para ver o detalhe</div>
     </div>
     <div class="rank-list" id="rank-list">
@@ -189,6 +201,7 @@
 <script>
 let TODOS = [];
 let opSelecionado = null;
+let rankingAtivo = "volume";
 const filtros = { ignorarMaisUmDia: true, ignorarMenosCincoMin: true };
 
 // Datas padrão: mês atual
@@ -334,6 +347,7 @@ function analisarOperador(nome, eventos){
   const duracoes = pares.filter(p=>!p.semSaida&&p.durMs>0&&!p.muitoRapido&&!p.fimDeSemana&&!(filtros.ignorarMaisUmDia&&p.maisUmDia)&&!(filtros.ignorarMenosCincoMin&&p.menosCincoMin)).map(p=>p.durMs);
   const tempoMedio = duracoes.length ? duracoes.reduce((s,d)=>s+d,0)/duracoes.length : 0;
   const indiceApontamento = totalPares>0 ? Math.round(comSaida/totalPares*100) : 100;
+  const totalRetrabalhos = eventos.filter(r=>String(r.retrabalho||"").trim()).length;
 
   // Score de performance
   let score = "ok";
@@ -343,9 +357,37 @@ function analisarOperador(nome, eventos){
   return { nome, pares, totalPares, comSaida, semSaida, muitoRapidos, totalPecas, tempoMedio, indiceApontamento, score };
 }
 
+function setRanking(tipo){
+  rankingAtivo = tipo;
+  document.querySelectorAll(".rank-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById("rb-"+tipo).classList.add("active");
+  aplicarFiltro();
+}
+
+function ordenarPorRanking(analises){
+  switch(rankingAtivo){
+    case "volume":
+      return [...analises].sort((a,b)=>b.totalPecas-a.totalPecas);
+    case "apontamento":
+      return [...analises].sort((a,b)=>b.indiceApontamento-a.indiceApontamento);
+    case "operacoes":
+      return [...analises].sort((a,b)=>b.totalPares-a.totalPares);
+    case "velocidade":
+      // Mais rápido = menor tempo médio (excluindo quem tem tempo médio 0)
+      return [...analises].filter(a=>a.tempoMedio>0).sort((a,b)=>a.tempoMedio-b.tempoMedio)
+        .concat(analises.filter(a=>a.tempoMedio===0));
+    case "sem_saida":
+      // Mais sem saída = pior apontamento (ranking invertido — mais é pior)
+      return [...analises].sort((a,b)=>b.semSaida-a.semSaida);
+    case "retrabalho":
+      return [...analises].sort((a,b)=>b.totalRetrabalhos-a.totalRetrabalhos);
+    default:
+      return analises;
+  }
+}
+
 function aplicarFiltro(){
   const dados = dadosFiltrados();
-  // Agrupa por operador
   const porOp = {};
   dados.forEach(r=>{
     const op = nomeOperador(r.operador);
@@ -353,13 +395,11 @@ function aplicarFiltro(){
     porOp[op].push(r);
   });
 
-  // Analisa cada operador
   const analises = Object.entries(porOp).map(([nome,evs])=>analisarOperador(nome,evs));
-  analises.sort((a,b)=>b.totalPecas-a.totalPecas);
+  const ordenadas = ordenarPorRanking(analises);
 
-  renderRanking(analises, dados);
+  renderRanking(ordenadas, dados);
 
-  // Se havia operador selecionado, atualiza o detalhe
   if(opSelecionado){
     const an = analises.find(a=>a.nome===opSelecionado);
     if(an) renderDetalhe(an, dados);
@@ -376,17 +416,46 @@ function renderRanking(analises, todosDados){
     const nc = i<3 ? numClasses[i] : "";
     const medal = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
     // Cor do índice de apontamento — vermelho se muito baixo, amarelo se médio, verde se bom
-    const apCor = an.indiceApontamento>=85?"var(--ok)":an.indiceApontamento>=70?"var(--warn)":"var(--danger)";
-    const semSaidaInfo = an.semSaida>0 ? ` · ${an.semSaida} sem saída` : "";
+    // Métrica destacada varia conforme ranking ativo
+    let metricaPrincipal = "";
+    let metricaSec = "";
+    switch(rankingAtivo){
+      case "volume":
+        metricaPrincipal = `<span style="font-size:15px;font-weight:700;font-family:var(--mono);color:var(--text)">${an.totalPecas} pç</span>`;
+        metricaSec = `${an.totalPares} operações`;
+        break;
+      case "apontamento":
+        const apCor2 = an.indiceApontamento>=85?"var(--ok)":an.indiceApontamento>=70?"var(--warn)":"var(--danger)";
+        metricaPrincipal = `<span style="font-size:15px;font-weight:700;font-family:var(--mono);color:${apCor2}">${an.indiceApontamento}%</span>`;
+        metricaSec = `${an.semSaida} sem saída`;
+        break;
+      case "operacoes":
+        metricaPrincipal = `<span style="font-size:15px;font-weight:700;font-family:var(--mono);color:var(--accent)">${an.totalPares}</span>`;
+        metricaSec = `operações registradas`;
+        break;
+      case "velocidade":
+        metricaPrincipal = `<span style="font-size:13px;font-weight:700;font-family:var(--mono);color:var(--ok)">${an.tempoMedio>0?fmtTempo(an.tempoMedio):"sem dados"}</span>`;
+        metricaSec = `tempo médio por op.`;
+        break;
+      case "sem_saida":
+        const ssCor = an.semSaida>10?"var(--danger)":an.semSaida>3?"var(--warn)":"var(--text3)";
+        metricaPrincipal = `<span style="font-size:15px;font-weight:700;font-family:var(--mono);color:${ssCor}">${an.semSaida}</span>`;
+        metricaSec = `sem saída de ${an.totalPares} op.`;
+        break;
+      case "retrabalho":
+        const retCor = an.totalRetrabalhos>5?"var(--danger)":an.totalRetrabalhos>2?"var(--warn)":"var(--text3)";
+        metricaPrincipal = `<span style="font-size:15px;font-weight:700;font-family:var(--mono);color:${retCor}">${an.totalRetrabalhos}</span>`;
+        metricaSec = `retrabalhos registrados`;
+        break;
+    }
     return `<div class="rank-item${opSelecionado===an.nome?" selected":""}" onclick="selOp('${esc(an.nome)}')">
       <div class="rank-num ${nc}">${medal||("#"+(i+1))}</div>
       <div class="rank-info">
         <div class="rank-nome">${an.nome}</div>
-        <div class="rank-meta">${an.totalPares} operações${semSaidaInfo}</div>
+        <div class="rank-meta" style="color:var(--text3);font-size:10px">${metricaSec}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
-        <div class="rank-vol">${an.totalPecas} pç</div>
-        <div style="font-size:11px;font-family:var(--mono);font-weight:600;color:${apCor};margin-top:3px">${an.indiceApontamento}% apontamento</div>
+        ${metricaPrincipal}
       </div>
     </div>`;
   }).join("");

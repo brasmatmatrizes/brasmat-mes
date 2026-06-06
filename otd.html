@@ -164,6 +164,15 @@
 <!-- CONTENT -->
 <div class="content">
 
+  <!-- AVISO SEM PRAZO -->
+  <div id="aviso-sem-prazo" style="display:none;background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.2);border-radius:10px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:12px">
+    <span style="font-size:18px">⚠️</span>
+    <div>
+      <span style="font-size:13px;font-weight:500;color:var(--warn)" id="aviso-titulo">—</span>
+      <span style="font-size:12px;color:var(--text3);margin-left:8px">O campo prazo de entrega já é obrigatório no formulário — novos registros não terão este problema.</span>
+    </div>
+  </div>
+
   <!-- OTD CARDS -->
   <div class="otd-row" id="otd-row">
     <div class="otd-card" id="card-plan" onclick="toggleFiltroOTD('plan')">
@@ -313,7 +322,7 @@ function antesDoP(data, prazo){ if(!data||!prazo) return null; return data<=praz
 function calcularOTDs(dados){
   const minDias = parseInt(document.getElementById("cfg-dias").value)||5;
 
-  // Agrupa por pedido+codigo
+  // Agrupa por pedido+codigo usando dados filtrados (período)
   const grupos={};
   dados.forEach(r=>{
     if(!r.pedido||!r.codigo_peca) return;
@@ -324,13 +333,16 @@ function calcularOTDs(dados){
 
   const resultados=[];
 
-  Object.entries(grupos).forEach(([k,evs])=>{
-    evs.sort((a,b)=>new Date(a.data_evento)-new Date(b.data_evento));
-    const pedido=evs[0].pedido;
-    const codigo=evs[0].codigo_peca;
+  Object.entries(grupos).forEach(([k,evsPeriodo])=>{
+    // Para análise completa, usa TODOS os eventos da peça (não só do período)
+    // Assim captura prazo e eventos de outras etapas fora do período filtrado
+    const [pedido,codigo]=k.split("||");
+    const todosEvs=TODOS.filter(r=>r.pedido===pedido&&r.codigo_peca===codigo);
+    const evs=todosEvs.sort((a,b)=>new Date(a.data_evento)-new Date(b.data_evento));
+
     const cliente=evs[0].cliente||"—";
 
-    // Pega prazo do primeiro evento que tiver
+    // Pega prazo de qualquer evento da peça (não só do período)
     const prazoEv=evs.find(r=>r.prazo_entrega&&String(r.prazo_entrega).trim());
     const prazo=prazoEv?new Date(prazoEv.prazo_entrega):null;
     if(!prazo) return; // sem prazo, não analisa
@@ -355,13 +367,26 @@ function calcularOTDs(dados){
     }
 
     // OTD PRODUÇÃO — última SAÍDA de processo produtivo (não Qualidade, não Administrativo)
+    // OU a primeira ENTRADA na Qualidade (o que vier primeiro como indicador de entrega)
     const saidas=evs.filter(r=>{
       const evt=String(r.evento||"").trim().toUpperCase();
       const proc=String(r.processo||"").trim().toUpperCase();
       return (evt==="SAÍDA"||evt==="SAIDA")&&!proc.includes("QUALIDADE")&&!proc.includes("ADMINISTRATIVO");
     });
     const ultimaSaidaProd=saidas.length?saidas[saidas.length-1]:null;
-    const prodOK=ultimaSaidaProd?antesDoP(new Date(ultimaSaidaProd.data_evento),prazo):null;
+
+    // Também verifica primeira ENTRADA na Qualidade — pois é o momento
+    // que a produção "entregou" para a qualidade
+    const entradaQual=evs.find(r=>{
+      const evt=String(r.evento||"").trim().toUpperCase();
+      const proc=String(r.processo||"").trim().toUpperCase();
+      return evt==="ENTRADA"&&proc.includes("QUALIDADE");
+    });
+
+    // Usa a data mais relevante: entrada na qualidade se existir,
+    // senão última saída da produção
+    const refProd = entradaQual || ultimaSaidaProd;
+    const prodOK = refProd ? antesDoP(new Date(refProd.data_evento), prazo) : null;
 
     // OTD QUALIDADE — SAÍDA Qualidade com 10.2
     const qualEv=evs.find(r=>{
@@ -390,27 +415,31 @@ function calcularOTDs(dados){
     });
     const expOK=expEv?antesDoP(new Date(expEv.data_evento),prazo):null;
 
-    // Lógica de cascata: quando uma etapa falha (false),
-    // as etapas seguintes ficam null (—) pois já chegaram com atraso herdado
-    // Ordem: plan → prod → qual → est → exp
-    let cascata = false;
+    // Lógica de cascata correta:
+    // Verifica cada etapa em ordem cronológica
+    // Se uma etapa atrasou, as seguintes ficam — (não são avaliadas)
+    // pois o atraso já foi herdado da etapa anterior
 
-    // Planejamento não propaga cascata para as outras etapas
-    // (é falha de planejamento, não impede medir as demais)
+    // PRODUÇÃO: saída da produção antes do prazo?
+    // Se não houve saída da produção ainda = null
+    // Se houve mas foi depois do prazo = false (produção falhou)
+    // Se houve antes do prazo = true
+    let prodFinal = prodOK; // já calculado acima
 
-    // Produção falhou?
-    let prodFinal = prodOK;
-    if(prodOK===false) cascata=true;
+    // CASCATA: se produção atrasou, não avalia as demais
+    let cascata = prodOK === false;
 
-    // Qualidade — se cascata, não avalia
+    // QUALIDADE: só avalia se produção foi no prazo
+    // Mas atenção: se a produção foi no prazo mas a qualidade recebeu
+    // e concluiu depois do prazo, AÍ é culpa da qualidade
     let qualFinal = cascata ? null : qualOK;
-    if(qualOK===false && !cascata) cascata=true;
+    if(qualOK === false && !cascata) cascata = true;
 
-    // Estoque — se cascata, não avalia
+    // ESTOQUE: só avalia se qualidade foi no prazo
     let estFinal = cascata ? null : estOK;
-    if(estOK===false && !cascata) cascata=true;
+    if(estOK === false && !cascata) cascata = true;
 
-    // Expedição — se cascata, não avalia
+    // EXPEDIÇÃO: só avalia se estoque foi no prazo
     let expFinal = cascata ? null : expOK;
 
     resultados.push({
@@ -474,7 +503,27 @@ let _resultados=[];
 
 function render(){
   const dados=dadosFiltrados();
+
+  // Conta peças sem prazo
+  const grupos={};
+  dados.forEach(r=>{
+    if(!r.pedido||!r.codigo_peca) return;
+    const k=r.pedido+"||"+r.codigo_peca;
+    grupos[k]=true;
+  });
+  const totalPecas=Object.keys(grupos).length;
+
   _resultados=calcularOTDs(dados);
+
+  const semPrazo=totalPecas-_resultados.length;
+  const aviso=document.getElementById("aviso-sem-prazo");
+  if(semPrazo>0){
+    aviso.style.display="flex";
+    document.getElementById("aviso-titulo").textContent=
+      `${semPrazo} peça(s) excluída(s) da análise por não ter prazo de entrega registrado (de ${totalPecas} peças no período).`;
+  } else {
+    aviso.style.display="none";
+  }
 
   let exibidos=_resultados;
   if(filtroOTD){

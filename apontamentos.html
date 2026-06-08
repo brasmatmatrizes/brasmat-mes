@@ -63,7 +63,13 @@
 
 /* RESUMO DO DIA */
 .resumo-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
-.res-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.res-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all 0.15s}
+.res-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.res-card.active-filter{border-width:2px}
+.res-card.active-total{border-color:var(--accent);background:rgba(59,127,255,0.06)}
+.res-card.active-saidas{border-color:var(--ok);background:rgba(45,191,126,0.06)}
+.res-card.active-entradas{border-color:var(--text2);background:rgba(196,203,218,0.06)}
+.res-card.active-aberto{border-color:var(--warn);background:rgba(245,166,35,0.06)}
 .res-val{font-size:24px;font-weight:500;font-family:var(--mono);line-height:1;margin-bottom:4px}
 .res-val.accent{color:var(--accent)}.res-val.ok{color:var(--ok)}.res-val.warn{color:var(--warn)}.res-val.danger{color:var(--danger)}
 .res-lbl{font-size:11px;color:var(--text3)}
@@ -213,6 +219,8 @@ async function buscar(){
 
 function renderResultado(op, eventos, di, df){
   const content = document.getElementById("content");
+  _eventosGlobais = eventos; // salva para refiltrar
+  filtroCard = null; // reseta filtro ao buscar novo operador
 
   if(!eventos.length){
     content.innerHTML=`<div class="empty"><div style="font-size:36px;margin-bottom:10px">📭</div><p style="font-size:13px;text-align:center">Nenhum apontamento encontrado para <strong>${op}</strong> no período selecionado.</p></div>`;
@@ -259,10 +267,26 @@ function renderResultado(op, eventos, di, df){
   // Resumo
   const resumoHtml = `
     <div class="resumo-row">
-      <div class="res-card"><div class="res-val accent">${totalPecas}</div><div class="res-lbl">peças produzidas</div></div>
-      <div class="res-card"><div class="res-val ok">${totalSaidas}</div><div class="res-lbl">saídas registradas</div></div>
-      <div class="res-card"><div class="res-val">${totalEntradas}</div><div class="res-lbl">entradas registradas</div></div>
-      <div class="res-card"><div class="res-val ${emAberto>0?"warn":"ok"}">${emAberto}</div><div class="res-lbl">entradas em aberto</div></div>
+      <div class="res-card" id="card-total" onclick="setFiltroCard('total')">
+        <div class="res-val accent">${totalPecas}</div>
+        <div class="res-lbl">peças produzidas</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono)">clique para filtrar saídas</div>
+      </div>
+      <div class="res-card" id="card-saidas" onclick="setFiltroCard('saidas')">
+        <div class="res-val ok">${totalSaidas}</div>
+        <div class="res-lbl">saídas registradas</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono)">clique para filtrar</div>
+      </div>
+      <div class="res-card" id="card-entradas" onclick="setFiltroCard('entradas')">
+        <div class="res-val">${totalEntradas}</div>
+        <div class="res-lbl">entradas registradas</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono)">clique para filtrar</div>
+      </div>
+      <div class="res-card" id="card-aberto" onclick="setFiltroCard('aberto')">
+        <div class="res-val ${emAberto>0?"warn":"ok"}">${emAberto}</div>
+        <div class="res-lbl">entradas em aberto</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--mono)">clique para filtrar</div>
+      </div>
     </div>`;
 
   // Lista de apontamentos
@@ -324,8 +348,102 @@ function renderResultado(op, eventos, di, df){
     </div>
     ${ultimoHtml}
     ${resumoHtml}
-    <div class="sec-title">histórico de apontamentos</div>
-    <div class="ap-list">${listaHtml}</div>`;
+    <div class="sec-title"><span id="lista-titulo">histórico de apontamentos (${eventos.length})</span></div>
+    <div class="ap-list" id="lista-apontamentos">${listaHtml}</div>`;
+}
+
+function setFiltroCard(tipo){
+  filtroCard = filtroCard===tipo ? null : tipo;
+  // Atualiza visual dos cards
+  ["total","saidas","entradas","aberto"].forEach(t=>{
+    const el=document.getElementById("card-"+t);
+    if(el){
+      el.classList.remove("active-filter","active-total","active-saidas","active-entradas","active-aberto");
+      if(filtroCard===t) el.classList.add("active-filter","active-"+t);
+    }
+  });
+  // Refiltrar e rerenderizar lista
+  renderLista(_eventosGlobais);
+}
+
+function renderLista(eventos){
+  // Aplica filtro do card selecionado
+  let filtrados = eventos;
+  if(filtroCard==="saidas"){
+    filtrados = eventos.filter(ev=>{
+      const e=String(ev.evento||"").trim().toUpperCase();
+      return e==="SAÍDA"||e==="SAIDA";
+    });
+  } else if(filtroCard==="entradas"){
+    filtrados = eventos.filter(ev=>String(ev.evento||"").trim().toUpperCase()==="ENTRADA");
+  } else if(filtroCard==="aberto"){
+    filtrados = eventos.filter((ev,i)=>{
+      if(String(ev.evento||"").trim().toUpperCase()!=="ENTRADA") return false;
+      const temSaida=eventos.slice(0,i).some(e=>{
+        const eS=String(e.evento||"").trim().toUpperCase();
+        return (eS==="SAÍDA"||eS==="SAIDA")&&e.pedido===ev.pedido&&e.codigo_peca===ev.codigo_peca;
+      });
+      return !temSaida;
+    });
+  } else if(filtroCard==="total"){
+    filtrados = eventos.filter(ev=>{
+      const e=String(ev.evento||"").trim().toUpperCase();
+      return e==="SAÍDA"||e==="SAIDA";
+    });
+  }
+
+  const titulo = filtroCard==="saidas"?"saídas registradas":
+                 filtroCard==="entradas"?"entradas registradas":
+                 filtroCard==="aberto"?"entradas em aberto":
+                 filtroCard==="total"?"saídas com produção":"todos os apontamentos";
+
+  const listaEl = document.getElementById("lista-apontamentos");
+  if(!listaEl) return;
+
+  if(!filtrados.length){
+    listaEl.innerHTML=`<div class="empty"><p style="font-size:13px">Nenhum apontamento encontrado para este filtro.</p></div>`;
+    document.getElementById("lista-titulo").textContent = titulo+" (0)";
+    return;
+  }
+
+  document.getElementById("lista-titulo").textContent = `${titulo} (${filtrados.length})`;
+
+  listaEl.innerHTML = filtrados.map((ev,i)=>{
+    const evS=String(ev.evento||"").trim().toUpperCase();
+    const isE=evS==="ENTRADA";
+    const sub=getSubop(ev);
+    const hora=new Date(ev.data_evento).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+    const data=new Date(ev.data_evento).toLocaleDateString("pt-BR");
+    let statusAp="";
+    if(isE){
+      const temSaida=eventos.slice(0,i).some(e=>{
+        const eS=String(e.evento||"").trim().toUpperCase();
+        return (eS==="SAÍDA"||eS==="SAIDA")&&e.pedido===ev.pedido&&e.codigo_peca===ev.codigo_peca;
+      });
+      statusAp=temSaida?"":"aberto";
+    } else {
+      const entradaAnt=eventos.slice(i+1).find(e=>
+        String(e.evento||"").trim().toUpperCase()==="ENTRADA"&&
+        e.pedido===ev.pedido&&e.codigo_peca===ev.codigo_peca
+      );
+      if(entradaAnt){
+        const ms=new Date(ev.data_evento)-new Date(entradaAnt.data_evento);
+        if(ms<5*60*1000) statusAp="rapido";
+      }
+    }
+    const statusChip=statusAp==="aberto"
+      ?`<span class="ap-status aberto">⚠ em aberto</span>`
+      :statusAp==="rapido"
+      ?`<span class="ap-status rapido">⚡ &lt;5min</span>`
+      :`<span class="ap-status ok">✓</span>`;
+    return `<div class="ap-item${statusAp==="aberto"?" aberto":""}">
+      <div class="ap-hora">${hora}<div style="font-size:10px;color:var(--text3);font-family:var(--mono)">${data}</div></div>
+      <div class="ap-tipo ${isE?"entrada":"saida"}">${isE?"ENTRADA":"SAÍDA"}</div>
+      <div class="ap-peca"><div class="ap-codigo">${ev.codigo_peca||"—"}</div><div class="ap-pedido">${ev.pedido||"—"}</div></div>
+      <div><div class="ap-proc">${String(ev.processo||"").trim()}</div><div class="ap-subop">${sub}</div></div>
+      ${statusChip}
+    </div>`;
+  }).join("");
 }
 
 function navTo(p){ window.location.href=p; }

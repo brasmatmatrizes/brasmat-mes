@@ -45,10 +45,17 @@
 
 /* RESUMO */
 .resumo-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
-.res-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.res-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all 0.15s}
+.res-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.res-card.ativo{border-width:2px;transform:translateY(-2px)}
+.res-card.ativo-total{border-color:var(--accent);background:rgba(59,127,255,0.06)}
+.res-card.ativo-encontradas{border-color:var(--ok);background:rgba(45,191,126,0.06)}
+.res-card.ativo-expedidas{border-color:var(--text3);background:rgba(78,90,114,0.08)}
+.res-card.ativo-nao{border-color:var(--danger);background:rgba(240,69,69,0.06)}
 .res-val{font-size:24px;font-weight:500;font-family:var(--mono);line-height:1;margin-bottom:4px}
 .res-val.ok{color:var(--ok)}.res-val.warn{color:var(--warn)}.res-val.danger{color:var(--danger)}.res-val.accent{color:var(--accent)}
 .res-lbl{font-size:11px;color:var(--text3)}
+.res-hint{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:4px}
 
 /* CARDS DE PEÇA */
 .peca-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:10px}
@@ -128,6 +135,9 @@
 
 <script src="status.js"></script>
 <script>
+let _resultadosGlobais = [];
+let _filtroAtivo = null; // null | 'total' | 'encontradas' | 'expedidas' | 'nao'
+
 // Extrai códigos de peça da lista colada
 // Padrão: começa com CF, CFA, H, G, MA seguido de números
 function extrairCodigos(texto){
@@ -210,10 +220,26 @@ function renderResultados(resultados){
   const textoCliente = gerarTextoCliente(resultados);
 
   const resumo = `<div class="resumo-row">
-    <div class="res-card"><div class="res-val accent">${resultados.length}</div><div class="res-lbl">peças consultadas</div></div>
-    <div class="res-card"><div class="res-val ok">${encontradas}</div><div class="res-lbl">localizadas em processo</div></div>
-    <div class="res-card"><div class="res-val" style="color:var(--text3)">${expedidas}</div><div class="res-lbl">expedidas / concluídas</div></div>
-    <div class="res-card"><div class="res-val ${naoEnc>0?"danger":"ok"}">${naoEnc}</div><div class="res-lbl">não encontradas</div></div>
+    <div class="res-card" id="rc-total" onclick="setFiltro('total')">
+      <div class="res-val accent">${resultados.length}</div>
+      <div class="res-lbl">peças consultadas</div>
+      <div class="res-hint">ver todas</div>
+    </div>
+    <div class="res-card" id="rc-encontradas" onclick="setFiltro('encontradas')">
+      <div class="res-val ok">${encontradas}</div>
+      <div class="res-lbl">localizadas em processo</div>
+      <div class="res-hint">clique para filtrar</div>
+    </div>
+    <div class="res-card" id="rc-expedidas" onclick="setFiltro('expedidas')">
+      <div class="res-val" style="color:var(--text3)">${expedidas}</div>
+      <div class="res-lbl">expedidas / concluídas</div>
+      <div class="res-hint">clique para filtrar</div>
+    </div>
+    <div class="res-card" id="rc-nao" onclick="setFiltro('nao')">
+      <div class="res-val ${naoEnc>0?"danger":"ok"}">${naoEnc}</div>
+      <div class="res-lbl">não encontradas</div>
+      <div class="res-hint">clique para filtrar</div>
+    </div>
   </div>`;
 
   const exportacao = `<div class="export-section">
@@ -222,9 +248,13 @@ function renderResultados(resultados){
     <button class="btn-copy" id="btn-copy" onclick="copiarTexto()">📋 Copiar texto</button>
   </div>`;
 
-  const cards = resultados.map(r=>renderCard(r)).join("");
+  _resultadosGlobais = resultados;
+  _filtroAtivo = null;
 
-  document.getElementById("content").innerHTML = resumo + exportacao + cards;
+  document.getElementById("content").innerHTML =
+    resumo +
+    `<div id="secao-exportacao">${exportacao}</div>` +
+    `<div id="secao-cards">${resultados.map(r=>renderCard(r)).join("")}</div>`;
 }
 
 function renderCard(r){
@@ -312,6 +342,45 @@ function gerarTextoCliente(resultados){
     texto += "\n";
   });
   return texto.trim();
+}
+
+function setFiltro(tipo){
+  // Toggle — clica no mesmo desativa
+  _filtroAtivo = _filtroAtivo===tipo ? null : tipo;
+
+  // Atualiza visual dos cards
+  ["total","encontradas","expedidas","nao"].forEach(t=>{
+    const el = document.getElementById("rc-"+t);
+    if(!el) return;
+    el.classList.remove("ativo","ativo-total","ativo-encontradas","ativo-expedidas","ativo-nao");
+    if(_filtroAtivo===t) el.classList.add("ativo","ativo-"+t);
+  });
+
+  // Filtra resultados
+  let filtrados = _resultadosGlobais;
+  if(_filtroAtivo==="encontradas") filtrados = _resultadosGlobais.filter(r=>r.status==="encontrada");
+  else if(_filtroAtivo==="expedidas")  filtrados = _resultadosGlobais.filter(r=>r.status==="expedida");
+  else if(_filtroAtivo==="nao")        filtrados = _resultadosGlobais.filter(r=>r.status==="nao_encontrada"||r.status==="erro");
+  // "total" mostra tudo
+
+  // Atualiza cards de detalhe
+  const secCards = document.getElementById("secao-cards");
+  if(secCards) secCards.innerHTML = filtrados.length
+    ? filtrados.map(r=>renderCard(r)).join("")
+    : `<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">Nenhuma peça neste filtro.</div>`;
+
+  // Atualiza texto de exportação
+  const textoFiltrado = gerarTextoCliente(filtrados);
+  const expEl = document.getElementById("export-text");
+  if(expEl) expEl.value = textoFiltrado;
+
+  // Atualiza título da exportação
+  const titulo = _filtroAtivo==="encontradas"?"Peças em processo":
+                 _filtroAtivo==="expedidas"?"Peças expedidas":
+                 _filtroAtivo==="nao"?"Peças não encontradas":
+                 "Todas as peças";
+  const expTitle = document.querySelector(".export-title");
+  if(expTitle) expTitle.textContent = `📤 ${titulo} — resposta para o cliente`;
 }
 
 function copiarTexto(){

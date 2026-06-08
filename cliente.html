@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRASMAT MES — Consulta de Cliente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#C4CBDA;--text3:#8E9AB0;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.nav{display:flex;gap:4px}
+.nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
+.tr-right{display:flex;align-items:center;gap:8px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-lbl{font-size:11px;color:var(--text2);font-family:var(--mono)}
+
+/* LAYOUT */
+.shell{display:grid;grid-template-columns:340px 1fr;height:calc(100vh - 56px);overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px;gap:12px;overflow:hidden}
+.sb-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px}
+.sb-desc{font-size:11px;color:var(--text3);line-height:1.5}
+.lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);font-family:var(--mono)}
+.textarea{width:100%;flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--text);font-family:var(--mono);resize:none;outline:none;line-height:1.6}
+.textarea:focus{border-color:var(--accent)}
+.textarea::placeholder{color:var(--text3)}
+.btn-buscar{width:100%;background:var(--accent);border:none;border-radius:8px;padding:10px;font-size:13px;color:#fff;cursor:pointer;font-family:var(--sans);font-weight:500}
+.btn-buscar:hover{background:#1A4FCC}
+.btn-buscar:disabled{opacity:0.5;cursor:not-allowed}
+.btn-limpar{width:100%;background:transparent;border:1px solid var(--border);border-radius:8px;padding:8px;font-size:12px;color:var(--text2);cursor:pointer}
+.btn-limpar:hover{border-color:var(--border2);color:var(--text)}
+.hint{font-size:10px;color:var(--text3);line-height:1.5;font-family:var(--mono)}
+
+/* CONTENT */
+.content{overflow-y:auto;padding:20px 24px}
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);gap:12px}
+.ph-ico{font-size:48px;opacity:0.3}.ph-txt{font-size:14px;text-align:center;line-height:1.6;max-width:300px}
+
+/* RESUMO */
+.resumo-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.res-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.res-val{font-size:24px;font-weight:500;font-family:var(--mono);line-height:1;margin-bottom:4px}
+.res-val.ok{color:var(--ok)}.res-val.warn{color:var(--warn)}.res-val.danger{color:var(--danger)}.res-val.accent{color:var(--accent)}
+.res-lbl{font-size:11px;color:var(--text3)}
+
+/* CARDS DE PEÇA */
+.peca-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:10px}
+.peca-card.encontrada{border-left:4px solid var(--ok)}
+.peca-card.em-risco{border-left:4px solid var(--warn)}
+.peca-card.nao-encontrada{border-left:4px solid var(--danger);opacity:0.8}
+.peca-card.expedida{border-left:4px solid var(--text3)}
+.peca-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.peca-codigo{font-size:15px;font-weight:500;color:var(--text);font-family:var(--mono)}
+.peca-desc{font-size:11px;color:var(--text3);margin-top:2px}
+.peca-pedido-cli{font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:1px}
+.status-pill{font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid transparent;white-space:nowrap;flex-shrink:0}
+.peca-info{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.peca-info-item{background:var(--bg3);border-radius:6px;padding:8px 10px}
+.peca-info-lbl{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px}
+.peca-info-val{font-size:12px;color:var(--text);font-weight:500}
+.match-info{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+
+/* EXPORTAR */
+.export-section{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px}
+.export-title{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--mono);margin-bottom:10px}
+.export-text{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--text2);font-family:var(--mono);resize:vertical;min-height:120px;outline:none;line-height:1.6}
+.btn-copy{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:12px;color:var(--text2);cursor:pointer;margin-top:8px}
+.btn-copy:hover{border-color:var(--border2);color:var(--text)}
+.btn-copy.copied{background:rgba(45,191,126,0.12);border-color:var(--ok);color:var(--ok)}
+
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div style="display:grid;grid-template-rows:56px 1fr;height:100vh">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand"><div class="bm">BM</div><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="nav">
+    <button class="nb" onclick="navTo('index.html')">Posição</button>
+    <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
+    <button class="nb" onclick="navTo('paradas.html')">Peças paradas</button>
+    <button class="nb" onclick="navTo('apontamentos.html')">Apontamentos</button>
+    <button class="nb" onclick="navTo('operadores.html')">Performance</button>
+    <button class="nb" onclick="navTo('prazos.html')">Prazos</button>
+    <button class="nb" onclick="navTo('otd.html')">OTD</button>
+    <button class="nb active">Consulta Cliente</button>
+  </div>
+  <div class="tr-right">
+    <div class="sync-dot"></div>
+    <span class="sync-lbl" id="slbl">pronto</span>
+  </div>
+</div>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div>
+      <div class="sb-title">Consulta de lista do cliente</div>
+      <div class="sb-desc">Cole a lista recebida do cliente. O sistema localiza cada peça automaticamente pelo código.</div>
+    </div>
+    <div class="lbl">lista do cliente</div>
+    <textarea class="textarea" id="lista-input" placeholder="Cole aqui a lista do cliente.&#10;&#10;Exemplo:&#10;CFA02650   024Z-LUVA DO MARTELO   2603110&#10;CF063447   011Z-INSERTO           2607374&#10;..."></textarea>
+    <div class="hint">Cole qualquer formato — o sistema extrai os códigos automaticamente (CFA, CF, H, G seguidos de números)</div>
+    <button class="btn-buscar" id="btn-buscar" onclick="buscar()">🔍 Localizar peças</button>
+    <button class="btn-limpar" onclick="limpar()">Limpar</button>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content" id="content">
+    <div class="placeholder">
+      <div class="ph-ico">📋</div>
+      <div class="ph-txt">Cole a lista do cliente na área à esquerda e clique em "Localizar peças".</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="status.js"></script>
+<script>
+// Extrai códigos de peça da lista colada
+// Padrão: começa com CF, CFA, H, G, MA seguido de números
+function extrairCodigos(texto){
+  const linhas = texto.split('\n').filter(l=>l.trim());
+  const resultado = [];
+  linhas.forEach(linha=>{
+    // Extrai código — primeiro token que parece código de peça
+    const tokens = linha.trim().split(/[\s\t]+/);
+    const codigo = tokens.find(t=>/^(CF|CFA|H|G|MA|F)\d/i.test(t.trim()));
+    if(!codigo) return;
+    // Extrai pedido — número no formato OF... ou 4500... ou similar
+    const pedido = tokens.find(t=>/^(OF|4500|\d{6,})/i.test(t.trim()) && t!==codigo);
+    // Descrição — o resto
+    const desc = tokens.filter(t=>t!==codigo&&t!==pedido).join(" ").trim();
+    resultado.push({
+      codigoOriginal: codigo.trim(),
+      codigoBusca: codigo.trim().replace(/\s/g,''),
+      pedidoCliente: pedido ? pedido.trim() : null,
+      descricaoCliente: desc || null
+    });
+  });
+  return resultado;
+}
+
+async function buscar(){
+  const texto = document.getElementById("lista-input").value.trim();
+  if(!texto){ alert("Cole a lista do cliente primeiro."); return; }
+
+  const itens = extrairCodigos(texto);
+  if(!itens.length){ alert("Nenhum código de peça encontrado na lista. Verifique o formato."); return; }
+
+  document.getElementById("btn-buscar").disabled = true;
+  document.getElementById("slbl").textContent = "buscando...";
+  document.getElementById("content").innerHTML =
+    `<div class="loading"><div class="spinner"></div>localizando ${itens.length} peça(s)...</div>`;
+
+  // Busca cada código no Supabase via posicao_atual
+  const resultados = await Promise.all(itens.map(async item=>{
+    try{
+      // Busca na view posicao_atual pelo código
+      const dados = await supaFetch(
+        `/rest/v1/posicao_atual?select=*&codigo_peca=ilike.*${encodeURIComponent(item.codigoBusca)}*&limit=5`
+      );
+      if(Array.isArray(dados)&&dados.length>0){
+        // Se tiver pedido do cliente, tenta priorizar o que bate
+        let melhor = dados[0];
+        if(item.pedidoCliente){
+          const match = dados.find(d=>
+            String(d.pedido||"").includes(item.pedidoCliente)||
+            item.pedidoCliente.includes(String(d.pedido||""))
+          );
+          if(match) melhor = match;
+        }
+        return {...item, status:"encontrada", dados:melhor, alternativas:dados.length>1?dados:[]};
+      }
+      // Não encontrou na posicao_atual — busca no histórico completo
+      const hist = await supaFetch(
+        `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,processo,evento,data_evento,cliente&codigo_peca=ilike.*${encodeURIComponent(item.codigoBusca)}*&order=id.desc&limit=3`
+      );
+      if(Array.isArray(hist)&&hist.length>0){
+        return {...item, status:"expedida", dados:hist[0], alternativas:[]};
+      }
+      return {...item, status:"nao_encontrada", dados:null, alternativas:[]};
+    }catch(e){
+      return {...item, status:"erro", dados:null, alternativas:[]};
+    }
+  }));
+
+  renderResultados(resultados);
+  document.getElementById("btn-buscar").disabled = false;
+  document.getElementById("slbl").textContent = `${resultados.length} peça(s) consultadas · ${new Date().toLocaleTimeString("pt-BR")}`;
+}
+
+function renderResultados(resultados){
+  const encontradas = resultados.filter(r=>r.status==="encontrada").length;
+  const expedidas   = resultados.filter(r=>r.status==="expedida").length;
+  const naoEnc      = resultados.filter(r=>r.status==="nao_encontrada"||r.status==="erro").length;
+
+  // Gera texto para copiar e enviar ao cliente
+  const textoCliente = gerarTextoCliente(resultados);
+
+  const resumo = `<div class="resumo-row">
+    <div class="res-card"><div class="res-val accent">${resultados.length}</div><div class="res-lbl">peças consultadas</div></div>
+    <div class="res-card"><div class="res-val ok">${encontradas}</div><div class="res-lbl">localizadas em processo</div></div>
+    <div class="res-card"><div class="res-val" style="color:var(--text3)">${expedidas}</div><div class="res-lbl">expedidas / concluídas</div></div>
+    <div class="res-card"><div class="res-val ${naoEnc>0?"danger":"ok"}">${naoEnc}</div><div class="res-lbl">não encontradas</div></div>
+  </div>`;
+
+  const exportacao = `<div class="export-section">
+    <div class="export-title">📤 Resposta para o cliente — clique para copiar</div>
+    <textarea class="export-text" id="export-text" readonly>${textoCliente}</textarea>
+    <button class="btn-copy" id="btn-copy" onclick="copiarTexto()">📋 Copiar texto</button>
+  </div>`;
+
+  const cards = resultados.map(r=>renderCard(r)).join("");
+
+  document.getElementById("content").innerHTML = resumo + exportacao + cards;
+}
+
+function renderCard(r){
+  if(r.status==="encontrada"){
+    const d = r.dados;
+    const st = status(d);
+    const dias = diasDesde(d);
+    const dc = diasCls(dias);
+    const proc = String(d.processo||"").trim();
+    const sub = getSubop(d);
+    const emRisco = dias >= 3;
+    const cardCls = emRisco ? "em-risco" : "encontrada";
+    const prazoD = d.prazo_entrega ? new Date(d.prazo_entrega) : null;
+    const prazoFmt = prazoD ? prazoD.toLocaleDateString("pt-BR") : "—";
+    const prazoVencido = prazoD && prazoD < new Date();
+    return `<div class="peca-card ${cardCls}">
+      <div class="peca-header">
+        <div>
+          <div class="peca-codigo">${d.codigo_peca}</div>
+          ${r.descricaoCliente?`<div class="peca-desc">${r.descricaoCliente}</div>`:""}
+          ${r.pedidoCliente?`<div class="peca-pedido-cli">Pedido cliente: ${r.pedidoCliente} · Sistema: ${d.pedido||"—"}</div>`:""}
+        </div>
+        <span class="status-pill" style="background:${st.cor}22;color:${st.cor};border-color:${st.cor}44">${st.ico} ${st.label}</span>
+      </div>
+      <div class="peca-info">
+        <div class="peca-info-item"><div class="peca-info-lbl">Processo</div><div class="peca-info-val">${proc||"—"}</div></div>
+        <div class="peca-info-item"><div class="peca-info-lbl">Suboperação</div><div class="peca-info-val" style="font-size:11px">${sub}</div></div>
+        <div class="peca-info-item"><div class="peca-info-lbl">Tempo no setor</div><div class="peca-info-val" style="color:var(--${dc})">${diasStr(dias)}</div></div>
+        <div class="peca-info-item"><div class="peca-info-lbl">Prazo entrega</div><div class="peca-info-val" style="color:${prazoVencido?"var(--danger)":"var(--text)"}">${prazoFmt}${prazoVencido?" ⚠":""}</div></div>
+      </div>
+      ${r.codigoBusca!==d.codigo_peca?`<div class="match-info">Buscado: ${r.codigoBusca} → Encontrado: ${d.codigo_peca}</div>`:""}
+    </div>`;
+  }
+
+  if(r.status==="expedida"){
+    const d = r.dados;
+    return `<div class="peca-card expedida">
+      <div class="peca-header">
+        <div>
+          <div class="peca-codigo">${r.codigoOriginal}</div>
+          ${r.descricaoCliente?`<div class="peca-desc">${r.descricaoCliente}</div>`:""}
+        </div>
+        <span class="status-pill" style="background:rgba(78,90,114,0.2);color:var(--text3);border-color:var(--border)">✓ Concluída / Expedida</span>
+      </div>
+      <div style="font-size:12px;color:var(--text3)">Peça não está mais em processo ativo. Último registro: ${d.processo||"—"} em ${d.data_evento?new Date(d.data_evento).toLocaleDateString("pt-BR"):"—"}.</div>
+    </div>`;
+  }
+
+  return `<div class="peca-card nao-encontrada">
+    <div class="peca-header">
+      <div>
+        <div class="peca-codigo">${r.codigoOriginal}</div>
+        ${r.descricaoCliente?`<div class="peca-desc">${r.descricaoCliente}</div>`:""}
+        ${r.pedidoCliente?`<div class="peca-pedido-cli">Pedido cliente: ${r.pedidoCliente}</div>`:""}
+      </div>
+      <span class="status-pill" style="background:rgba(240,69,69,0.1);color:var(--danger);border-color:rgba(240,69,69,0.3)">⚠ Não encontrada</span>
+    </div>
+    <div style="font-size:12px;color:var(--text3)">Código não localizado no sistema. Verifique se o pedido já foi lançado ou se o código está correto.</div>
+  </div>`;
+}
+
+function gerarTextoCliente(resultados){
+  const data = new Date().toLocaleDateString("pt-BR");
+  let texto = `BRASMAT — Atualização de status em ${data}\n`;
+  texto += "─".repeat(50)+"\n\n";
+  resultados.forEach(r=>{
+    texto += `▸ ${r.codigoOriginal}`;
+    if(r.descricaoCliente) texto += ` — ${r.descricaoCliente}`;
+    texto += "\n";
+    if(r.status==="encontrada"){
+      const d=r.dados;
+      const st=status(d);
+      const dias=diasDesde(d);
+      const proc=String(d.processo||"").trim();
+      const sub=getSubop(d);
+      texto += `  Status: ${st.label}\n`;
+      texto += `  Processo: ${proc}${sub&&sub!=="—"?" → "+sub:""}\n`;
+      texto += `  Há ${diasStr(dias)} neste setor\n`;
+      if(d.prazo_entrega) texto += `  Prazo: ${new Date(d.prazo_entrega).toLocaleDateString("pt-BR")}\n`;
+    } else if(r.status==="expedida"){
+      texto += `  Status: Concluída / Expedida\n`;
+    } else {
+      texto += `  Status: Não localizada no sistema\n`;
+    }
+    texto += "\n";
+  });
+  return texto.trim();
+}
+
+function copiarTexto(){
+  const el = document.getElementById("export-text");
+  el.select();
+  navigator.clipboard.writeText(el.value).then(()=>{
+    const btn = document.getElementById("btn-copy");
+    btn.textContent = "✓ Copiado!";
+    btn.classList.add("copied");
+    setTimeout(()=>{btn.textContent="📋 Copiar texto";btn.classList.remove("copied");},2000);
+  });
+}
+
+function limpar(){
+  document.getElementById("lista-input").value="";
+  document.getElementById("content").innerHTML=`<div class="placeholder"><div class="ph-ico">📋</div><div class="ph-txt">Cole a lista do cliente na área à esquerda e clique em "Localizar peças".</div></div>`;
+  document.getElementById("slbl").textContent="pronto";
+}
+
+function diasStr(d){ return d===0?"hoje":d===1?"1 dia":d+" dias"; }
+function navTo(p){ window.location.href=p; }
+</script>
+</body>
+</html>

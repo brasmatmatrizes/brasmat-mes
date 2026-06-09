@@ -9,18 +9,23 @@
 <style>
 :root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#C4CBDA;--text3:#8E9AB0;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
 *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
-.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px}
-.brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
+
+/* TOPBAR */
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:8px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff;flex-shrink:0}
 .bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
-.nav{display:flex;gap:4px}
+.nav{display:flex;gap:4px;overflow-x:auto;flex:1;justify-content:center}
+.nav::-webkit-scrollbar{height:0}
 .nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
 .nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
-.tr-right{display:flex;align-items:center;gap:8px}
+.tr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 .sync-lbl{font-size:11px;color:var(--text2);font-family:var(--mono)}
 .btn-sm{background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--mono)}
-.btn-sm:hover{border-color:var(--border2);color:var(--text2)}
+
+/* DESKTOP LAYOUT */
 .main{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 56px);overflow:hidden}
 .sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
 .sb{padding:14px}.sb+.sb{border-top:1px solid var(--border)}
@@ -46,16 +51,13 @@
 .ctitle{font-size:16px;font-weight:500;color:var(--text)}.csub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
 .frow{display:flex;gap:6px;flex-wrap:wrap}
 .fsel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--text2);outline:none;cursor:pointer}
-.fsel:focus{border-color:var(--accent)}
 .btn-g{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer}
 .btn-g:hover{border-color:var(--border2);color:var(--text)}
 .tabs{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap}
 .tab{font-size:11px;padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;white-space:nowrap}
-.tab:hover{border-color:var(--border2);color:var(--text)}
-.tab.active{border-color:transparent;color:#fff}
-.tab-todas.active{background:var(--accent)}.tab-em_producao.active{background:#3B7FFF}
-.tab-aguardando.active{background:#F5A623}.tab-em_estoque.active{background:#2DBF7E}
-.tab-aprovada.active{background:#2DBF7E}.tab-liberada.active{background:#6E7A92}
+.tab:hover{border-color:var(--border2);color:var(--text)}.tab.active{border-color:transparent;color:#fff}
+.tab-em_producao.active{background:#3B7FFF}.tab-aguardando.active{background:#F5A623}
+.tab-em_estoque.active{background:#2DBF7E}.tab-aprovada.active{background:#2DBF7E}
 .tw{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .thead{display:grid;grid-template-columns:120px 155px 140px 155px 155px 100px 75px;border-bottom:1px solid var(--border);padding:0 14px}
 .th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);padding:8px 6px}
@@ -64,7 +66,8 @@
 .tr:last-child{border-bottom:none}.tr:hover{background:var(--bg3)}
 .td{font-size:12px;color:var(--text2);padding:9px 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .chip{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:10px;white-space:nowrap;font-weight:500}
-.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+
+/* TIMELINE */
 .tl-item{position:relative;margin-bottom:12px}.tl-item:last-child{margin-bottom:0}
 .tl-dot{position:absolute;left:-28px;top:4px;width:13px;height:13px;border-radius:50%;border:2px solid var(--bg2)}
 .tl-dot.entrada{background:var(--accent)}.tl-dot.saida{background:var(--ok)}.tl-dot.atual{background:var(--warn);box-shadow:0 0 0 3px rgba(245,166,35,0.2)}
@@ -73,48 +76,113 @@
 .tl-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
 .tl-proc{font-size:12px;font-weight:500;color:var(--text)}
 .tl-evt{font-size:10px;padding:1px 7px;border-radius:8px}
-.evt-entrada{background:rgba(59,127,255,0.12);color:var(--accent)}
-.evt-saida{background:rgba(45,191,126,0.1);color:var(--ok)}
+.evt-entrada{background:rgba(59,127,255,0.12);color:var(--accent)}.evt-saida{background:rgba(45,191,126,0.1);color:var(--ok)}
 .tl-atual-tag{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(245,166,35,0.12);color:var(--warn)}
 .tl-sub{font-size:11px;color:var(--text2);margin-bottom:6px}
-.tl-foot{display:flex;gap:12px;flex-wrap:wrap}.tl-m{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.tl-foot{display:flex;gap:8px;flex-wrap:wrap}.tl-m{font-size:11px;color:var(--text3);font-family:var(--mono)}
 .timeline{list-style:none;position:relative;padding-left:28px}
 .timeline::before{content:"";position:absolute;left:9px;top:0;bottom:0;width:1px;background:var(--border)}
-.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-/* DETALHE */
+
+/* DETALHE LATERAL */
 .det-panel{display:none;position:fixed;right:0;top:56px;bottom:0;width:460px;background:var(--bg2);border-left:1px solid var(--border);z-index:100;overflow-y:auto;animation:si 0.18s ease}
 .det-panel.open{display:block}
 @keyframes si{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
 .det-hdr{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--bg2);z-index:1}
 .det-close{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer}
 .det-body{padding:16px 20px}
-.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-.mb{background:var(--bg3);border-radius:8px;padding:10px 12px}.ml{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.07em}.mv{font-size:13px;font-weight:500;color:var(--text)}
+.mgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.mb{background:var(--bg3);border-radius:8px;padding:10px 12px}.ml{font-size:10px;color:var(--text2);font-family:var(--mono);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.07em}.mv{font-size:13px;font-weight:500;color:var(--text)}
 .pos-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px}
 .tl-lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:12px}
-.timeline{list-style:none;position:relative;padding-left:28px}
-.timeline::before{content:"";position:absolute;left:9px;top:0;bottom:0;width:1px;background:var(--border)}
-.tl-item{position:relative;margin-bottom:12px}.tl-item:last-child{margin-bottom:0}
-.tl-dot{position:absolute;left:-28px;top:4px;width:13px;height:13px;border-radius:50%;border:2px solid var(--bg2)}
-.tl-dot.entrada{background:var(--accent)}.tl-dot.saida{background:var(--ok)}.tl-dot.atual{background:var(--warn);box-shadow:0 0 0 3px rgba(245,166,35,0.2)}
-.tl-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
-.tl-card.atual{border-color:rgba(245,166,35,0.4)}
-.tl-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
-.tl-proc{font-size:12px;font-weight:500;color:var(--text)}
-.tl-evt{font-size:10px;padding:1px 7px;border-radius:8px}
-.ent{background:rgba(59,127,255,0.12);color:var(--accent)}.sai{background:rgba(45,191,126,0.1);color:var(--ok)}
-.tl-tag{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(245,166,35,0.12);color:var(--warn)}
-.tl-ret{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(240,69,69,0.12);color:var(--danger)}
-.tl-sub{font-size:11px;color:var(--text2);margin-bottom:6px}
-.tl-foot{display:flex;gap:12px;flex-wrap:wrap}.tl-m{font-size:11px;color:var(--text3);font-family:var(--mono)}
-.tl-obs{margin-top:6px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:6px;line-height:1.5}
+
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ========== MOBILE ========== */
+@media (max-width: 768px){
+  /* Topbar mobile — esconde nav, mostra só brand e sync */
+  .topbar{padding:0 12px}
+  .bs{display:none}
+  .nav{display:none}
+  .sync-lbl{display:none}
+  .btn-sm{padding:3px 8px;font-size:10px}
+
+  /* Layout mobile — coluna única */
+  .main{grid-template-columns:1fr;height:auto;overflow:visible;display:flex;flex-direction:column}
+  .sidebar{border-right:none;border-bottom:1px solid var(--border);overflow:visible}
+
+  /* Sidebar mobile — compacta */
+  .sb-search{padding:12px}
+  .si-input{font-size:16px;padding:12px 14px 12px 38px} /* evita zoom no iOS */
+  .sr{max-height:280px}
+  .rc{padding:12px 14px}
+
+  /* Esconde stats e proc-list no mobile — foco na busca */
+  .sb-stats{display:none}
+  .sb-proc{display:none}
+
+  /* Content mobile */
+  .content{padding:12px 14px;min-height:calc(100vh - 180px)}
+
+  /* Tabs — scroll horizontal */
+  .tabs{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px}
+  .tabs::-webkit-scrollbar{height:0}
+  .tab{font-size:12px;padding:6px 14px}
+
+  /* Esconde tabela no mobile — usa cards */
+  .tw{display:none}
+
+  /* Cards mobile para lista de peças */
+  .mobile-cards{display:flex;flex-direction:column;gap:8px}
+  .mc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:background 0.1s;display:flex;align-items:center;gap:12px}
+  .mc:hover{background:var(--bg3)}
+  .mc-stripe{width:4px;height:44px;border-radius:2px;flex-shrink:0}
+  .mc-info{flex:1;min-width:0}
+  .mc-codigo{font-size:14px;font-weight:500;font-family:var(--mono);color:var(--text)}
+  .mc-pedido{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+  .mc-proc{font-size:12px;color:var(--text2);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mc-right{text-align:right;flex-shrink:0}
+  .mc-dias{font-size:13px;font-weight:500;font-family:var(--mono)}
+  .mc-status{font-size:10px;margin-top:3px}
+
+  /* Linha do tempo mobile */
+  .tl-foot{gap:6px}
+  .tl-m{font-size:10px}
+
+  /* Detalhe — full screen no mobile */
+  .det-panel{width:100%;top:0;z-index:200}
+  .det-panel.open{display:block}
+
+  /* Cabeçalho detalhe mobile */
+  .mgrid{grid-template-columns:1fr 1fr}
+
+  /* Botão voltar visível no mobile */
+  .mobile-nav-bar{display:flex;gap:6px;overflow-x:auto;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border)}
+  .mobile-nav-bar::-webkit-scrollbar{height:0}
+  .mnb{font-size:11px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;white-space:nowrap;flex-shrink:0}
+  .mnb.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  /* Header info no detalhe mobile — wrap melhor */
+  .det-info-wrap{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+  .det-info-item{background:var(--bg3);border-radius:8px;padding:9px 11px}
+  .det-info-lbl{font-size:10px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px}
+  .det-info-val{font-size:13px;font-weight:500;color:var(--text)}
+}
+/* Desktop — esconde elementos mobile */
+@media (min-width:769px){
+  .mobile-cards{display:none}
+  .mobile-nav-bar{display:none}
+}
 </style>
 </head>
 <body>
 <div style="display:grid;grid-template-rows:56px 1fr;height:100vh">
 <div class="topbar">
-  <div class="brand"><div class="bm">BM</div><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="brand">
+    <div class="bm">BM</div>
+    <div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div>
+  </div>
   <div class="nav">
     <button class="nb active">Posição</button>
     <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
@@ -126,19 +194,36 @@
     <button class="nb" onclick="navTo('cliente.html')">Consulta Cliente</button>
   </div>
   <div class="tr-right">
-    <button class="btn-sm" onclick="init()">↻ atualizar</button>
+    <button class="btn-sm" onclick="init()">↻</button>
     <div class="sync-dot"></div>
     <span class="sync-lbl" id="slbl">carregando...</span>
   </div>
 </div>
+
+<!-- MOBILE NAV BAR -->
+<div class="mobile-nav-bar" id="mobile-nav">
+  <button class="mnb active" onclick="navTo('index.html')">Posição</button>
+  <button class="mnb" onclick="navTo('kanban.html')">Kanban</button>
+  <button class="mnb" onclick="navTo('paradas.html')">Paradas</button>
+  <button class="mnb" onclick="navTo('apontamentos.html')">Apontamentos</button>
+  <button class="mnb" onclick="navTo('operadores.html')">Performance</button>
+  <button class="mnb" onclick="navTo('prazos.html')">Prazos</button>
+  <button class="mnb" onclick="navTo('otd.html')">OTD</button>
+  <button class="mnb" onclick="navTo('cliente.html')">Cliente</button>
+</div>
+
 <div class="main">
+  <!-- SIDEBAR -->
   <div class="sidebar">
-    <div class="sb">
+    <div class="sb sb-search">
       <div class="lbl">buscar peça</div>
-      <div class="si-wrap"><span class="si-ico">⌕</span><input class="si-input" id="search" placeholder="Código ou pedido..." autocomplete="off"></div>
+      <div class="si-wrap">
+        <span class="si-ico">⌕</span>
+        <input class="si-input" id="search" placeholder="Código, pedido ou OS..." autocomplete="off">
+      </div>
       <div class="sr" id="sr"></div>
     </div>
-    <div class="sb">
+    <div class="sb sb-stats">
       <div class="lbl">resumo</div>
       <div class="stats">
         <div class="stat"><div class="sv accent" id="s1">—</div><div class="sl">em produção</div></div>
@@ -147,14 +232,16 @@
         <div class="stat"><div class="sv warn" id="s4">—</div><div class="sl">aguard. operador</div></div>
       </div>
     </div>
-    <div class="sb" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
+    <div class="sb sb-proc" style="flex:1;overflow:hidden;display:flex;flex-direction:column">
       <div class="lbl">por processo</div>
       <div class="proc-list" id="pl"></div>
     </div>
   </div>
+
+  <!-- CONTENT -->
   <div class="content">
     <div class="chdr">
-      <div><div class="ctitle">Posição atual da fábrica</div><div class="csub" id="csub">carregando...</div></div>
+      <div><div class="ctitle" id="ctitle">Posição atual</div><div class="csub" id="csub">carregando...</div></div>
       <div class="frow">
         <select class="fsel" id="fp"><option value="">Todos os processos</option></select>
         <select class="fsel" id="fc"><option value="">Todos os clientes</option></select>
@@ -166,39 +253,46 @@
   </div>
 </div>
 </div>
+
 <!-- DETALHE -->
 <div class="det-panel" id="dp">
   <div class="det-hdr"><div id="dt"></div><button class="det-close" onclick="fechar()">✕ fechar</button></div>
   <div class="det-body" id="db"></div>
 </div>
+
 <script src="status.js"></script>
 <script>
 let POS=[];
-let fP="",fC="",fS="todas";
+let fP="",fC="",fS="em_producao";
 
 async function init(){
   document.getElementById("slbl").textContent="carregando...";
-  POS = await buscarPosicao();
-  popularFiltros(); renderTabs(); renderTabela(); renderProc(); renderStats();
+  POS=await buscarPosicao();
+  popularFiltros();renderTabs();renderTabela();renderProc();renderStats();
   document.getElementById("slbl").textContent=`${POS.length} peças · ${new Date().toLocaleTimeString("pt-BR")}`;
 }
 
 function filtrados(){
   return POS.filter(r=>{
     const p=String(r.processo||"").trim().toUpperCase();
-    const c=String(r.cliente||"").trim();
+    const cl=String(r.cliente||"").trim();
     const s=status(r).s;
     if(fP&&p!==fP) return false;
-    if(fC&&c!==fC) return false;
+    if(fC&&cl!==fC) return false;
     if(fS!=="todas"&&s!==fS) return false;
     return true;
   }).sort((a,b)=>diasDesde(b)-diasDesde(a));
 }
 
 function renderTabs(){
-  const cnt={todas:0,em_producao:0,em_estoque:0,aguardando:0,liberada:0,aprovada:0};
-  POS.forEach(r=>{cnt.todas++;const s=status(r).s;if(cnt[s]!==undefined)cnt[s]++;});
-  const ts=[{k:"em_producao",l:"Em produção"},{k:"aguardando",l:"Aguard. operador"},{k:"em_estoque",l:"Em estoque"},{k:"aprovada",l:"Aprovadas"}];
+  const cnt={em_producao:0,em_estoque:0,aguardando:0,aprovada:0};
+  POS.forEach(r=>{const s=status(r).s;if(cnt[s]!==undefined)cnt[s]++;});
+  const ts=[
+    {k:"em_producao",l:"Em produção"},
+    {k:"aguardando",l:"Aguard. operador"},
+    {k:"em_estoque",l:"Em estoque"},
+    {k:"aprovada",l:"Aprovadas"}
+  ];
   document.getElementById("tabs").innerHTML=ts.map(t=>`<button class="tab tab-${t.k}${fS===t.k?" active":""}" onclick="setTab('${t.k}')">${t.l} (${cnt[t.k]})</button>`).join("");
 }
 function setTab(s){fS=s;renderTabs();renderTabela();}
@@ -206,10 +300,15 @@ function setTab(s){fS=s;renderTabs();renderTabela();}
 function renderTabela(){
   const pcs=filtrados();
   document.getElementById("csub").textContent=`${pcs.length} peça(s) · ${new Date().toLocaleTimeString("pt-BR")}`;
-  if(!pcs.length){document.getElementById("area").innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Nenhuma peça encontrada.</div>`;return;}
+  if(!pcs.length){
+    document.getElementById("area").innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3);font-size:13px">Nenhuma peça encontrada.</div>`;
+    return;
+  }
+
+  // TABELA DESKTOP
   const rows=pcs.map(r=>{
     const st=status(r);const d=diasDesde(r);const dc=diasCls(d);
-    return `<div class="tr" onclick="abrirDet('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
+    return `<div class="tr" onclick="abrirCentro('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
       <div class="td" style="font-family:var(--mono);font-weight:500;color:var(--text)">${r.codigo_peca||"—"}</div>
       <div class="td" style="font-size:11px;color:var(--text)">${String(r.processo||"").trim()||"—"}</div>
       <div class="td" style="font-size:10px;color:var(--text2)">${getSubop(r)}</div>
@@ -219,9 +318,30 @@ function renderTabela(){
       <div class="td"><span class="chip" style="background:rgba(${dc==="ok"?"45,191,126":dc==="warn"?"245,166,35":"240,69,69"},0.12);color:var(--${dc})">${diasStr(d)}</span></div>
     </div>`;
   }).join("");
-  document.getElementById("area").innerHTML=`<div class="tw">
-    <div class="thead"><div class="th">Código</div><div class="th">Processo</div><div class="th">Suboperação</div><div class="th">Cliente</div><div class="th">Operador</div><div class="th">Status</div><div class="th">Tempo</div></div>
-    <div class="tbody">${rows}</div></div>`;
+
+  // CARDS MOBILE
+  const cards=pcs.map(r=>{
+    const st=status(r);const d=diasDesde(r);const dc=diasCls(d);
+    return `<div class="mc" onclick="abrirCentro('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
+      <div class="mc-stripe" style="background:${st.cor}"></div>
+      <div class="mc-info">
+        <div class="mc-codigo">${r.codigo_peca||"—"}</div>
+        <div class="mc-pedido">${r.pedido||"(sem pedido)"}${r.os?" · OS: "+r.os:""}</div>
+        <div class="mc-proc">${String(r.processo||"").trim()||"—"} · ${getSubop(r)}</div>
+      </div>
+      <div class="mc-right">
+        <div class="mc-dias" style="color:var(--${dc})">${diasStr(d)}</div>
+        <div class="mc-status" style="color:${st.cor}">${st.ico} ${st.label.split("—")[0].trim()}</div>
+      </div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("area").innerHTML=`
+    <div class="tw">
+      <div class="thead"><div class="th">Código</div><div class="th">Processo</div><div class="th">Suboperação</div><div class="th">Cliente</div><div class="th">Operador</div><div class="th">Status</div><div class="th">Tempo</div></div>
+      <div class="tbody">${rows}</div>
+    </div>
+    <div class="mobile-cards">${cards}</div>`;
 }
 
 function renderStats(){
@@ -249,8 +369,9 @@ function popularFiltros(){
 }
 
 function filtrarP(p){fP=fP===p?"":p;document.getElementById("fp").value=fP;renderTabela();}
-function limpar(){fP="";fC="";fS="todas";document.getElementById("fp").value="";document.getElementById("fc").value="";renderTabs();renderTabela();}
+function limpar(){fP="";fC="";fS="em_producao";document.getElementById("fp").value="";document.getElementById("fc").value="";renderTabs();renderTabela();}
 
+// BUSCA — código, pedido ou OS
 document.getElementById("search").addEventListener("input",function(){
   const q=this.value.trim().toUpperCase();
   const res=document.getElementById("sr");
@@ -273,34 +394,26 @@ document.getElementById("search").addEventListener("input",function(){
   }).join("");
 });
 
-async function abrirDet(pedido,codigo){
-  document.getElementById("dp").classList.add("open");
-  await abrirPainelDetalhe(pedido,codigo,"dp","dt","db");
-}
-function fechar(){document.getElementById("dp").classList.remove("open");}
-
 async function abrirCentro(pedido,codigo){
-  // Expande linha do tempo no centro da tela — igual buscar peça
-  const area = document.getElementById("area");
-  area.innerHTML = `<div class="loading"><div class="spinner"></div>carregando histórico...</div>`;
-  document.getElementById("sr").innerHTML = "";
-  document.getElementById("search").value = "";
+  const area=document.getElementById("area");
+  area.innerHTML=`<div class="loading"><div class="spinner"></div>carregando histórico...</div>`;
+  document.getElementById("sr").innerHTML="";
+  document.getElementById("search").value="";
 
-  const eventos = await buscarHistorico(pedido, codigo);
-  if(!eventos.length){ area.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3)">Nenhum evento encontrado.</div>`; return; }
+  const eventos=await buscarHistorico(pedido,codigo);
+  if(!eventos.length){area.innerHTML=`<div style="text-align:center;padding:60px;color:var(--text3)">Nenhum evento encontrado.</div>`;return;}
 
-  const ultimo = eventos[eventos.length-1];
-  const st = status(ultimo);
-  const prazoD = ultimo.prazo_entrega ? new Date(ultimo.prazo_entrega) : null;
-  const prazoFmt = prazoD ? prazoD.toLocaleDateString("pt-BR") : "—";
-  const prazoCor = prazoD&&prazoD<new Date() ? "var(--danger)" : "var(--text2)";
-  const prazoOk = prazoD?(prazoD>new Date()?'<span style="color:var(--ok)">✓</span>':'<span style="color:var(--danger)">⚠</span>'):"";
-  const ret = eventos.filter(r=>String(r.retrabalho||"").trim()).length;
+  const ultimo=eventos[eventos.length-1];
+  const st=status(ultimo);
+  const prazoD=ultimo.prazo_entrega?new Date(ultimo.prazo_entrega):null;
+  const prazoFmt=prazoD?prazoD.toLocaleDateString("pt-BR"):"—";
+  const prazoCor=prazoD&&prazoD<new Date()?"var(--danger)":"var(--text2)";
+  const prazoOk=prazoD?(prazoD>new Date()?'<span style="color:var(--ok)">✓</span>':'<span style="color:var(--danger)">⚠</span>'):"";
+  const ret=eventos.filter(r=>String(r.retrabalho||"").trim()).length;
+  const osNum=ultimo.os?String(ultimo.os).trim():"—";
+  const qtdSol=ultimo.quantidade_solicitada?String(ultimo.quantidade_solicitada).trim():"—";
 
-  const osNum = ultimo.os ? String(ultimo.os).trim() : "—";
-  const qtdSol = ultimo.quantidade_solicitada ? String(ultimo.quantidade_solicitada).trim() : "—";
-
-  const tl = eventos.map((ev,i)=>{
+  const tl=eventos.map((ev,i)=>{
     const isUlt=i===eventos.length-1;
     const evtS=String(ev.evento||"").trim().toUpperCase();
     const isEnt=evtS==="ENTRADA";
@@ -335,6 +448,7 @@ async function abrirCentro(pedido,codigo){
           <span class="tl-m">👤 ${ev.operador||"—"}</span>
           <span style="font-size:11px;font-family:var(--mono);color:${dataCor}">${dataIco} ${ev.data_evento?new Date(ev.data_evento).toLocaleDateString("pt-BR")+" "+new Date(ev.data_evento).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"—"}</span>
           ${ev.sequencial_operacao?`<span class="tl-m">op. ${ev.sequencial_operacao}</span>`:""}
+          ${ev.quantidade_produzida&&String(ev.quantidade_produzida).trim()?`<span style="font-size:11px;font-family:var(--mono);color:var(--ok);background:rgba(45,191,126,0.1);padding:1px 7px;border-radius:6px">📦 ${ev.quantidade_produzida} pç</span>`:""}
           ${dur}
         </div>
         ${ev.observacao&&String(ev.observacao).trim()?`<div style="margin-top:6px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:6px;line-height:1.5">${ev.observacao}</div>`:""}
@@ -342,46 +456,36 @@ async function abrirCentro(pedido,codigo){
     </li>`;
   }).join("");
 
-  area.innerHTML = `
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:20px">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+  area.innerHTML=`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:16px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap">
         <div>
           <div style="font-size:18px;font-weight:500;color:var(--text);font-family:var(--mono)">${codigo}</div>
-          <div style="font-size:13px;color:var(--text2);font-family:var(--mono);margin-top:2px">Pedido: ${pedido}</div>
+          <div style="font-size:13px;color:var(--text2);font-family:var(--mono);margin-top:2px">Pedido: ${pedido||"(sem pedido)"}</div>
         </div>
-        <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
-          <div style="text-align:center">
-            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Prazo</div>
-            <div style="font-size:13px;font-weight:500;color:${prazoCor};font-family:var(--mono)">${prazoFmt} ${prazoOk}</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Cliente</div>
-            <div style="font-size:13px;color:var(--text2)">${ultimo.cliente||"—"}</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">OS</div>
-            <div style="font-size:13px;color:var(--text2);font-family:var(--mono)">${osNum}</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Qtd. Solicitada</div>
-            <div style="font-size:13px;color:var(--text2);font-family:var(--mono)">${qtdSol}</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Eventos</div>
-            <div style="font-size:13px;color:var(--text2);font-family:var(--mono)">${eventos.length}</div>
-          </div>
-          <div style="text-align:center">
-            <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Retrabalhos</div>
-            <div style="font-size:13px;color:${ret>0?"var(--danger)":"var(--ok)"};font-family:var(--mono)">${ret}</div>
-          </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <span style="font-size:12px;padding:6px 14px;border-radius:20px;border:1px solid ${st.cor}44;background:${st.cor}22;color:${st.cor}">${st.ico} ${st.label}</span>
-          <button onclick="render()" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer">← voltar à lista</button>
+          <button onclick="render()" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:6px 14px;font-size:12px;color:var(--text2);cursor:pointer">← voltar</button>
         </div>
       </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-bottom:16px">
+        <div style="background:var(--bg3);border-radius:8px;padding:9px 11px"><div style="font-size:10px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Prazo</div><div style="font-size:13px;font-weight:500;color:${prazoCor};font-family:var(--mono)">${prazoFmt} ${prazoOk}</div></div>
+        <div style="background:var(--bg3);border-radius:8px;padding:9px 11px"><div style="font-size:10px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">OS</div><div style="font-size:13px;font-weight:500;color:var(--text);font-family:var(--mono)">${osNum}</div></div>
+        <div style="background:var(--bg3);border-radius:8px;padding:9px 11px"><div style="font-size:10px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Qtd. Solic.</div><div style="font-size:13px;font-weight:500;color:var(--text);font-family:var(--mono)">${qtdSol}</div></div>
+        <div style="background:var(--bg3);border-radius:8px;padding:9px 11px"><div style="font-size:10px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Eventos</div><div style="font-size:13px;font-weight:500;color:var(--text);font-family:var(--mono)">${eventos.length}</div></div>
+        <div style="background:var(--bg3);border-radius:8px;padding:9px 11px"><div style="font-size:10px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Retrabalhos</div><div style="font-size:13px;font-weight:500;color:${ret>0?"var(--danger)":"var(--ok)"};font-family:var(--mono)">${ret}</div></div>
+        <div style="background:var(--bg3);border-radius:8px;padding:9px 11px"><div style="font-size:10px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Cliente</div><div style="font-size:12px;color:var(--text2)">${ultimo.cliente||"—"}</div></div>
+      </div>
       <div style="font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:14px">linha do tempo</div>
-      <ul class="timeline" style="max-height:calc(100vh - 340px);overflow-y:auto;padding-right:8px">${tl}</ul>
+      <ul class="timeline">${tl}</ul>
     </div>`;
 }
+
+async function abrirDet(pedido,codigo){
+  document.getElementById("dp").classList.add("open");
+  await abrirPainelDetalhe(pedido,codigo,"dp","dt","db");
+}
+function fechar(){document.getElementById("dp").classList.remove("open");}
 function navTo(p){window.location.href=p;}
 document.getElementById("fp").addEventListener("change",function(){fP=this.value;renderTabela();});
 document.getElementById("fc").addEventListener("change",function(){fC=this.value;renderTabela();});

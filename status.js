@@ -173,6 +173,7 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
           <span class="tl-m">👤 ${ev.operador||"—"}</span>
           <span style="font-size:11px;font-family:var(--mono);color:${dataCor}">${dataIco} ${fmtDt(ev.data_evento)}</span>
           ${ev.sequencial_operacao?`<span class="tl-m">op. ${ev.sequencial_operacao}</span>`:""}
+          ${ev.quantidade_produzida&&String(ev.quantidade_produzida).trim()?`<span style="font-size:11px;font-family:var(--mono);color:var(--ok);background:rgba(45,191,126,0.1);padding:1px 7px;border-radius:6px">📦 ${ev.quantidade_produzida} pç</span>`:""}
           ${dur}
         </div>
         ${ev.observacao&&String(ev.observacao).trim()?`<div class="tl-obs">${ev.observacao}</div>`:""}

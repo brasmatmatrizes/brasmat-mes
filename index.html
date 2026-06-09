@@ -255,9 +255,22 @@ document.getElementById("search").addEventListener("input",function(){
   const q=this.value.trim().toUpperCase();
   const res=document.getElementById("sr");
   if(q.length<2){res.innerHTML="";return;}
-  const found=POS.filter(r=>String(r.codigo_peca||"").toUpperCase().includes(q)||String(r.pedido||"").toUpperCase().includes(q)).slice(0,6);
+  const found=POS.filter(r=>
+    String(r.codigo_peca||"").toUpperCase().includes(q)||
+    String(r.pedido||"").toUpperCase().includes(q)||
+    String(r.os||"").toUpperCase().includes(q)
+  ).slice(0,6);
   if(!found.length){res.innerHTML=`<div style="font-size:12px;color:var(--text3);padding:10px 0">Nenhuma peça encontrada</div>`;return;}
-  res.innerHTML=found.map(r=>{const st=status(r);return `<div class="rc" onclick="abrirDet('${esc(r.pedido)}','${esc(r.codigo_peca)}')"><div style="font-size:13px;font-weight:500;color:var(--text);font-family:var(--mono)">${r.codigo_peca}</div><div style="font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:1px">${r.pedido}</div><div style="font-size:11px;color:${st.cor};margin-top:3px">${st.ico} ${st.label}</div></div>`;}).join("");
+  res.innerHTML=found.map(r=>{
+    const st=status(r);
+    const osInfo=r.os&&String(r.os).trim()?`<div style="font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:1px">OS: ${r.os}</div>`:"";
+    return `<div class="rc" onclick="abrirCentro('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
+      <div style="font-size:13px;font-weight:500;color:var(--text);font-family:var(--mono)">${r.codigo_peca}</div>
+      <div style="font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:1px">${r.pedido||"(sem pedido)"}</div>
+      ${osInfo}
+      <div style="font-size:11px;color:${st.cor};margin-top:3px">${st.ico} ${st.label}</div>
+    </div>`;
+  }).join("");
 });
 
 async function abrirDet(pedido,codigo){

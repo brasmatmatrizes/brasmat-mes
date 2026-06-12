@@ -220,6 +220,7 @@ async function abrirPeca(pedido, codigo){
   }
 
   const ultimo  = eventos[eventos.length-1];
+  const prog    = calcProgresso(eventos);
   const st      = status(ultimo);
   const prazoD  = ultimo.prazo_entrega ? new Date(ultimo.prazo_entrega) : null;
   const prazoFmt= prazoD ? prazoD.toLocaleDateString("pt-BR") : "—";
@@ -291,6 +292,7 @@ async function abrirPeca(pedido, codigo){
       <div class="dm"><div class="dml">Eventos</div><div class="dmv" style="font-family:var(--mono)">${eventos.length}</div></div>
       <div class="dm"><div class="dml">Retrabalhos</div><div class="dmv" style="color:${ret>0?"var(--danger)":"var(--ok)"};font-family:var(--mono)">${ret}</div></div>
     </div>
+    ${renderProgresso(prog)}
     <div class="det-lbl">linha do tempo</div>
     <ul class="timeline">${tl}</ul>
   </div>`;

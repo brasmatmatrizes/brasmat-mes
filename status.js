@@ -101,6 +101,29 @@ function status(row){
 
 function esc(s){ return String(s||"").replace(/'/g,"\\'"); }
 
+function calcProgresso(eventos){
+  const seqs = eventos.map(e=>parseInt(e.sequencial_operacao)||0).filter(n=>n>0);
+  if(!seqs.length) return null;
+  const total = eventos[0].total_operacoes ? parseInt(eventos[0].total_operacoes) : Math.max(...seqs);
+  const cur   = parseInt(eventos[eventos.length-1].sequencial_operacao)||0;
+  if(!total||!cur) return null;
+  return {pct:Math.min(100,Math.round(cur/total*100)), cur, max:total};
+}
+
+function renderProgresso(prog){
+  if(!prog) return "";
+  const cor = prog.pct>=80?"var(--ok)":prog.pct>=40?"var(--accent)":"var(--warn)";
+  return `<div style="margin:10px 0 14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+      <span style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em">Progresso da Peça</span>
+      <span style="font-size:11px;font-family:var(--mono);font-weight:500;color:${cor}">${prog.pct}% · op. ${prog.cur}/${prog.max}</span>
+    </div>
+    <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden">
+      <div style="height:100%;width:${prog.pct}%;background:${cor};border-radius:3px;transition:width 0.4s ease"></div>
+    </div>
+  </div>`;
+}
+
 // Renderiza painel de detalhe de uma peça (compartilhado por todas as telas)
 async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
   const panel = document.getElementById(panelId);
@@ -118,6 +141,7 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
   const dias   = diasDesde(ultimo);
   const dc     = diasCls(dias);
   const ret    = eventos.filter(r=>String(r.retrabalho||"").trim()).length;
+  const prog   = calcProgresso(eventos);
   const prazo  = ultimo.prazo_entrega||"—";
   const prazoD = prazo!=="—"?new Date(prazo):null;
   const prazoFmtBR = prazoD ? prazoD.toLocaleDateString("pt-BR") : "—";
@@ -182,6 +206,7 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
   }).join("");
 
   body.innerHTML=`
+    ${renderProgresso(prog)}
     <div class="mgrid">
       <div class="mb"><div class="ml">cliente</div><div class="mv">${ultimo.cliente||"—"}</div></div>
       <div class="mb"><div class="ml">eventos</div><div class="mv">${eventos.length}</div></div>

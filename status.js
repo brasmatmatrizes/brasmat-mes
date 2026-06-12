@@ -102,10 +102,16 @@ function status(row){
 function esc(s){ return String(s||"").replace(/'/g,"\\'"); }
 
 function calcProgresso(eventos){
-  const seqs = eventos.map(e=>parseInt(e.sequencial_operacao)||0).filter(n=>n>0);
-  if(!seqs.length) return null;
-  const total = eventos[0].total_operacoes ? parseInt(eventos[0].total_operacoes) : Math.max(...seqs);
-  const cur   = parseInt(eventos[eventos.length-1].sequencial_operacao)||0;
+  const ultimo = eventos[eventos.length-1];
+  const total  = parseInt(ultimo.quantidade_operacoes)||0;
+  const cur    = parseInt(ultimo.sequencial_operacao)||0;
+  if(!total||!cur) return null;
+  return {pct:Math.min(100,Math.round(cur/total*100)), cur, max:total};
+}
+
+function calcProgressoRow(row){
+  const total = parseInt(row.quantidade_operacoes)||0;
+  const cur   = parseInt(row.sequencial_operacao)||0;
   if(!total||!cur) return null;
   return {pct:Math.min(100,Math.round(cur/total*100)), cur, max:total};
 }

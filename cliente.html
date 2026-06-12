@@ -298,6 +298,7 @@ function renderCard(r){
     const sub = getSubop(d);
     const emRisco = dias >= 3;
     const cardCls = emRisco ? "em-risco" : "encontrada";
+    const prog = calcProgressoRow(d);
     const prazoD = d.prazo_entrega ? new Date(d.prazo_entrega) : null;
     const prazoFmt = prazoD ? prazoD.toLocaleDateString("pt-BR") : "—";
     const prazoVencido = prazoD && prazoD < new Date();
@@ -319,6 +320,7 @@ function renderCard(r){
         <div class="peca-info-item"><div class="peca-info-lbl">Tempo no setor</div><div class="peca-info-val" style="color:var(--${dc})">${diasStr(dias)}</div></div>
         <div class="peca-info-item"><div class="peca-info-lbl">Prazo entrega</div><div class="peca-info-val" style="color:${prazoVencido?"var(--danger)":"var(--text)"}">${prazoFmt}${prazoVencido?" ⚠":""}</div></div>
       </div>
+      ${renderProgresso(prog)}
       ${r.codigoBusca!==d.codigo_peca?`<div class="match-info">Buscado: ${r.codigoBusca} → Encontrado: ${d.codigo_peca}</div>`:""}
     </div>`;
   }

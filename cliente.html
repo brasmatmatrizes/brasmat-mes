@@ -44,17 +44,25 @@
 .ph-ico{font-size:48px;opacity:0.3}.ph-txt{font-size:14px;text-align:center;line-height:1.6;max-width:300px}
 
 /* RESUMO */
-.resumo-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
-.res-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;cursor:pointer;transition:all 0.15s}
-.res-card:hover{border-color:var(--border2);transform:translateY(-1px)}
-.res-card.ativo{border-width:2px;transform:translateY(-2px)}
-.res-card.ativo-total{border-color:var(--accent);background:rgba(59,127,255,0.06)}
-.res-card.ativo-encontradas{border-color:var(--ok);background:rgba(45,191,126,0.06)}
-.res-card.ativo-expedidas{border-color:var(--text3);background:rgba(78,90,114,0.08)}
-.res-card.ativo-nao{border-color:var(--danger);background:rgba(240,69,69,0.06)}
-.res-val{font-size:24px;font-weight:500;font-family:var(--mono);line-height:1;margin-bottom:4px}
-.res-val.ok{color:var(--ok)}.res-val.warn{color:var(--warn)}.res-val.danger{color:var(--danger)}.res-val.accent{color:var(--accent)}
-.res-lbl{font-size:11px;color:var(--text3)}
+.resumo-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.res-card{border-radius:12px;padding:16px;cursor:pointer;transition:all 0.18s;border:1px solid transparent;position:relative;overflow:hidden}
+.res-card::after{content:"";position:absolute;inset:0;border-radius:12px;opacity:0;transition:opacity 0.18s;background:rgba(255,255,255,0.04)}
+.res-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.3)}.res-card:hover::after{opacity:1}
+.res-card.ativo{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.rc-total    {background:linear-gradient(135deg,rgba(59,127,255,0.18),rgba(59,127,255,0.08));border-color:rgba(59,127,255,0.35)}
+.rc-processo {background:linear-gradient(135deg,rgba(14,165,233,0.18),rgba(14,165,233,0.08));border-color:rgba(14,165,233,0.35)}
+.rc-final    {background:linear-gradient(135deg,rgba(45,191,126,0.18),rgba(45,191,126,0.08));border-color:rgba(45,191,126,0.35)}
+.rc-exped    {background:linear-gradient(135deg,rgba(139,92,246,0.18),rgba(139,92,246,0.08));border-color:rgba(139,92,246,0.35)}
+.rc-nao      {background:linear-gradient(135deg,rgba(240,69,69,0.18),rgba(240,69,69,0.08));border-color:rgba(240,69,69,0.35)}
+.rc-total.ativo    {border-color:rgba(59,127,255,0.7);background:linear-gradient(135deg,rgba(59,127,255,0.28),rgba(59,127,255,0.14))}
+.rc-processo.ativo {border-color:rgba(14,165,233,0.7);background:linear-gradient(135deg,rgba(14,165,233,0.28),rgba(14,165,233,0.14))}
+.rc-final.ativo    {border-color:rgba(45,191,126,0.7);background:linear-gradient(135deg,rgba(45,191,126,0.28),rgba(45,191,126,0.14))}
+.rc-exped.ativo    {border-color:rgba(139,92,246,0.7);background:linear-gradient(135deg,rgba(139,92,246,0.28),rgba(139,92,246,0.14))}
+.rc-nao.ativo      {border-color:rgba(240,69,69,0.7);background:linear-gradient(135deg,rgba(240,69,69,0.28),rgba(240,69,69,0.14))}
+.res-ico{font-size:18px;margin-bottom:8px}
+.res-val{font-size:28px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:4px}
+.rc-total .res-val{color:#6BA3FF}.rc-processo .res-val{color:#38BDF8}.rc-final .res-val{color:var(--ok)}.rc-exped .res-val{color:#A78BFA}.rc-nao .res-val{color:var(--danger)}
+.res-lbl{font-size:11px;color:var(--text2);font-weight:500}
 .res-hint{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:4px}
 
 /* CARDS DE PEÇA */
@@ -230,7 +238,9 @@ async function buscar(){
           melhor.sequencial_operacao = prog[0].sequencial_operacao;
           melhor.quantidade_operacoes = prog[0].quantidade_operacoes;
         }
-        return {...item, status:"encontrada", dados:melhor, alternativas:dados.length>1?dados:[]};
+        const stMelhor = status(melhor);
+        const statusFinal = (stMelhor.s==="aprovada"||stMelhor.s==="em_estoque") ? "finalizada" : "encontrada";
+        return {...item, status:statusFinal, dados:melhor, alternativas:dados.length>1?dados:[]};
       }
       // Não encontrou na posicao_atual — busca no histórico completo
       const hist = await supaFetch(
@@ -251,31 +261,41 @@ async function buscar(){
 }
 
 function renderResultados(resultados){
-  const encontradas = resultados.filter(r=>r.status==="encontrada").length;
-  const expedidas   = resultados.filter(r=>r.status==="expedida").length;
-  const naoEnc      = resultados.filter(r=>r.status==="nao_encontrada"||r.status==="erro").length;
+  const encontradas  = resultados.filter(r=>r.status==="encontrada").length;
+  const finalizadas  = resultados.filter(r=>r.status==="finalizada").length;
+  const expedidas    = resultados.filter(r=>r.status==="expedida").length;
+  const naoEnc       = resultados.filter(r=>r.status==="nao_encontrada"||r.status==="erro").length;
 
-  // Gera texto para copiar e enviar ao cliente
   const textoCliente = gerarTextoCliente(resultados);
 
   const resumo = `<div class="resumo-row">
-    <div class="res-card" id="rc-total" onclick="setFiltro('total')">
-      <div class="res-val accent">${resultados.length}</div>
+    <div class="res-card rc-total" id="rc-total" onclick="setFiltro('total')">
+      <div class="res-ico">📋</div>
+      <div class="res-val">${resultados.length}</div>
       <div class="res-lbl">peças consultadas</div>
       <div class="res-hint">ver todas</div>
     </div>
-    <div class="res-card" id="rc-encontradas" onclick="setFiltro('encontradas')">
-      <div class="res-val ok">${encontradas}</div>
-      <div class="res-lbl">localizadas em processo</div>
+    <div class="res-card rc-processo" id="rc-encontradas" onclick="setFiltro('encontradas')">
+      <div class="res-ico">⚙️</div>
+      <div class="res-val">${encontradas}</div>
+      <div class="res-lbl">em processo</div>
       <div class="res-hint">clique para filtrar</div>
     </div>
-    <div class="res-card" id="rc-expedidas" onclick="setFiltro('expedidas')">
-      <div class="res-val" style="color:var(--text3)">${expedidas}</div>
-      <div class="res-lbl">expedidas / concluídas</div>
+    <div class="res-card rc-final" id="rc-finalizadas" onclick="setFiltro('finalizadas')">
+      <div class="res-ico">✅</div>
+      <div class="res-val">${finalizadas}</div>
+      <div class="res-lbl">finalizadas</div>
+      <div class="res-hint">saíram da inspeção</div>
+    </div>
+    <div class="res-card rc-exped" id="rc-expedidas" onclick="setFiltro('expedidas')">
+      <div class="res-ico">🚚</div>
+      <div class="res-val">${expedidas}</div>
+      <div class="res-lbl">expedidas</div>
       <div class="res-hint">clique para filtrar</div>
     </div>
-    <div class="res-card" id="rc-nao" onclick="setFiltro('nao')">
-      <div class="res-val ${naoEnc>0?"danger":"ok"}">${naoEnc}</div>
+    <div class="res-card rc-nao" id="rc-nao" onclick="setFiltro('nao')">
+      <div class="res-ico">⚠️</div>
+      <div class="res-val">${naoEnc}</div>
       <div class="res-lbl">não encontradas</div>
       <div class="res-hint">clique para filtrar</div>
     </div>
@@ -330,6 +350,35 @@ function renderCard(r){
         <div class="peca-info-item"><div class="peca-info-lbl">Prazo entrega</div><div class="peca-info-val" style="color:${prazoVencido?"var(--danger)":"var(--text)"}">${prazoFmt}${prazoVencido?" ⚠":""}</div></div>
       </div>
       ${r.codigoBusca!==d.codigo_peca?`<div class="match-info">Buscado: ${r.codigoBusca} → Encontrado: ${d.codigo_peca}</div>`:""}
+    </div>`;
+  }
+
+  if(r.status==="finalizada"){
+    const d = r.dados;
+    const st = status(d);
+    const prazoD = d.prazo_entrega ? new Date(d.prazo_entrega) : null;
+    const prazoFmt = prazoD ? prazoD.toLocaleDateString("pt-BR") : "—";
+    const prazoVencido = prazoD && prazoD < new Date();
+    const prog = calcProgressoRow(d);
+    return `<div class="peca-card encontrada" style="cursor:pointer;border-left:4px solid var(--ok)" onclick="abrirDetalhe('${esc(d.pedido||"")}','${esc(d.codigo_peca||"")}')">
+      <div class="peca-header">
+        <div>
+          <div class="peca-codigo">${d.codigo_peca}</div>
+          ${r.descricaoCliente?`<div class="peca-desc">${r.descricaoCliente}</div>`:""}
+          ${r.pedidoCliente?`<div class="peca-pedido-cli">Pedido cliente: ${r.pedidoCliente} · Sistema: ${d.pedido||"—"}</div>`:""}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span class="status-pill" style="background:rgba(45,191,126,0.15);color:var(--ok);border-color:rgba(45,191,126,0.4)">${st.ico} ${st.label}</span>
+          <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">ver linha do tempo →</span>
+        </div>
+      </div>
+      ${renderProgresso(prog)}
+      <div class="peca-info">
+        <div class="peca-info-item"><div class="peca-info-lbl">Processo</div><div class="peca-info-val">${String(d.processo||"").trim()||"—"}</div></div>
+        <div class="peca-info-item"><div class="peca-info-lbl">Suboperação</div><div class="peca-info-val" style="font-size:11px">${getSubop(d)}</div></div>
+        <div class="peca-info-item"><div class="peca-info-lbl">Cliente</div><div class="peca-info-val" style="font-size:11px">${d.cliente||"—"}</div></div>
+        <div class="peca-info-item"><div class="peca-info-lbl">Prazo entrega</div><div class="peca-info-val" style="color:${prazoVencido?"var(--danger)":"var(--text)"}">${prazoFmt}${prazoVencido?" ⚠":""}</div></div>
+      </div>
     </div>`;
   }
 
@@ -389,8 +438,14 @@ function gerarTextoCliente(resultados){
       texto += `  Processo: ${proc}${sub&&sub!=="—"?" → "+sub:""}\n`;
       texto += `  Há ${diasStr(dias)} neste setor\n`;
       if(d.prazo_entrega) texto += `  Prazo: ${new Date(d.prazo_entrega).toLocaleDateString("pt-BR")}\n`;
+    } else if(r.status==="finalizada"){
+      const d=r.dados;
+      const st=status(d);
+      texto += `  Status: ${st.label}\n`;
+      texto += `  Processo: ${String(d.processo||"").trim()}\n`;
+      if(d.prazo_entrega) texto += `  Prazo: ${new Date(d.prazo_entrega).toLocaleDateString("pt-BR")}\n`;
     } else if(r.status==="expedida"){
-      texto += `  Status: Concluída / Expedida\n`;
+      texto += `  Status: Expedida\n`;
     } else {
       texto += `  Status: Não localizada no sistema\n`;
     }
@@ -404,18 +459,18 @@ function setFiltro(tipo){
   _filtroAtivo = _filtroAtivo===tipo ? null : tipo;
 
   // Atualiza visual dos cards
-  ["total","encontradas","expedidas","nao"].forEach(t=>{
+  ["total","encontradas","finalizadas","expedidas","nao"].forEach(t=>{
     const el = document.getElementById("rc-"+t);
     if(!el) return;
-    el.classList.remove("ativo","ativo-total","ativo-encontradas","ativo-expedidas","ativo-nao");
-    if(_filtroAtivo===t) el.classList.add("ativo","ativo-"+t);
+    el.classList.remove("ativo");
+    if(_filtroAtivo===t) el.classList.add("ativo");
   });
 
-  // Filtra resultados
   let filtrados = _resultadosGlobais;
-  if(_filtroAtivo==="encontradas") filtrados = _resultadosGlobais.filter(r=>r.status==="encontrada");
-  else if(_filtroAtivo==="expedidas")  filtrados = _resultadosGlobais.filter(r=>r.status==="expedida");
-  else if(_filtroAtivo==="nao")        filtrados = _resultadosGlobais.filter(r=>r.status==="nao_encontrada"||r.status==="erro");
+  if(_filtroAtivo==="encontradas")  filtrados = _resultadosGlobais.filter(r=>r.status==="encontrada");
+  else if(_filtroAtivo==="finalizadas") filtrados = _resultadosGlobais.filter(r=>r.status==="finalizada");
+  else if(_filtroAtivo==="expedidas")   filtrados = _resultadosGlobais.filter(r=>r.status==="expedida");
+  else if(_filtroAtivo==="nao")         filtrados = _resultadosGlobais.filter(r=>r.status==="nao_encontrada"||r.status==="erro");
   // "total" mostra tudo
 
   // Atualiza cards de detalhe
@@ -431,6 +486,7 @@ function setFiltro(tipo){
 
   // Atualiza título da exportação
   const titulo = _filtroAtivo==="encontradas"?"Peças em processo":
+                 _filtroAtivo==="finalizadas"?"Peças finalizadas":
                  _filtroAtivo==="expedidas"?"Peças expedidas":
                  _filtroAtivo==="nao"?"Peças não encontradas":
                  "Todas as peças";

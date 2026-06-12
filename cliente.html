@@ -222,6 +222,14 @@ async function buscar(){
           );
           if(match) melhor = match;
         }
+        // Busca sequencial_operacao e quantidade_operacoes do último evento
+        const prog = await supaFetch(
+          `/rest/v1/producao_eventos?select=sequencial_operacao,quantidade_operacoes&pedido=eq.${encodeURIComponent(melhor.pedido||"")}&codigo_peca=eq.${encodeURIComponent(melhor.codigo_peca||"")}&order=id.desc&limit=1`
+        );
+        if(Array.isArray(prog)&&prog.length>0){
+          melhor.sequencial_operacao = prog[0].sequencial_operacao;
+          melhor.quantidade_operacoes = prog[0].quantidade_operacoes;
+        }
         return {...item, status:"encontrada", dados:melhor, alternativas:dados.length>1?dados:[]};
       }
       // Não encontrou na posicao_atual — busca no histórico completo

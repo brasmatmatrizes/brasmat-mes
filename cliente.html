@@ -241,7 +241,7 @@ async function buscar(){
         }
         // Busca razao_social/classificacao_fiscal do primeiro registro que tenha esses campos preenchidos
         const tipo = await supaFetch(
-          `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(melhor.codigo_peca||"")}&razao_social=not.is.null&limit=1`
+          `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(melhor.codigo_peca||"")}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&limit=1`
         );
         if(Array.isArray(tipo)&&tipo.length>0){
           melhor.razao_social         = tipo[0].razao_social;

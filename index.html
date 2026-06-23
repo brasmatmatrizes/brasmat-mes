@@ -169,7 +169,7 @@ async function init(){
 
   // Enriquece POS com razao_social e classificacao_fiscal de producao_eventos
   // Busca tipo (V/I) apenas de registros que têm razao_social preenchida
-  const tipoData = await supaFetch("/rest/v1/producao_eventos?select=codigo_peca,razao_social,classificacao_fiscal&razao_social=not.is.null&order=id.desc&limit=10000");
+  const tipoData = await supaFetch("/rest/v1/producao_eventos?select=codigo_peca,razao_social,classificacao_fiscal&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=10000");
   if(Array.isArray(tipoData)){
     const tipoMap = new Map();
     tipoData.forEach(t=>{

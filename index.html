@@ -166,23 +166,20 @@ let POS = [];
 
 async function init(){
   POS = await buscarPosicao();
-
-  // Enriquece POS com razao_social e classificacao_fiscal de producao_eventos
-  // Busca tipo (V/I) apenas de registros que têm razao_social preenchida
-  const tipoData = await supaFetch("/rest/v1/producao_eventos?select=codigo_peca,razao_social,classificacao_fiscal&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=10000");
-  if(Array.isArray(tipoData)){
-    const tipoMap = new Map();
-    tipoData.forEach(t=>{
-      if(!tipoMap.has(t.codigo_peca)) tipoMap.set(t.codigo_peca, t);
-    });
-    POS.forEach(p=>{
-      const t = tipoMap.get(p.codigo_peca);
-      if(t){ p.razao_social=t.razao_social; p.classificacao_fiscal=t.classificacao_fiscal; }
-    });
-  }
-
   document.getElementById("slbl").textContent = `${POS.length} peças`;
   document.getElementById("shint").textContent = `${POS.length} peças disponíveis — código, pedido ou OS`;
+}
+
+async function buscarTipo(codigo){
+  const r = await supaFetch(
+    `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(codigo)}&razao_social=not.is.null&limit=1`
+  );
+  if(Array.isArray(r)&&r.length>0) return r[0];
+  // fallback: tenta classificacao_fiscal
+  const r2 = await supaFetch(
+    `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(codigo)}&classificacao_fiscal=not.is.null&limit=1`
+  );
+  return Array.isArray(r2)&&r2.length>0 ? r2[0] : null;
 }
 
 document.getElementById("search").addEventListener("input", function(){
@@ -201,17 +198,31 @@ document.getElementById("search").addEventListener("input", function(){
     return;
   }
 
-  res.innerHTML = `<div class="res-list">${found.map(r=>{
+  renderFound(res, found);
+  found.forEach(async (r, i)=>{
+    if(getTipo(r)) return;
+    const t = await buscarTipo(r.codigo_peca);
+    if(!t) return;
+    r.razao_social = t.razao_social;
+    r.classificacao_fiscal = t.classificacao_fiscal;
+    const el = document.getElementById(`badge-${i}`);
+    if(el) el.outerHTML = renderTipoBadge(r)||`<span id="badge-${i}"></span>`;
+  });
+});
+
+function renderFound(res, found){
+  res.innerHTML = `<div class="res-list">${found.map((r,i)=>{
     const st = status(r);
     const d  = diasDesde(r);
     const dc = diasCls(d);
     const osInfo = r.os&&String(r.os).trim() ? ` · OS: ${r.os}` : "";
+    const badge  = getTipo(r) ? renderTipoBadge(r) : `<span id="badge-${i}"></span>`;
     return `<div class="ri" onclick="abrirPeca('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
       <div class="ri-stripe" style="background:${st.cor}"></div>
       <div class="ri-info">
         <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
           <div class="ri-codigo">${r.codigo_peca||"—"}</div>
-          ${renderTipoBadge(r)}
+          ${badge}
         </div>
         <div class="ri-pedido">${r.pedido||"(sem pedido)"}${osInfo}</div>
         <div class="ri-proc">${String(r.processo||"").trim()||"—"} · ${getSubop(r)}</div>
@@ -222,7 +233,7 @@ document.getElementById("search").addEventListener("input", function(){
       </div>
     </div>`;
   }).join("")}</div>`;
-});
+}
 
 async function abrirPeca(pedido, codigo){
   document.getElementById("hero-section").style.display = "none";

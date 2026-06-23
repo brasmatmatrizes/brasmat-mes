@@ -101,6 +101,22 @@ function status(row){
 
 function esc(s){ return String(s||"").replace(/'/g,"\\'"); }
 
+function getTipo(row){
+  const cf = String(row.classificacao_fiscal||"").trim().toLowerCase();
+  if(cf.includes("vend"))   return {label:"V", full:"Vendas",          cor:"#3B7FFF", bg:"rgba(59,127,255,0.15)"};
+  if(cf.includes("indust")) return {label:"I", full:"Industrialização", cor:"#F5A623", bg:"rgba(245,166,35,0.15)"};
+  const rs = String(row.razao_social||"").trim().toLowerCase();
+  if(rs.includes("brasmat")) return {label:"V", full:"Vendas",          cor:"#3B7FFF", bg:"rgba(59,127,255,0.15)"};
+  if(rs.includes("mota"))    return {label:"I", full:"Industrialização", cor:"#F5A623", bg:"rgba(245,166,35,0.15)"};
+  return null;
+}
+
+function renderTipoBadge(row){
+  const t = getTipo(row);
+  if(!t) return "";
+  return `<span style="font-size:10px;font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:6px;background:${t.bg};color:${t.cor};border:1px solid ${t.cor}44">${t.label} · ${t.full}</span>`;
+}
+
 function calcProgresso(eventos){
   const ultimo = eventos[eventos.length-1];
   const total  = parseInt(ultimo.quantidade_operacoes)||0;
@@ -157,8 +173,11 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
   // Atualiza o título para incluir prazo no cabeçalho fixo
   title.innerHTML = `
     <div>
-      <div style="font-size:15px;font-weight:500;color:var(--text);font-family:var(--mono)">${codigo}</div>
-      <div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px">Pedido: ${pedido}</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="font-size:15px;font-weight:500;color:var(--text);font-family:var(--mono)">${codigo}</div>
+        ${renderTipoBadge(ultimo)}
+      </div>
+      <div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px">Pedido: ${pedido}${ultimo.os&&String(ultimo.os).trim()?' · OS: '+String(ultimo.os).trim():''}</div>
     </div>
     <div style="text-align:center;padding:0 12px">
       <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Prazo</div>

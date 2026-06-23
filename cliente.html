@@ -333,7 +333,10 @@ function renderCard(r){
     return `<div class="peca-card ${cardCls}" style="cursor:pointer" onclick="abrirDetalhe('${esc(d.pedido||"")}','${esc(d.codigo_peca||"")}')">
       <div class="peca-header">
         <div>
-          <div class="peca-codigo">${d.codigo_peca}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div class="peca-codigo">${d.codigo_peca}</div>
+            ${renderTipoBadge(d)}
+          </div>
           ${r.descricaoCliente?`<div class="peca-desc">${r.descricaoCliente}</div>`:""}
           ${r.pedidoCliente?`<div class="peca-pedido-cli">Pedido cliente: ${r.pedidoCliente} · Sistema: ${d.pedido||"—"}</div>`:""}
         </div>
@@ -363,7 +366,10 @@ function renderCard(r){
     return `<div class="peca-card encontrada" style="cursor:pointer;border-left:4px solid var(--ok)" onclick="abrirDetalhe('${esc(d.pedido||"")}','${esc(d.codigo_peca||"")}')">
       <div class="peca-header">
         <div>
-          <div class="peca-codigo">${d.codigo_peca}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div class="peca-codigo">${d.codigo_peca}</div>
+            ${renderTipoBadge(d)}
+          </div>
           ${r.descricaoCliente?`<div class="peca-desc">${r.descricaoCliente}</div>`:""}
           ${r.pedidoCliente?`<div class="peca-pedido-cli">Pedido cliente: ${r.pedidoCliente} · Sistema: ${d.pedido||"—"}</div>`:""}
         </div>

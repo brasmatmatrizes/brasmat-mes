@@ -168,16 +168,15 @@ async function init(){
   POS = await buscarPosicao();
 
   // Enriquece POS com razao_social e classificacao_fiscal de producao_eventos
-  const tipoData = await supaFetch("/rest/v1/producao_eventos?select=codigo_peca,pedido,razao_social,classificacao_fiscal&order=id.desc&limit=10000");
+  // Busca tipo (V/I) apenas de registros que têm razao_social preenchida
+  const tipoData = await supaFetch("/rest/v1/producao_eventos?select=codigo_peca,razao_social,classificacao_fiscal&razao_social=not.is.null&order=id.desc&limit=10000");
   if(Array.isArray(tipoData)){
     const tipoMap = new Map();
     tipoData.forEach(t=>{
-      const k = (t.codigo_peca||"")+"_"+(t.pedido||"");
-      if(!tipoMap.has(k)) tipoMap.set(k, t);
+      if(!tipoMap.has(t.codigo_peca)) tipoMap.set(t.codigo_peca, t);
     });
     POS.forEach(p=>{
-      const k = (p.codigo_peca||"")+"_"+(p.pedido||"");
-      const t = tipoMap.get(k);
+      const t = tipoMap.get(p.codigo_peca);
       if(t){ p.razao_social=t.razao_social; p.classificacao_fiscal=t.classificacao_fiscal; }
     });
   }

@@ -231,14 +231,21 @@ async function buscar(){
           if(match) melhor = match;
         }
         // Busca sequencial_operacao e quantidade_operacoes do último evento
+        // Busca campos de progresso pelo registro mais recente
         const prog = await supaFetch(
-          `/rest/v1/producao_eventos?select=sequencial_operacao,quantidade_operacoes,razao_social,classificacao_fiscal&pedido=eq.${encodeURIComponent(melhor.pedido||"")}&codigo_peca=eq.${encodeURIComponent(melhor.codigo_peca||"")}&order=id.desc&limit=1`
+          `/rest/v1/producao_eventos?select=sequencial_operacao,quantidade_operacoes&codigo_peca=eq.${encodeURIComponent(melhor.codigo_peca||"")}&order=id.desc&limit=1`
         );
         if(Array.isArray(prog)&&prog.length>0){
-          melhor.sequencial_operacao    = prog[0].sequencial_operacao;
-          melhor.quantidade_operacoes   = prog[0].quantidade_operacoes;
-          melhor.razao_social           = prog[0].razao_social;
-          melhor.classificacao_fiscal   = prog[0].classificacao_fiscal;
+          melhor.sequencial_operacao  = prog[0].sequencial_operacao;
+          melhor.quantidade_operacoes = prog[0].quantidade_operacoes;
+        }
+        // Busca razao_social/classificacao_fiscal do primeiro registro que tenha esses campos preenchidos
+        const tipo = await supaFetch(
+          `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(melhor.codigo_peca||"")}&razao_social=not.is.null&limit=1`
+        );
+        if(Array.isArray(tipo)&&tipo.length>0){
+          melhor.razao_social         = tipo[0].razao_social;
+          melhor.classificacao_fiscal = tipo[0].classificacao_fiscal;
         }
         const stMelhor = status(melhor);
         const statusFinal = (stMelhor.s==="aprovada"||stMelhor.s==="em_estoque") ? "finalizada" : "encontrada";

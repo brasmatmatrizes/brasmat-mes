@@ -194,7 +194,10 @@ document.getElementById("search").addEventListener("input", function(){
     return `<div class="ri" onclick="abrirPeca('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
       <div class="ri-stripe" style="background:${st.cor}"></div>
       <div class="ri-info">
-        <div class="ri-codigo">${r.codigo_peca||"—"}</div>
+        <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+          <div class="ri-codigo">${r.codigo_peca||"—"}</div>
+          ${renderTipoBadge(r)}
+        </div>
         <div class="ri-pedido">${r.pedido||"(sem pedido)"}${osInfo}</div>
         <div class="ri-proc">${String(r.processo||"").trim()||"—"} · ${getSubop(r)}</div>
       </div>

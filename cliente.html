@@ -255,10 +255,21 @@ async function buscar(){
       }
       // Não encontrou na posicao_atual — busca no histórico completo
       const hist = await supaFetch(
-        `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,processo,evento,data_evento,cliente&codigo_peca=ilike.*${encodeURIComponent(item.codigoBusca)}*&order=id.desc&limit=3`
+        `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,processo,evento,data_evento,cliente,sequencial_operacao,quantidade_operacoes,razao_social,classificacao_fiscal&codigo_peca=ilike.*${encodeURIComponent(item.codigoBusca)}*&order=id.desc&limit=3`
       );
       if(Array.isArray(hist)&&hist.length>0){
-        return {...item, status:"expedida", dados:hist[0], alternativas:[]};
+        const dExp = hist[0];
+        // Completa razao_social/classificacao_fiscal se vazios no registro mais recente
+        if(!getTipo(dExp)){
+          const tipoExp = await supaFetch(
+            `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(dExp.codigo_peca||"")}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&limit=1`
+          );
+          if(Array.isArray(tipoExp)&&tipoExp.length>0){
+            dExp.razao_social         = tipoExp[0].razao_social;
+            dExp.classificacao_fiscal = tipoExp[0].classificacao_fiscal;
+          }
+        }
+        return {...item, status:"expedida", dados:dExp, alternativas:[]};
       }
       return {...item, status:"nao_encontrada", dados:null, alternativas:[]};
     }catch(e){
@@ -403,10 +414,14 @@ function renderCard(r){
     const d = r.dados;
     const dataFmt = d.data_evento ? new Date(d.data_evento).toLocaleDateString("pt-BR") : "—";
     const pedidoSist = d.pedido || "—";
+    const prog = calcProgressoRow(d);
     return `<div class="peca-card expedida" style="cursor:pointer" onclick="abrirDetalhe('${esc(d.pedido||"")}','${esc(d.codigo_peca||r.codigoOriginal)}')">
       <div class="peca-header">
         <div>
-          <div class="peca-codigo">${d.codigo_peca||r.codigoOriginal}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div class="peca-codigo">${d.codigo_peca||r.codigoOriginal}</div>
+            ${renderTipoBadge(d)}
+          </div>
           ${r.descricaoCliente?`<div class="peca-desc">${r.descricaoCliente}</div>`:""}
           ${r.pedidoCliente?`<div class="peca-pedido-cli">Pedido cliente: ${r.pedidoCliente} · Sistema: ${pedidoSist}</div>`:""}
         </div>
@@ -415,6 +430,7 @@ function renderCard(r){
           <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">ver linha do tempo →</span>
         </div>
       </div>
+      ${renderProgresso(prog)}
       <div class="peca-info">
         <div class="peca-info-item"><div class="peca-info-lbl">Último processo</div><div class="peca-info-val">${d.processo||"—"}</div></div>
         <div class="peca-info-item"><div class="peca-info-lbl">Último evento</div><div class="peca-info-val">${String(d.evento||"—").trim()}</div></div>

@@ -256,7 +256,21 @@ async function carregarDemanda(){
       const existe = !!r.pedido || POS.some(p=>String(p.codigo_peca||"").toUpperCase()===String(r.codigo_peca||"").toUpperCase());
       return {...r, pedido:r.pedido||"", os:r.os||"", _novo:!existe};
     });
+    // Enriquece com tipo (V/I) e progresso, em paralelo
+    await Promise.all(ITENS.filter(it=>!it._novo).map(enriquecerItem));
   }catch(e){ ITENS = []; }
+}
+
+// Busca tipo (V/I) e progresso da peça em producao_eventos (igual Consulta Cliente)
+async function enriquecerItem(it){
+  if(it._novo) return;
+  const c = encodeURIComponent(it.codigo_peca||"");
+  try{
+    const prog = await supaFetch(`/rest/v1/producao_eventos?select=sequencial_operacao,quantidade_operacoes&codigo_peca=eq.${c}&order=id.desc&limit=1`);
+    if(Array.isArray(prog)&&prog[0]){ it.sequencial_operacao=prog[0].sequencial_operacao; it.quantidade_operacoes=prog[0].quantidade_operacoes; }
+    const tipo = await supaFetch(`/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${c}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&limit=1`);
+    if(Array.isArray(tipo)&&tipo[0]){ it.razao_social=tipo[0].razao_social; it.classificacao_fiscal=tipo[0].classificacao_fiscal; }
+  }catch(e){}
 }
 
 // ---------- Busca / sugestões de item ----------
@@ -335,13 +349,15 @@ function lancarItem(codigo, pedido, os, novo){
     hideSugg();
     return;
   }
-  ITENS.push({
+  const item = {
     codigo_peca:codigo, pedido:pedido||"", os:os||"", descricao:"", data_desejada:null, prazo_confirmado:null,
     desenho_url:null, fluxo_url:null, _novo:!!novo
-  });
+  };
+  ITENS.push(item);
   document.getElementById("item-input").value = "";
   hideSugg();
   render();
+  if(!novo) enriquecerItem(item).then(render);
 }
 
 function removerItem(i){
@@ -461,9 +477,13 @@ function render(){
     const tlHint = podeTimeline ? `<div style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-top:3px">ver linha do tempo →</div>` : "";
     return `<div class="item-card">
       <div class="item-top">
-        <div ${clickAttr}><div class="item-cod">${it.codigo_peca}${novo}</div>${subLine}${tlHint}</div>
+        <div ${clickAttr}>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="item-cod">${it.codigo_peca}${novo}</div>${renderTipoBadge(it)}</div>
+          ${subLine}${tlHint}
+        </div>
         <button class="btn-rm" onclick="removerItem(${i})">remover</button>
       </div>
+      ${renderProgresso(calcProgressoRow(it))}
       <div class="item-grid">
         <div>
           <div class="field-lbl">Data desejada (cliente)</div>

@@ -394,7 +394,11 @@ function lancarItem(codigo, pedido, os, novo){
 
 function removerItem(i){
   const it = ITENS[i];
-  if(it && it.id) REMOVIDOS.push(it.id);
+  if(it){
+    if(it.desenho_url) supaDeleteArquivo(it.desenho_url);   // apaga PDFs do item
+    if(it.fluxo_url)   supaDeleteArquivo(it.fluxo_url);
+    if(it.id) REMOVIDOS.push(it.id);
+  }
   ITENS.splice(i,1);
   render();
   agendarSalvar();
@@ -416,6 +420,8 @@ async function uploadArquivo(i, tipo, inputEl){
   if(!file) return;
   if(file.type !== "application/pdf"){ flash("Apenas PDF é aceito"); inputEl.value=""; return; }
   const it = ITENS[i];
+  const campo = tipo==="desenho"?"desenho_url":"fluxo_url";
+  const oldUrl = it[campo];   // guarda o anterior para apagar após troca
   const stateEl = document.getElementById(`fst-${i}-${tipo}`);
   if(stateEl) stateEl.innerHTML = `<span class="mini-spin"></span> enviando...`;
   try{
@@ -423,10 +429,11 @@ async function uploadArquivo(i, tipo, inputEl){
     const safeCli = String(CLIENTE).replace(/[^A-Za-z0-9_-]/g,"_");
     const path = `${safeCli}/${safeCod}/${tipo}-${Date.now()}.pdf`;
     const url = await supaUpload(path, file);
-    it[tipo==="desenho"?"desenho_url":"fluxo_url"] = url;
+    it[campo] = url;
     render();
     agendarSalvar();
     flash("PDF enviado");
+    if(oldUrl && oldUrl !== url) supaDeleteArquivo(oldUrl);   // apaga o PDF antigo (troca)
   }catch(e){
     if(stateEl) stateEl.innerHTML = `<span style="color:var(--danger)">falha no envio</span>`;
     flash("Erro ao enviar PDF");
@@ -444,11 +451,28 @@ function supaUpload(path, file){
   });
 }
 
-function removerArquivo(i, tipo){
+// Apaga o arquivo físico do bucket a partir da URL pública
+async function supaDeleteArquivo(url){
+  if(!url) return;
+  const marker = `/storage/v1/object/public/${BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if(idx < 0) return;
+  const path = url.slice(idx + marker.length);
+  try{
+    await fetch(`${SUPA_URL}/storage/v1/object/${BUCKET}/${path}`, {
+      method:"DELETE", headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY }
+    });
+  }catch(e){}
+}
+
+async function removerArquivo(i, tipo){
   const it = ITENS[i];
-  it[tipo==="desenho"?"desenho_url":"fluxo_url"] = null;
+  const campo = tipo==="desenho"?"desenho_url":"fluxo_url";
+  const url = it[campo];
+  it[campo] = null;
   render();
   agendarSalvar();
+  await supaDeleteArquivo(url);   // remove o arquivo físico do bucket
 }
 
 // ---------- Salvamento automático ----------

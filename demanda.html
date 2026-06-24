@@ -311,9 +311,18 @@ function renderSugg(lista, q){
       const cod = String(r.codigo_peca||"").trim();
       const ped = String(r.pedido||"").trim();
       const os  = String(r.os||"").trim();
-      const sub = [ped?("Pedido: "+ped):"", os?("OS: "+os):""].filter(Boolean).join(" · ");
+      const st  = status(r);
+      const proc = String(r.processo||"").trim()||"—";
+      const subop = getSubop(r);
+      const qtd = String(r.quantidade_solicitada||"").trim();
+      const linha2 = [ped?("Pedido: "+ped):"", os?("OS: "+os):"", qtd?("Qtd: "+qtd+" pç"):""].filter(Boolean).join(" · ");
       return `<div class="sugg-item" onclick="lancarItem('${esc(cod)}','${esc(ped)}','${esc(os)}',false)">
-        <div class="sugg-cod">${cod}</div>${sub?`<div class="sugg-desc">${sub}</div>`:""}
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <div class="sugg-cod">${cod}</div>
+          <span style="font-size:9px;padding:2px 7px;border-radius:8px;background:${st.cor}22;color:${st.cor};white-space:nowrap">${st.ico} ${st.label.split("—")[0].trim()}</span>
+        </div>
+        ${linha2?`<div class="sugg-desc">${linha2}</div>`:""}
+        <div class="sugg-desc" style="color:var(--text2)">${proc} · ${subop}</div>
       </div>`;
     }).join("");
   }else{

@@ -223,6 +223,8 @@ function renderFound(res, found){
     const d  = diasDesde(r);
     const dc = diasCls(d);
     const osInfo = r.os&&String(r.os).trim() ? ` · OS: ${r.os}` : "";
+    const qtd = String(r.quantidade_solicitada||"").trim();
+    const qtdInfo = qtd ? ` · Qtd: ${qtd} pç` : "";
     const badge  = getTipo(r) ? renderTipoBadge(r) : `<span id="badge-${i}"></span>`;
     return `<div class="ri" onclick="abrirPeca('${esc(r.pedido)}','${esc(r.codigo_peca)}')">
       <div class="ri-stripe" style="background:${st.cor}"></div>
@@ -231,7 +233,7 @@ function renderFound(res, found){
           <div class="ri-codigo">${r.codigo_peca||"—"}</div>
           ${badge}
         </div>
-        <div class="ri-pedido">${r.pedido||"(sem pedido)"}${osInfo}</div>
+        <div class="ri-pedido">${r.pedido||"(sem pedido)"}${osInfo}${qtdInfo}</div>
         <div class="ri-proc">${String(r.processo||"").trim()||"—"} · ${getSubop(r)}</div>
       </div>
       <div class="ri-right">

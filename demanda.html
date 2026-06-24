@@ -175,7 +175,9 @@
 
     <div class="divider"></div>
 
-    <button class="btn-save" id="btn-save" onclick="salvar()" disabled>💾 Salvar demanda</button>
+    <div style="display:flex;align-items:center;gap:7px;justify-content:center">
+      <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">💾 Salvamento automático</span>
+    </div>
     <div class="saved-msg" id="saved-msg"></div>
   </div>
 
@@ -233,8 +235,8 @@ async function init(){
 async function selecionarCliente(){
   CLIENTE = document.getElementById("cliente-sel").value;
   document.getElementById("item-input").disabled = !CLIENTE;
-  document.getElementById("btn-save").disabled = !CLIENTE;
   document.getElementById("saved-msg").textContent = "";
+  clearTimeout(_saveTimer);
   hideSugg();
   if(!CLIENTE){
     document.getElementById("content").innerHTML =
@@ -261,14 +263,15 @@ async function carregarDemanda(){
   }catch(e){ ITENS = []; }
 }
 
-// Busca tipo (V/I) e progresso da peça em producao_eventos (igual Consulta Cliente)
+// Busca tipo (V/I) e progresso da peça — MESMO cálculo da linha do tempo
 async function enriquecerItem(it){
   if(it._novo) return;
   const c = encodeURIComponent(it.codigo_peca||"");
   const ped = it.pedido ? `&pedido=eq.${encodeURIComponent(it.pedido)}` : "";
   try{
-    const prog = await supaFetch(`/rest/v1/producao_eventos?select=sequencial_operacao,quantidade_operacoes&codigo_peca=eq.${c}${ped}&order=id.desc&limit=1`);
-    if(Array.isArray(prog)&&prog[0]){ it.sequencial_operacao=prog[0].sequencial_operacao; it.quantidade_operacoes=prog[0].quantidade_operacoes; }
+    // Progresso idêntico ao da linha do tempo: histórico completo + calcProgresso
+    const eventos = await buscarHistorico(it.pedido||"", it.codigo_peca||"");
+    it._prog = (Array.isArray(eventos)&&eventos.length) ? calcProgresso(eventos) : null;
     const tipo = await supaFetch(`/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${c}${ped}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`);
     if(Array.isArray(tipo)&&tipo[0]){ it.razao_social=tipo[0].razao_social; it.classificacao_fiscal=tipo[0].classificacao_fiscal; }
   }catch(e){}
@@ -385,6 +388,7 @@ function lancarItem(codigo, pedido, os, novo){
   document.getElementById("item-input").value = "";
   hideSugg();
   render();
+  agendarSalvar();
   if(!novo) enriquecerItem(item).then(render);
 }
 
@@ -393,10 +397,18 @@ function removerItem(i){
   if(it && it.id) REMOVIDOS.push(it.id);
   ITENS.splice(i,1);
   render();
+  agendarSalvar();
 }
 
 // ---------- Edição de campos ----------
-function setCampo(i, campo, valor){ if(ITENS[i]) ITENS[i][campo] = valor || null; }
+function setCampo(i, campo, valor){ if(ITENS[i]){ ITENS[i][campo] = valor || null; agendarSalvar(); } }
+
+function toggleConcluido(i, checked){
+  if(!ITENS[i]) return;
+  ITENS[i].concluido = !!checked;
+  render();
+  agendarSalvar();
+}
 
 // ---------- Upload de PDF ----------
 async function uploadArquivo(i, tipo, inputEl){
@@ -413,6 +425,7 @@ async function uploadArquivo(i, tipo, inputEl){
     const url = await supaUpload(path, file);
     it[tipo==="desenho"?"desenho_url":"fluxo_url"] = url;
     render();
+    agendarSalvar();
     flash("PDF enviado");
   }catch(e){
     if(stateEl) stateEl.innerHTML = `<span style="color:var(--danger)">falha no envio</span>`;
@@ -435,15 +448,27 @@ function removerArquivo(i, tipo){
   const it = ITENS[i];
   it[tipo==="desenho"?"desenho_url":"fluxo_url"] = null;
   render();
+  agendarSalvar();
 }
 
-// ---------- Salvar ----------
-async function salvar(){
-  const btn = document.getElementById("btn-save");
-  btn.disabled = true;
+// ---------- Salvamento automático ----------
+let _saveTimer = null;
+let _saving = false;
+let _saveAgain = false;
+
+function agendarSalvar(){
+  if(!CLIENTE) return;
   const msg = document.getElementById("saved-msg");
-  msg.style.color = "var(--text3)";
-  msg.textContent = "salvando...";
+  if(msg){ msg.style.color = "var(--text3)"; msg.textContent = "alterações pendentes…"; }
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(salvar, 800);
+}
+
+async function salvar(){
+  if(_saving){ _saveAgain = true; return; }   // evita salvar concorrente
+  _saving = true;
+  const msg = document.getElementById("saved-msg");
+  if(msg){ msg.style.color = "var(--text3)"; msg.textContent = "salvando…"; }
   try{
     // Deleta removidos
     for(const id of REMOVIDOS){
@@ -458,7 +483,8 @@ async function salvar(){
         cliente:CLIENTE, codigo_peca:it.codigo_peca, pedido:it.pedido||null, os:it.os||null,
         descricao:it.descricao||null,
         data_desejada:it.data_desejada||null, prazo_confirmado:it.prazo_confirmado||null,
-        desenho_url:it.desenho_url||null, fluxo_url:it.fluxo_url||null
+        desenho_url:it.desenho_url||null, fluxo_url:it.fluxo_url||null,
+        concluido:!!it.concluido
       };
       if(it.id){
         await fetch(`${SUPA_URL}/rest/v1/demanda_itens?id=eq.${it.id}`, {
@@ -476,15 +502,13 @@ async function salvar(){
         if(Array.isArray(data)&&data[0]){ it.id = data[0].id; it._novo=false; }
       }
     }
-    msg.style.color = "var(--ok)";
-    msg.textContent = "✓ demanda salva";
-    render();
+    if(msg){ msg.style.color = "var(--ok)"; msg.textContent = "✓ salvo automaticamente"; }
   }catch(e){
-    msg.style.color = "var(--danger)";
-    msg.textContent = "erro ao salvar";
+    if(msg){ msg.style.color = "var(--danger)"; msg.textContent = "erro ao salvar"; }
   }
-  btn.disabled = false;
-  setTimeout(()=>{ if(msg.textContent.includes("✓")) msg.textContent=""; }, 3000);
+  _saving = false;
+  if(_saveAgain){ _saveAgain = false; agendarSalvar(); }   // havia mudança durante o save
+  setTimeout(()=>{ if(msg && msg.textContent.includes("✓")) msg.textContent=""; }, 2500);
 }
 
 // ---------- Render ----------
@@ -503,15 +527,19 @@ function render(){
     const podeTimeline = !it._novo;
     const clickAttr = podeTimeline ? `style="cursor:pointer" onclick="abrirDetalhe('${esc(it.pedido||"")}','${esc(it.codigo_peca||"")}')"` : "";
     const tlHint = podeTimeline ? `<div style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-top:3px">ver linha do tempo →</div>` : "";
-    return `<div class="item-card">
+    const concBadge = it.concluido ? `<span style="font-size:10px;font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:6px;background:rgba(45,191,126,0.15);color:var(--ok);border:1px solid rgba(45,191,126,0.4)">✓ Concluído</span>` : "";
+    const progHtml = it.concluido
+      ? `<div style="margin:10px 0 14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><span style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em">Progresso da Peça</span><span style="font-size:11px;font-family:var(--mono);font-weight:600;color:var(--ok)">✓ Concluído (manual)</span></div><div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;width:100%;background:var(--ok);border-radius:3px"></div></div></div>`
+      : renderProgresso(it._prog || calcProgressoRow(it));
+    return `<div class="item-card" style="${it.concluido?'border-left:4px solid var(--ok)':''}">
       <div class="item-top">
         <div ${clickAttr}>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="item-cod">${it.codigo_peca}${novo}</div>${renderTipoBadge(it)}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="item-cod">${it.codigo_peca}${novo}</div>${renderTipoBadge(it)}${concBadge}</div>
           ${subLine}${tlHint}
         </div>
         <button class="btn-rm" onclick="removerItem(${i})">remover</button>
       </div>
-      ${renderProgresso(calcProgressoRow(it))}
+      ${progHtml}
       <div class="item-grid">
         <div>
           <div class="field-lbl">Data desejada (cliente)</div>
@@ -526,6 +554,10 @@ function render(){
         ${fileBox(i,"desenho","Desenho (PDF)",it.desenho_url)}
         ${fileBox(i,"fluxo","Fluxo do processo (PDF)",it.fluxo_url)}
       </div>
+      <label style="display:inline-flex;align-items:center;gap:7px;margin-top:12px;cursor:pointer;font-size:12px;color:var(--text2);user-select:none">
+        <input type="checkbox" ${it.concluido?"checked":""} onchange="toggleConcluido(${i},this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:var(--ok)">
+        Marcar como concluído (independente do apontamento)
+      </label>
     </div>`;
   }).join("");
   c.innerHTML = `<div class="chdr">

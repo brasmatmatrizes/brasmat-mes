@@ -117,6 +117,30 @@ function renderTipoBadge(row){
   return `<span style="font-size:10px;font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:6px;background:${t.bg};color:${t.cor};border:1px solid ${t.cor}44">${t.label} · ${t.full}</span>`;
 }
 
+// Busca anexos (desenho/roteiro) cadastrados na Demanda do Cliente para esta peça
+async function buscarAnexosDemanda(pedido, codigo){
+  const c = encodeURIComponent(codigo||"");
+  const ped = pedido ? `&pedido=eq.${encodeURIComponent(pedido)}` : "";
+  try{
+    const rows = await supaFetch(`/rest/v1/demanda_itens?select=desenho_url,fluxo_url&codigo_peca=eq.${c}${ped}&order=id.desc`);
+    if(Array.isArray(rows)){
+      for(const r of rows){ if(r.desenho_url||r.fluxo_url) return {desenho_url:r.desenho_url||null, fluxo_url:r.fluxo_url||null}; }
+    }
+  }catch(e){}
+  return {desenho_url:null, fluxo_url:null};
+}
+
+// Renderiza os ícones de anexo (só aparecem quando existe o arquivo)
+function renderAnexosIcons(a){
+  if(!a || (!a.desenho_url && !a.fluxo_url)) return "";
+  const base = "display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);padding:4px 10px;border-radius:6px;text-decoration:none";
+  let h = '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">';
+  if(a.desenho_url) h += `<a href="${a.desenho_url}" target="_blank" rel="noopener" title="Abrir desenho (PDF)" style="${base};background:rgba(59,127,255,0.12);color:var(--accent);border:1px solid rgba(59,127,255,0.3)">📐 Desenho</a>`;
+  if(a.fluxo_url)   h += `<a href="${a.fluxo_url}" target="_blank" rel="noopener" title="Abrir roteiro (PDF)" style="${base};background:rgba(45,191,126,0.12);color:var(--ok);border:1px solid rgba(45,191,126,0.3)">📋 Roteiro</a>`;
+  h += '</div>';
+  return h;
+}
+
 function calcProgresso(eventos){
   const ultimo = eventos[eventos.length-1];
   const total  = parseInt(ultimo.quantidade_operacoes)||0;
@@ -164,6 +188,7 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
   const dc     = diasCls(dias);
   const ret    = eventos.filter(r=>String(r.retrabalho||"").trim()).length;
   const prog   = calcProgresso(eventos);
+  const anexos = await buscarAnexosDemanda(pedido, codigo);
   const prazo  = ultimo.prazo_entrega||"—";
   const prazoD = prazo!=="—"?new Date(prazo):null;
   const prazoFmtBR = prazoD ? prazoD.toLocaleDateString("pt-BR") : "—";
@@ -178,6 +203,7 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
         ${renderTipoBadge(ultimo)}
       </div>
       <div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px">Pedido: ${pedido}${ultimo.os&&String(ultimo.os).trim()?' · OS: '+String(ultimo.os).trim():''}</div>
+      ${renderAnexosIcons(anexos)}
     </div>
     <div style="text-align:center;padding:0 12px">
       <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Prazo</div>

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRASMAT MES — Demanda por Cliente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#C4CBDA;--text3:#8E9AB0;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.nav{display:flex;gap:4px;overflow-x:auto}
+.nav::-webkit-scrollbar{height:0}
+.nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
+.tr-right{display:flex;align-items:center;gap:8px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-lbl{font-size:11px;color:var(--text2);font-family:var(--mono)}
+
+/* LAYOUT */
+.shell{display:grid;grid-template-columns:320px 1fr;height:calc(100vh - 56px);overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px;gap:14px;overflow-y:auto}
+.sb-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px}
+.sb-desc{font-size:11px;color:var(--text3);line-height:1.5}
+.lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);margin-bottom:8px}
+.fsel{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);outline:none;cursor:pointer}
+.fsel:focus{border-color:var(--accent)}
+.search-wrap{position:relative}
+.input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--text);outline:none;font-family:var(--sans)}
+.input:focus{border-color:var(--accent)}
+.input::placeholder{color:var(--text3)}
+.input:disabled{opacity:0.4;cursor:not-allowed}
+.sugg{position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--bg3);border:1px solid var(--border2);border-radius:8px;max-height:240px;overflow-y:auto;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.sugg-item{padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border)}
+.sugg-item:last-child{border-bottom:none}
+.sugg-item:hover{background:var(--bg4)}
+.sugg-cod{font-size:13px;font-family:var(--mono);color:var(--text)}
+.sugg-desc{font-size:11px;color:var(--text3);margin-top:1px}
+.sugg-new{padding:9px 12px;cursor:pointer;color:var(--accent);font-size:12px}
+.sugg-new:hover{background:var(--bg4)}
+.btn-add{width:100%;background:var(--accent);border:none;border-radius:8px;padding:10px;font-size:13px;color:#fff;cursor:pointer;font-weight:500}
+.btn-add:hover{background:#1A4FCC}.btn-add:disabled{opacity:0.4;cursor:not-allowed}
+.btn-save{width:100%;background:var(--ok);border:none;border-radius:8px;padding:11px;font-size:13px;color:#06281A;cursor:pointer;font-weight:600}
+.btn-save:hover{filter:brightness(1.08)}.btn-save:disabled{opacity:0.4;cursor:not-allowed}
+.hint{font-size:10px;color:var(--text3);line-height:1.5;font-family:var(--mono)}
+.divider{height:1px;background:var(--border)}
+.saved-msg{font-size:11px;font-family:var(--mono);text-align:center;min-height:14px}
+
+/* CONTENT */
+.content{overflow-y:auto;padding:20px 24px}
+.chdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.ctitle{font-size:18px;font-weight:500;color:var(--text)}
+.csub{font-size:12px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:80%;color:var(--text3);gap:12px}
+.ph-ico{font-size:48px;opacity:0.3}.ph-txt{font-size:14px;text-align:center;line-height:1.6;max-width:340px}
+
+/* ITEM CARD */
+.item-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.item-cod{font-size:15px;font-weight:500;color:var(--text);font-family:var(--mono)}
+.item-desc{font-size:12px;color:var(--text3);margin-top:2px}
+.item-badge-new{font-size:9px;font-family:var(--mono);font-weight:600;padding:2px 7px;border-radius:6px;background:rgba(245,166,35,0.15);color:var(--warn);border:1px solid rgba(245,166,35,0.4);margin-left:6px;vertical-align:middle}
+.btn-rm{background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text3);cursor:pointer;flex-shrink:0}
+.btn-rm:hover{border-color:var(--danger);color:var(--danger)}
+.item-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.field-lbl{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:5px}
+.date-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:13px;color:var(--text);outline:none;font-family:var(--mono);color-scheme:dark}
+.date-input:focus{border-color:var(--accent)}
+.date-input.confirmado{border-color:rgba(45,191,126,0.4)}
+.files-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.file-box{background:var(--bg3);border:1px dashed var(--border2);border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.file-box.has-file{border-style:solid;border-color:rgba(45,191,126,0.4)}
+.file-info{min-width:0;flex:1}
+.file-lbl{font-size:11px;color:var(--text2);font-weight:500}
+.file-state{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-state.ok{color:var(--ok)}
+.file-actions{display:flex;gap:6px;flex-shrink:0}
+.btn-file{background:var(--bg4);border:1px solid var(--border);border-radius:6px;padding:5px 9px;font-size:11px;color:var(--text2);cursor:pointer;white-space:nowrap}
+.btn-file:hover{border-color:var(--border2);color:var(--text)}
+.btn-file.view{color:var(--accent);border-color:rgba(59,127,255,0.3)}
+.hidden-file{display:none}
+
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.mini-spin{width:11px;height:11px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;vertical-align:middle}
+</style>
+</head>
+<body>
+<div style="display:grid;grid-template-rows:56px 1fr;height:100vh">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand"><div class="bm">BM</div><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="nav">
+    <button class="nb" onclick="navTo('index.html')">Buscar Peça</button>
+    <button class="nb" onclick="navTo('ordens.html')">Ordens em Aberto</button>
+    <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
+    <button class="nb" onclick="navTo('paradas.html')">Peças paradas</button>
+    <button class="nb" onclick="navTo('apontamentos.html')">Apontamentos</button>
+    <button class="nb" onclick="navTo('operadores.html')">Performance</button>
+    <button class="nb" onclick="navTo('prazos.html')">Prazos</button>
+    <button class="nb" onclick="navTo('otd.html')">OTD</button>
+    <button class="nb" onclick="navTo('cliente.html')">Consulta Cliente</button>
+    <button class="nb active">Demanda Cliente</button>
+  </div>
+  <div class="tr-right">
+    <div class="sync-dot"></div>
+    <span class="sync-lbl" id="slbl">pronto</span>
+  </div>
+</div>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div>
+      <div class="sb-title">Demanda por Cliente</div>
+      <div class="sb-desc">Escolha o cliente, pesquise e lance os itens a faturar, negocie datas e anexe os PDFs.</div>
+    </div>
+
+    <div>
+      <div class="lbl">cliente</div>
+      <select class="fsel" id="cliente-sel" onchange="selecionarCliente()">
+        <option value="">Carregando clientes...</option>
+      </select>
+    </div>
+
+    <div class="divider"></div>
+
+    <div>
+      <div class="lbl">lançar item</div>
+      <div class="search-wrap">
+        <input class="input" id="item-input" placeholder="Código do item..." autocomplete="off" disabled
+               oninput="onBuscaItem()" onkeydown="if(event.key==='Enter')lancarDigitado()">
+        <div id="sugg" style="display:none"></div>
+      </div>
+      <div class="hint" style="margin-top:6px">Selecione um existente ou digite um código novo e pressione Enter.</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <button class="btn-save" id="btn-save" onclick="salvar()" disabled>💾 Salvar demanda</button>
+    <div class="saved-msg" id="saved-msg"></div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content" id="content">
+    <div class="placeholder">
+      <div class="ph-ico">📑</div>
+      <div class="ph-txt">Selecione um cliente para começar a montar a lista de demanda.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="status.js"></script>
+<script>
+const BUCKET = "demanda-arquivos";
+let CLIENTE = "";
+let ITENS = [];          // {id?, codigo_peca, descricao, data_desejada, prazo_confirmado, desenho_url, fluxo_url, _novo}
+let REMOVIDOS = [];      // ids a deletar ao salvar
+let CATALOGO = [];       // peças existentes p/ sugestão (codigo + descricao)
+let _suggTimer = null;
+
+function navTo(p){ window.location.href=p; }
+
+// ---------- Carregar clientes ----------
+async function init(){
+  try{
+    const rows = await supaFetch("/rest/v1/producao_eventos?select=cliente&cliente=not.is.null&limit=20000");
+    const set = new Set();
+    (Array.isArray(rows)?rows:[]).forEach(r=>{ const c=String(r.cliente||"").trim(); if(c) set.add(c); });
+    const clientes = [...set].sort((a,b)=>a.localeCompare(b,"pt-BR"));
+    const sel = document.getElementById("cliente-sel");
+    sel.innerHTML = `<option value="">Selecione um cliente...</option>` +
+      clientes.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join("");
+    document.getElementById("slbl").textContent = `${clientes.length} clientes`;
+  }catch(e){
+    document.getElementById("cliente-sel").innerHTML = `<option value="">Erro ao carregar clientes</option>`;
+  }
+}
+
+// ---------- Selecionar cliente ----------
+async function selecionarCliente(){
+  CLIENTE = document.getElementById("cliente-sel").value;
+  document.getElementById("item-input").disabled = !CLIENTE;
+  document.getElementById("btn-save").disabled = !CLIENTE;
+  document.getElementById("saved-msg").textContent = "";
+  hideSugg();
+  if(!CLIENTE){
+    document.getElementById("content").innerHTML =
+      `<div class="placeholder"><div class="ph-ico">📑</div><div class="ph-txt">Selecione um cliente para começar a montar a lista de demanda.</div></div>`;
+    return;
+  }
+  document.getElementById("content").innerHTML = `<div class="loading"><div class="spinner"></div>carregando demanda salva...</div>`;
+  await carregarDemanda();
+  render();
+}
+
+async function carregarDemanda(){
+  ITENS = []; REMOVIDOS = [];
+  try{
+    const rows = await supaFetch(
+      `/rest/v1/demanda_itens?select=*&cliente=eq.${encodeURIComponent(CLIENTE)}&order=id.asc`
+    );
+    if(Array.isArray(rows)) ITENS = rows.map(r=>({...r, _novo:false}));
+  }catch(e){ ITENS = []; }
+}
+
+// ---------- Busca / sugestões de item ----------
+function onBuscaItem(){
+  const q = document.getElementById("item-input").value.trim();
+  clearTimeout(_suggTimer);
+  if(q.length < 2){ hideSugg(); return; }
+  _suggTimer = setTimeout(()=>buscarSugg(q), 220);
+}
+
+async function buscarSugg(q){
+  let achados = [];
+  try{
+    const rows = await supaFetch(
+      `/rest/v1/posicao_atual?select=codigo_peca,os&codigo_peca=ilike.*${encodeURIComponent(q)}*&limit=12`
+    );
+    if(Array.isArray(rows)) achados = rows;
+  }catch(e){}
+  // dedupe por código
+  const seen = new Set(); const lista = [];
+  achados.forEach(r=>{ const c=String(r.codigo_peca||"").trim(); if(c&&!seen.has(c)){seen.add(c);lista.push(r);} });
+  renderSugg(lista, q);
+}
+
+function renderSugg(lista, q){
+  const box = document.getElementById("sugg");
+  let html = "";
+  if(lista.length){
+    html += lista.map(r=>{
+      const cod = String(r.codigo_peca||"").trim();
+      const os = String(r.os||"").trim();
+      return `<div class="sugg-item" onclick="lancarItem('${esc(cod)}','',false)">
+        <div class="sugg-cod">${cod}</div>${os?`<div class="sugg-desc">OS: ${os}</div>`:""}
+      </div>`;
+    }).join("");
+  }
+  html += `<div class="sugg-new" onclick="lancarItem('${esc(q.toUpperCase())}','',true)">+ Lançar "<b>${q.toUpperCase()}</b>" como item novo</div>`;
+  box.className = "sugg";
+  box.innerHTML = html;
+  box.style.display = "block";
+}
+
+function hideSugg(){ const b=document.getElementById("sugg"); b.style.display="none"; b.innerHTML=""; }
+
+function lancarDigitado(){
+  const q = document.getElementById("item-input").value.trim();
+  if(q.length>=1) lancarItem(q.toUpperCase(), "", true);
+}
+
+function lancarItem(codigo, descricao, novo){
+  codigo = String(codigo||"").trim();
+  if(!codigo) return;
+  if(ITENS.some(it=>String(it.codigo_peca).toUpperCase()===codigo.toUpperCase())){
+    flash("Item já está na lista");
+    document.getElementById("item-input").value = "";
+    hideSugg();
+    return;
+  }
+  ITENS.push({
+    codigo_peca:codigo, descricao:descricao||"", data_desejada:null, prazo_confirmado:null,
+    desenho_url:null, fluxo_url:null, _novo:!!novo
+  });
+  document.getElementById("item-input").value = "";
+  hideSugg();
+  render();
+}
+
+function removerItem(i){
+  const it = ITENS[i];
+  if(it && it.id) REMOVIDOS.push(it.id);
+  ITENS.splice(i,1);
+  render();
+}
+
+// ---------- Edição de campos ----------
+function setCampo(i, campo, valor){ if(ITENS[i]) ITENS[i][campo] = valor || null; }
+
+// ---------- Upload de PDF ----------
+async function uploadArquivo(i, tipo, inputEl){
+  const file = inputEl.files && inputEl.files[0];
+  if(!file) return;
+  if(file.type !== "application/pdf"){ flash("Apenas PDF é aceito"); inputEl.value=""; return; }
+  const it = ITENS[i];
+  const stateEl = document.getElementById(`fst-${i}-${tipo}`);
+  if(stateEl) stateEl.innerHTML = `<span class="mini-spin"></span> enviando...`;
+  try{
+    const safeCod = String(it.codigo_peca).replace(/[^A-Za-z0-9_-]/g,"_");
+    const safeCli = String(CLIENTE).replace(/[^A-Za-z0-9_-]/g,"_");
+    const path = `${safeCli}/${safeCod}/${tipo}-${Date.now()}.pdf`;
+    const url = await supaUpload(path, file);
+    it[tipo==="desenho"?"desenho_url":"fluxo_url"] = url;
+    render();
+    flash("PDF enviado");
+  }catch(e){
+    if(stateEl) stateEl.innerHTML = `<span style="color:var(--danger)">falha no envio</span>`;
+    flash("Erro ao enviar PDF");
+  }
+}
+
+function supaUpload(path, file){
+  return fetch(`${SUPA_URL}/storage/v1/object/${BUCKET}/${encodeURIComponent(path)}`, {
+    method:"POST",
+    headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/pdf", "x-upsert":"true" },
+    body:file
+  }).then(r=>{
+    if(!r.ok) throw new Error("upload");
+    return `${SUPA_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+  });
+}
+
+function removerArquivo(i, tipo){
+  const it = ITENS[i];
+  it[tipo==="desenho"?"desenho_url":"fluxo_url"] = null;
+  render();
+}
+
+// ---------- Salvar ----------
+async function salvar(){
+  const btn = document.getElementById("btn-save");
+  btn.disabled = true;
+  const msg = document.getElementById("saved-msg");
+  msg.style.color = "var(--text3)";
+  msg.textContent = "salvando...";
+  try{
+    // Deleta removidos
+    for(const id of REMOVIDOS){
+      await fetch(`${SUPA_URL}/rest/v1/demanda_itens?id=eq.${id}`, {
+        method:"DELETE", headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY }
+      });
+    }
+    REMOVIDOS = [];
+    // Insere/atualiza
+    for(const it of ITENS){
+      const payload = {
+        cliente:CLIENTE, codigo_peca:it.codigo_peca, descricao:it.descricao||null,
+        data_desejada:it.data_desejada||null, prazo_confirmado:it.prazo_confirmado||null,
+        desenho_url:it.desenho_url||null, fluxo_url:it.fluxo_url||null
+      };
+      if(it.id){
+        await fetch(`${SUPA_URL}/rest/v1/demanda_itens?id=eq.${it.id}`, {
+          method:"PATCH",
+          headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer:"return=minimal" },
+          body:JSON.stringify(payload)
+        });
+      }else{
+        const r = await fetch(`${SUPA_URL}/rest/v1/demanda_itens`, {
+          method:"POST",
+          headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer:"return=representation" },
+          body:JSON.stringify(payload)
+        });
+        const data = await r.json();
+        if(Array.isArray(data)&&data[0]){ it.id = data[0].id; it._novo=false; }
+      }
+    }
+    msg.style.color = "var(--ok)";
+    msg.textContent = "✓ demanda salva";
+    render();
+  }catch(e){
+    msg.style.color = "var(--danger)";
+    msg.textContent = "erro ao salvar";
+  }
+  btn.disabled = false;
+  setTimeout(()=>{ if(msg.textContent.includes("✓")) msg.textContent=""; }, 3000);
+}
+
+// ---------- Render ----------
+function render(){
+  const c = document.getElementById("content");
+  if(!ITENS.length){
+    c.innerHTML = `<div class="chdr"><div><div class="ctitle">${CLIENTE}</div><div class="csub">0 itens na demanda</div></div></div>
+      <div class="placeholder" style="height:60%"><div class="ph-ico">➕</div><div class="ph-txt">Pesquise um código no painel à esquerda e lance o primeiro item.</div></div>`;
+    return;
+  }
+  const cards = ITENS.map((it,i)=>{
+    const desCod = it.descricao ? `<div class="item-desc">${it.descricao}</div>` : "";
+    const novo = it._novo ? `<span class="item-badge-new">NOVO</span>` : "";
+    return `<div class="item-card">
+      <div class="item-top">
+        <div><div class="item-cod">${it.codigo_peca}${novo}</div>${desCod}</div>
+        <button class="btn-rm" onclick="removerItem(${i})">remover</button>
+      </div>
+      <div class="item-grid">
+        <div>
+          <div class="field-lbl">Data desejada (cliente)</div>
+          <input type="date" class="date-input" value="${it.data_desejada||""}" onchange="setCampo(${i},'data_desejada',this.value)">
+        </div>
+        <div>
+          <div class="field-lbl">Prazo confirmado (produção)</div>
+          <input type="date" class="date-input confirmado" value="${it.prazo_confirmado||""}" onchange="setCampo(${i},'prazo_confirmado',this.value)">
+        </div>
+      </div>
+      <div class="files-row">
+        ${fileBox(i,"desenho","Desenho (PDF)",it.desenho_url)}
+        ${fileBox(i,"fluxo","Fluxo do processo (PDF)",it.fluxo_url)}
+      </div>
+    </div>`;
+  }).join("");
+  c.innerHTML = `<div class="chdr">
+      <div><div class="ctitle">${CLIENTE}</div><div class="csub">${ITENS.length} ${ITENS.length===1?"item":"itens"} na demanda</div></div>
+    </div>${cards}`;
+}
+
+function fileBox(i, tipo, label, url){
+  const has = !!url;
+  const state = has ? `<div class="file-state ok" id="fst-${i}-${tipo}">✓ anexado</div>`
+                    : `<div class="file-state" id="fst-${i}-${tipo}">nenhum arquivo</div>`;
+  const view = has ? `<a class="btn-file view" href="${url}" target="_blank" rel="noopener">abrir</a>
+                      <button class="btn-file" onclick="removerArquivo(${i},'${tipo}')">×</button>` : "";
+  return `<div class="file-box ${has?'has-file':''}">
+    <div class="file-info"><div class="file-lbl">${label}</div>${state}</div>
+    <div class="file-actions">
+      ${view}
+      <label class="btn-file">${has?'trocar':'enviar'}
+        <input type="file" accept="application/pdf" class="hidden-file" onchange="uploadArquivo(${i},'${tipo}',this)">
+      </label>
+    </div>
+  </div>`;
+}
+
+function flash(txt){
+  const msg = document.getElementById("saved-msg");
+  msg.style.color = "var(--text2)";
+  msg.textContent = txt;
+  setTimeout(()=>{ if(msg.textContent===txt) msg.textContent=""; }, 2200);
+}
+
+// fecha sugestões ao clicar fora
+document.addEventListener("click", e=>{
+  if(!e.target.closest(".search-wrap")) hideSugg();
+});
+
+init();
+</script>
+</body>
+</html>

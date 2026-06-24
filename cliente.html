@@ -248,7 +248,9 @@ async function buscar(){
           melhor.classificacao_fiscal = tipo[0].classificacao_fiscal;
         }
         const stMelhor = status(melhor);
-        const statusFinal = (stMelhor.s==="aprovada"||stMelhor.s==="em_estoque") ? "finalizada" : "encontrada";
+        const statusFinal = stMelhor.s==="expedida" ? "expedida"
+                          : (stMelhor.s==="aprovada"||stMelhor.s==="em_estoque") ? "finalizada"
+                          : "encontrada";
         return {...item, status:statusFinal, dados:melhor, alternativas:dados.length>1?dados:[]};
       }
       // Não encontrou na posicao_atual — busca no histórico completo

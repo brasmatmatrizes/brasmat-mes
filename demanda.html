@@ -90,6 +90,36 @@
 .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .mini-spin{width:11px;height:11px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;vertical-align:middle}
+
+/* PAINEL DETALHE */
+.det-panel{display:none;position:fixed;right:0;top:56px;bottom:0;width:460px;background:var(--bg2);border-left:1px solid var(--border);z-index:100;overflow-y:auto;animation:si 0.18s ease}
+.det-panel.open{display:block}
+@keyframes si{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+.det-hdr{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--bg2);z-index:1}
+.det-close{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer}
+.det-body{padding:16px 20px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.mb{background:var(--bg3);border-radius:8px;padding:10px 12px}
+.ml{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.07em}
+.mv{font-size:13px;font-weight:500;color:var(--text)}
+.pos-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px}
+.tl-lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:12px}
+.timeline{list-style:none;position:relative;padding-left:28px}
+.timeline::before{content:"";position:absolute;left:9px;top:0;bottom:0;width:1px;background:var(--border)}
+.tl-item{position:relative;margin-bottom:12px}.tl-item:last-child{margin-bottom:0}
+.tl-dot{position:absolute;left:-28px;top:4px;width:13px;height:13px;border-radius:50%;border:2px solid var(--bg2)}
+.tl-dot.entrada{background:var(--accent)}.tl-dot.saida{background:var(--ok)}.tl-dot.atual{background:var(--warn);box-shadow:0 0 0 3px rgba(245,166,35,0.2)}
+.tl-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.tl-card.atual{border-color:rgba(245,166,35,0.4)}
+.tl-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.tl-proc{font-size:12px;font-weight:500;color:var(--text)}
+.tl-evt{font-size:10px;padding:1px 7px;border-radius:8px}
+.ent{background:rgba(59,127,255,0.12);color:var(--accent)}.sai{background:rgba(45,191,126,0.1);color:var(--ok)}
+.tl-tag{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(245,166,35,0.12);color:var(--warn)}
+.tl-ret{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(240,69,69,0.12);color:var(--danger)}
+.tl-sub{font-size:11px;color:var(--text2);margin-bottom:6px}
+.tl-foot{display:flex;gap:12px;flex-wrap:wrap}.tl-m{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.tl-obs{margin-top:6px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:6px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -159,23 +189,36 @@
 </div>
 </div>
 
+<div class="det-panel" id="dp">
+  <div class="det-hdr"><div id="dt"></div><button class="det-close" onclick="fecharDetalhe()">✕ fechar</button></div>
+  <div class="det-body" id="db"></div>
+</div>
+
 <script src="status.js"></script>
 <script>
 const BUCKET = "demanda-arquivos";
+
+function abrirDetalhe(pedido, codigo){
+  abrirPainelDetalhe(pedido, codigo, 'dp', 'dt', 'db');
+}
+function fecharDetalhe(){ document.getElementById('dp').classList.remove('open'); }
 let CLIENTE = "";
 let ITENS = [];          // {id?, codigo_peca, descricao, data_desejada, prazo_confirmado, desenho_url, fluxo_url, _novo}
 let REMOVIDOS = [];      // ids a deletar ao salvar
-let CATALOGO = [];       // peças existentes p/ sugestão (codigo + descricao)
+let POS = [];            // peças existentes (posicao_atual) p/ busca local
 let _suggTimer = null;
 
 function navTo(p){ window.location.href=p; }
 
-// ---------- Carregar clientes ----------
+// ---------- Carregar clientes + peças ----------
 async function init(){
   try{
-    const rows = await supaFetch("/rest/v1/producao_eventos?select=cliente&cliente=not.is.null&limit=20000");
+    // Peças (mesma fonte do Buscar Peça) — para busca por código, pedido ou OS
+    POS = await buscarPosicao();
+
+    // Lista de clientes a partir da própria base de peças
     const set = new Set();
-    (Array.isArray(rows)?rows:[]).forEach(r=>{ const c=String(r.cliente||"").trim(); if(c) set.add(c); });
+    POS.forEach(r=>{ const c=String(r.cliente||"").trim(); if(c) set.add(c); });
     const clientes = [...set].sort((a,b)=>a.localeCompare(b,"pt-BR"));
     const sel = document.getElementById("cliente-sel");
     sel.innerHTML = `<option value="">Selecione um cliente...</option>` +
@@ -209,7 +252,10 @@ async function carregarDemanda(){
     const rows = await supaFetch(
       `/rest/v1/demanda_itens?select=*&cliente=eq.${encodeURIComponent(CLIENTE)}&order=id.asc`
     );
-    if(Array.isArray(rows)) ITENS = rows.map(r=>({...r, _novo:false}));
+    if(Array.isArray(rows)) ITENS = rows.map(r=>{
+      const existe = !!r.pedido || POS.some(p=>String(p.codigo_peca||"").toUpperCase()===String(r.codigo_peca||"").toUpperCase());
+      return {...r, pedido:r.pedido||"", os:r.os||"", _novo:!existe};
+    });
   }catch(e){ ITENS = []; }
 }
 
@@ -218,21 +264,28 @@ function onBuscaItem(){
   const q = document.getElementById("item-input").value.trim();
   clearTimeout(_suggTimer);
   if(q.length < 2){ hideSugg(); return; }
-  _suggTimer = setTimeout(()=>buscarSugg(q), 220);
+  _suggTimer = setTimeout(()=>buscarSugg(q), 150);
 }
 
-async function buscarSugg(q){
-  let achados = [];
-  try{
-    const rows = await supaFetch(
-      `/rest/v1/posicao_atual?select=codigo_peca,os&codigo_peca=ilike.*${encodeURIComponent(q)}*&limit=12`
-    );
-    if(Array.isArray(rows)) achados = rows;
-  }catch(e){}
-  // dedupe por código
-  const seen = new Set(); const lista = [];
-  achados.forEach(r=>{ const c=String(r.codigo_peca||"").trim(); if(c&&!seen.has(c)){seen.add(c);lista.push(r);} });
-  renderSugg(lista, q);
+// Busca local em POS por código, pedido ou OS (igual ao Buscar Peça)
+function buscarSugg(q){
+  const qU = q.toUpperCase();
+  const seen = new Set();
+  const lista = [];
+  POS.forEach(r=>{
+    const cod = String(r.codigo_peca||"").trim();
+    if(!cod) return;
+    const match =
+      cod.toUpperCase().includes(qU) ||
+      String(r.pedido||"").toUpperCase().includes(qU) ||
+      String(r.os||"").toUpperCase().includes(qU);
+    if(!match) return;
+    const key = cod + "|" + (r.pedido||"");
+    if(seen.has(key)) return;
+    seen.add(key);
+    lista.push(r);
+  });
+  renderSugg(lista.slice(0,12), q);
 }
 
 function renderSugg(lista, q){
@@ -241,13 +294,17 @@ function renderSugg(lista, q){
   if(lista.length){
     html += lista.map(r=>{
       const cod = String(r.codigo_peca||"").trim();
-      const os = String(r.os||"").trim();
-      return `<div class="sugg-item" onclick="lancarItem('${esc(cod)}','',false)">
-        <div class="sugg-cod">${cod}</div>${os?`<div class="sugg-desc">OS: ${os}</div>`:""}
+      const ped = String(r.pedido||"").trim();
+      const os  = String(r.os||"").trim();
+      const sub = [ped?("Pedido: "+ped):"", os?("OS: "+os):""].filter(Boolean).join(" · ");
+      return `<div class="sugg-item" onclick="lancarItem('${esc(cod)}','${esc(ped)}','${esc(os)}',false)">
+        <div class="sugg-cod">${cod}</div>${sub?`<div class="sugg-desc">${sub}</div>`:""}
       </div>`;
     }).join("");
+  }else{
+    // Só oferece "item novo" quando NÃO encontrou nada
+    html += `<div class="sugg-new" onclick="lancarItem('${esc(q.toUpperCase())}','','',true)">+ Lançar "<b>${q.toUpperCase()}</b>" como item novo (não existe no sistema)</div>`;
   }
-  html += `<div class="sugg-new" onclick="lancarItem('${esc(q.toUpperCase())}','',true)">+ Lançar "<b>${q.toUpperCase()}</b>" como item novo</div>`;
   box.className = "sugg";
   box.innerHTML = html;
   box.style.display = "block";
@@ -257,20 +314,29 @@ function hideSugg(){ const b=document.getElementById("sugg"); b.style.display="n
 
 function lancarDigitado(){
   const q = document.getElementById("item-input").value.trim();
-  if(q.length>=1) lancarItem(q.toUpperCase(), "", true);
+  if(q.length<2) return;
+  // Se existir na base, lança o primeiro match; senão, item novo
+  const qU = q.toUpperCase();
+  const achado = POS.find(r=>
+    String(r.codigo_peca||"").toUpperCase().includes(qU) ||
+    String(r.pedido||"").toUpperCase().includes(qU) ||
+    String(r.os||"").toUpperCase().includes(qU)
+  );
+  if(achado) lancarItem(achado.codigo_peca, achado.pedido||"", achado.os||"", false);
+  else lancarItem(qU, "", "", true);
 }
 
-function lancarItem(codigo, descricao, novo){
+function lancarItem(codigo, pedido, os, novo){
   codigo = String(codigo||"").trim();
   if(!codigo) return;
-  if(ITENS.some(it=>String(it.codigo_peca).toUpperCase()===codigo.toUpperCase())){
+  if(ITENS.some(it=>String(it.codigo_peca).toUpperCase()===codigo.toUpperCase() && String(it.pedido||"")===String(pedido||""))){
     flash("Item já está na lista");
     document.getElementById("item-input").value = "";
     hideSugg();
     return;
   }
   ITENS.push({
-    codigo_peca:codigo, descricao:descricao||"", data_desejada:null, prazo_confirmado:null,
+    codigo_peca:codigo, pedido:pedido||"", os:os||"", descricao:"", data_desejada:null, prazo_confirmado:null,
     desenho_url:null, fluxo_url:null, _novo:!!novo
   });
   document.getElementById("item-input").value = "";
@@ -345,7 +411,8 @@ async function salvar(){
     // Insere/atualiza
     for(const it of ITENS){
       const payload = {
-        cliente:CLIENTE, codigo_peca:it.codigo_peca, descricao:it.descricao||null,
+        cliente:CLIENTE, codigo_peca:it.codigo_peca, pedido:it.pedido||null, os:it.os||null,
+        descricao:it.descricao||null,
         data_desejada:it.data_desejada||null, prazo_confirmado:it.prazo_confirmado||null,
         desenho_url:it.desenho_url||null, fluxo_url:it.fluxo_url||null
       };
@@ -385,11 +452,16 @@ function render(){
     return;
   }
   const cards = ITENS.map((it,i)=>{
-    const desCod = it.descricao ? `<div class="item-desc">${it.descricao}</div>` : "";
     const novo = it._novo ? `<span class="item-badge-new">NOVO</span>` : "";
+    const sub  = [it.pedido?("Pedido: "+it.pedido):"", it.os?("OS: "+it.os):""].filter(Boolean).join(" · ");
+    const subLine = sub ? `<div class="item-desc">${sub}</div>` : (it._novo?`<div class="item-desc">item novo — sem registro no sistema</div>`:"");
+    // Itens existentes (com pedido) abrem a linha do tempo ao clicar
+    const podeTimeline = !it._novo;
+    const clickAttr = podeTimeline ? `style="cursor:pointer" onclick="abrirDetalhe('${esc(it.pedido||"")}','${esc(it.codigo_peca||"")}')"` : "";
+    const tlHint = podeTimeline ? `<div style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-top:3px">ver linha do tempo →</div>` : "";
     return `<div class="item-card">
       <div class="item-top">
-        <div><div class="item-cod">${it.codigo_peca}${novo}</div>${desCod}</div>
+        <div ${clickAttr}><div class="item-cod">${it.codigo_peca}${novo}</div>${subLine}${tlHint}</div>
         <button class="btn-rm" onclick="removerItem(${i})">remover</button>
       </div>
       <div class="item-grid">

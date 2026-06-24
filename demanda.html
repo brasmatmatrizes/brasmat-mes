@@ -307,7 +307,7 @@ function renderSugg(lista, q){
   const box = document.getElementById("sugg");
   let html = "";
   if(lista.length){
-    html += lista.map(r=>{
+    html += lista.map((r,idx)=>{
       const cod = String(r.codigo_peca||"").trim();
       const ped = String(r.pedido||"").trim();
       const os  = String(r.os||"").trim();
@@ -318,7 +318,7 @@ function renderSugg(lista, q){
       const linha2 = [ped?("Pedido: "+ped):"", os?("OS: "+os):"", qtd?("Qtd: "+qtd+" pç"):""].filter(Boolean).join(" · ");
       return `<div class="sugg-item" onclick="lancarItem('${esc(cod)}','${esc(ped)}','${esc(os)}',false)">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
-          <div class="sugg-cod">${cod}</div>
+          <div style="display:flex;align-items:center;gap:6px"><div class="sugg-cod">${cod}</div><span id="sgt-${idx}"></span></div>
           <span style="font-size:9px;padding:2px 7px;border-radius:8px;background:${st.cor}22;color:${st.cor};white-space:nowrap">${st.ico} ${st.label.split("—")[0].trim()}</span>
         </div>
         ${linha2?`<div class="sugg-desc">${linha2}</div>`:""}
@@ -332,6 +332,24 @@ function renderSugg(lista, q){
   box.className = "sugg";
   box.innerHTML = html;
   box.style.display = "block";
+
+  // Preenche a sigla V/I de cada sugestão (tipo vem de producao_eventos, por pedido+código)
+  lista.forEach(async (r,idx)=>{
+    const row = await fetchTipoRow(r.codigo_peca, r.pedido);
+    const t = row ? getTipo(row) : null;
+    const el = document.getElementById(`sgt-${idx}`);
+    if(el && t) el.outerHTML =
+      `<span id="sgt-${idx}" title="${t.full}" style="font-size:9px;font-family:var(--mono);font-weight:600;padding:1px 6px;border-radius:5px;background:${t.bg};color:${t.cor};border:1px solid ${t.cor}44">${t.label}</span>`;
+  });
+}
+
+async function fetchTipoRow(codigo, pedido){
+  const c = encodeURIComponent(codigo||"");
+  const ped = pedido ? `&pedido=eq.${encodeURIComponent(pedido)}` : "";
+  try{
+    const r = await supaFetch(`/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${c}${ped}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`);
+    return Array.isArray(r)&&r[0] ? r[0] : null;
+  }catch(e){ return null; }
 }
 
 function hideSugg(){ const b=document.getElementById("sugg"); b.style.display="none"; b.innerHTML=""; }

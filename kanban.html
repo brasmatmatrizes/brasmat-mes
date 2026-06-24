@@ -61,6 +61,8 @@
 .card-s{border-left:4px solid #0891B2;background:#F0FDFA;border-color:#A5F3FC;border-left-color:#0891B2}
 /* Aguardando — borda âmbar */
 .card-w{border-left:4px solid #D97706;background:#FFFBEB;border-color:#FDE68A;border-left-color:#D97706}
+/* Na demanda do cliente — fundo vermelho clarinho (sobrepõe os demais) */
+.card-demanda{background:#FEE2E2 !important;border-color:#FCA5A5 !important;border-left-color:#DC2626 !important}
 /* Textos — escuros para contrastar com fundo claro */
 .c1{font-size:12px;font-weight:500;font-family:var(--mono);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-n .c1,.card-a .c1,.card-e .c1,.card-s .c1,.card-w .c1{color:#0F172A}
@@ -173,11 +175,34 @@ function toggleFlag(f){
   renderBoard();
 }
 
+let DEMANDA=new Set();      // 'CODIGO|PEDIDO' (itens com pedido)
+let DEMANDA_COD=new Set();  // 'CODIGO' (itens sem pedido)
+
 async function init(){
   document.getElementById("slbl").textContent="carregando...";
   POS=await buscarPosicao();
+  await carregarDemanda();
   popularFiltros();renderBoard();
   document.getElementById("slbl").textContent=`${POS.length} peças · ${new Date().toLocaleTimeString("pt-BR")}`;
+}
+
+async function carregarDemanda(){
+  DEMANDA=new Set();DEMANDA_COD=new Set();
+  try{
+    const rows=await supaFetch("/rest/v1/demanda_itens?select=codigo_peca,pedido&limit=10000");
+    (Array.isArray(rows)?rows:[]).forEach(r=>{
+      const c=String(r.codigo_peca||"").trim().toUpperCase();
+      const p=String(r.pedido||"").trim();
+      if(!c) return;
+      if(p) DEMANDA.add(c+"|"+p); else DEMANDA_COD.add(c);
+    });
+  }catch(e){}
+}
+
+function naDemanda(row){
+  const c=String(row.codigo_peca||"").trim().toUpperCase();
+  const p=String(row.pedido||"").trim();
+  return DEMANDA.has(c+"|"+p)||DEMANDA_COD.has(c);
 }
 
 function popularFiltros(){
@@ -242,7 +267,7 @@ function renderBoard(){
       :pcs.map(p=>{
         const cat=catCard(p);const d=diasDesde(p);const sub=getSubop(p);
         const ds=d===0?"hoje":d===1?"1d":d+"d";
-        return `<div class="card card-${cat}" onclick="abrirDet('${esc(p.pedido)}','${esc(p.codigo_peca)}')">
+        return `<div class="card card-${cat}${naDemanda(p)?' card-demanda':''}" onclick="abrirDet('${esc(p.pedido)}','${esc(p.codigo_peca)}')">
           <div class="c1">${p.codigo_peca||"—"}</div>
           <div class="c2">Ped: ${p.pedido||"—"}</div>
           <div class="c3">${sub}</div>

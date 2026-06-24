@@ -265,10 +265,11 @@ async function carregarDemanda(){
 async function enriquecerItem(it){
   if(it._novo) return;
   const c = encodeURIComponent(it.codigo_peca||"");
+  const ped = it.pedido ? `&pedido=eq.${encodeURIComponent(it.pedido)}` : "";
   try{
-    const prog = await supaFetch(`/rest/v1/producao_eventos?select=sequencial_operacao,quantidade_operacoes&codigo_peca=eq.${c}&order=id.desc&limit=1`);
+    const prog = await supaFetch(`/rest/v1/producao_eventos?select=sequencial_operacao,quantidade_operacoes&codigo_peca=eq.${c}${ped}&order=id.desc&limit=1`);
     if(Array.isArray(prog)&&prog[0]){ it.sequencial_operacao=prog[0].sequencial_operacao; it.quantidade_operacoes=prog[0].quantidade_operacoes; }
-    const tipo = await supaFetch(`/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${c}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&limit=1`);
+    const tipo = await supaFetch(`/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${c}${ped}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`);
     if(Array.isArray(tipo)&&tipo[0]){ it.razao_social=tipo[0].razao_social; it.classificacao_fiscal=tipo[0].classificacao_fiscal; }
   }catch(e){}
 }

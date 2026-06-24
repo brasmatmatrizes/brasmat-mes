@@ -172,14 +172,19 @@ async function init(){
   document.getElementById("shint").textContent = `${POS.length} peças disponíveis — código, pedido ou OS`;
 }
 
-async function buscarTipo(codigo){
-  const r = await supaFetch(
-    `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(codigo)}&razao_social=not.is.null&limit=1`
-  );
-  if(Array.isArray(r)&&r.length>0) return r[0];
-  // fallback: tenta classificacao_fiscal
+async function buscarTipo(codigo, pedido){
+  const c = encodeURIComponent(codigo);
+  const filtroTipo = "&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)";
+  // Mesmo critério da linha do tempo: filtra por pedido + código (registro mais recente)
+  if(pedido){
+    const r = await supaFetch(
+      `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${c}&pedido=eq.${encodeURIComponent(pedido)}${filtroTipo}&order=id.desc&limit=1`
+    );
+    if(Array.isArray(r)&&r.length>0) return r[0];
+  }
+  // Fallback: sem pedido, busca só por código
   const r2 = await supaFetch(
-    `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(codigo)}&classificacao_fiscal=not.is.null&limit=1`
+    `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${c}${filtroTipo}&order=id.desc&limit=1`
   );
   return Array.isArray(r2)&&r2.length>0 ? r2[0] : null;
 }
@@ -203,7 +208,7 @@ document.getElementById("search").addEventListener("input", function(){
   renderFound(res, found);
   found.forEach(async (r, i)=>{
     if(getTipo(r)) return;
-    const t = await buscarTipo(r.codigo_peca);
+    const t = await buscarTipo(r.codigo_peca, r.pedido);
     if(!t) return;
     r.razao_social = t.razao_social;
     r.classificacao_fiscal = t.classificacao_fiscal;

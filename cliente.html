@@ -241,8 +241,9 @@ async function buscar(){
           melhor.quantidade_operacoes = prog[0].quantidade_operacoes;
         }
         // Busca razao_social/classificacao_fiscal do primeiro registro que tenha esses campos preenchidos
+        const tipoPed = melhor.pedido ? `&pedido=eq.${encodeURIComponent(melhor.pedido)}` : "";
         const tipo = await supaFetch(
-          `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(melhor.codigo_peca||"")}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&limit=1`
+          `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(melhor.codigo_peca||"")}${tipoPed}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`
         );
         if(Array.isArray(tipo)&&tipo.length>0){
           melhor.razao_social         = tipo[0].razao_social;
@@ -262,8 +263,9 @@ async function buscar(){
         const dExp = hist[0];
         // Completa razao_social/classificacao_fiscal se vazios no registro mais recente
         if(!getTipo(dExp)){
+          const tipoExpPed = dExp.pedido ? `&pedido=eq.${encodeURIComponent(dExp.pedido)}` : "";
           const tipoExp = await supaFetch(
-            `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(dExp.codigo_peca||"")}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&limit=1`
+            `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(dExp.codigo_peca||"")}${tipoExpPed}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`
           );
           if(Array.isArray(tipoExp)&&tipoExp.length>0){
             dExp.razao_social         = tipoExp[0].razao_social;

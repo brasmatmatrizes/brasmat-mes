@@ -352,10 +352,13 @@ function renderSugg(lista, q){
       const subop = getSubop(r);
       const qtd = String(r.quantidade_solicitada||"").trim();
       const linha2 = [ped?("Pedido: "+ped):"", os?("OS: "+os):"", qtd?("Qtd: "+qtd+" pç"):""].filter(Boolean).join(" · ");
-      return `<div class="sugg-item" onclick="lancarItem('${esc(cod)}','${esc(ped)}','${esc(os)}',false)">
+      const jaNaLista = ITENS.some(it=>String(it.codigo_peca).toUpperCase()===cod.toUpperCase() && String(it.pedido||"")===ped);
+      const clickH = jaNaLista ? `onclick="flash('Item já está na demanda')"` : `onclick="lancarItem('${esc(cod)}','${esc(ped)}','${esc(os)}',false)"`;
+      const dupTag = jaNaLista ? `<span style="font-size:9px;font-family:var(--mono);font-weight:600;padding:2px 7px;border-radius:8px;background:rgba(45,191,126,0.15);color:var(--ok);white-space:nowrap">✓ já na demanda</span>` : `<span style="font-size:9px;padding:2px 7px;border-radius:8px;background:${st.cor}22;color:${st.cor};white-space:nowrap">${st.ico} ${st.label.split("—")[0].trim()}</span>`;
+      return `<div class="sugg-item" style="${jaNaLista?'opacity:0.55;cursor:default':''}" ${clickH}>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
           <div style="display:flex;align-items:center;gap:6px"><div class="sugg-cod">${cod}</div><span id="sgt-${idx}"></span></div>
-          <span style="font-size:9px;padding:2px 7px;border-radius:8px;background:${st.cor}22;color:${st.cor};white-space:nowrap">${st.ico} ${st.label.split("—")[0].trim()}</span>
+          ${dupTag}
         </div>
         ${linha2?`<div class="sugg-desc">${linha2}</div>`:""}
         <div class="sugg-desc" style="color:var(--text2)">${proc} · ${subop}</div>

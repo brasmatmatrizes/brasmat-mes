@@ -41,6 +41,13 @@ O menu de navegação (`.nav` no topbar) deve conter as 10 páginas, em **todas*
 - **Design system**: usar as variáveis CSS de `:root` (`--bg`, `--accent`, `--ok`, `--warn`, `--danger`, `--mono`, etc.) — idênticas em todas as páginas. Manter o padrão visual existente.
 - Idioma com o usuário: **português**.
 
+## Eficiência de contexto (pedido do usuário)
+
+- Respostas **curtas e diretas**, sem reexplicar o que já está neste CLAUDE.md.
+- Ler **só os trechos necessários** dos arquivos (faixas de linhas), nunca o arquivo inteiro à toa.
+- Buscas e comandos **enxutos** — `grep` direcionado, sem despejar saídas grandes.
+- Editar **direto no ponto certo**, sem releituras desnecessárias.
+
 ## Operações que exigem credencial elevada
 
 A chave pública NÃO cria tabelas/buckets. Para DDL: **Management API** (`https://api.supabase.com/v1/projects/{ref}/database/query`) com **Personal Access Token** (`sbp_...`), ou **service_role** para Storage. Essas credenciais são sensíveis — usar de forma transitória, nunca colocar no código/git, e pedir para o usuário rotacionar depois.

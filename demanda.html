@@ -464,7 +464,10 @@ function dropArquivo(ev, i, tipo){
 }
 
 async function uploadArquivoFile(i, tipo, file){
-  if(file.type !== "application/pdf"){ flash("Apenas PDF é aceito"); return; }
+  const ext = (file.name.split(".").pop()||"").toLowerCase();
+  const extOk = ["pdf","jpg","jpeg","png","gif","webp","bmp","tif","tiff","heic","heif","svg"].includes(ext);
+  const tipoOk = file.type==="application/pdf" || (file.type||"").startsWith("image/");
+  if(!tipoOk && !extOk){ flash("Formato não aceito (use PDF ou imagem)"); return; }
   const it = ITENS[i];
   const campo = tipo==="desenho"?"desenho_url":"fluxo_url";
   const oldUrl = it[campo];   // guarda o anterior para apagar após troca
@@ -473,7 +476,7 @@ async function uploadArquivoFile(i, tipo, file){
   try{
     const safeCod = String(it.codigo_peca).replace(/[^A-Za-z0-9_-]/g,"_");
     const safeCli = String(CLIENTE).replace(/[^A-Za-z0-9_-]/g,"_");
-    const path = `${safeCli}/${safeCod}/${tipo}-${Date.now()}.pdf`;
+    const path = `${safeCli}/${safeCod}/${tipo}-${Date.now()}.${ext||"bin"}`;
     const url = await supaUpload(path, file);
     it[campo] = url;
     render();
@@ -489,7 +492,7 @@ async function uploadArquivoFile(i, tipo, file){
 function supaUpload(path, file){
   return fetch(`${SUPA_URL}/storage/v1/object/${BUCKET}/${encodeURIComponent(path)}`, {
     method:"POST",
-    headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/pdf", "x-upsert":"true" },
+    headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":file.type||"application/octet-stream", "x-upsert":"true" },
     body:file
   }).then(r=>{
     if(!r.ok) throw new Error("upload");
@@ -621,13 +624,13 @@ function render(){
         </div>
       </div>
       <div class="files-row">
-        ${fileBox(i,"desenho","Desenho (PDF)",it.desenho_url)}
-        ${fileBox(i,"fluxo","Fluxo do processo (PDF)",it.fluxo_url)}
+        ${fileBox(i,"desenho","Desenho (PDF ou imagem)",it.desenho_url)}
+        ${fileBox(i,"fluxo","Fluxo do processo (PDF ou imagem)",it.fluxo_url)}
       </div>
       <div style="margin-top:12px">
         <div class="field-lbl">Observações</div>
         <textarea oninput="setCampo(${i},'observacao',this.value)" placeholder="Anotações sobre este item..."
-          style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:12px;color:var(--text);font-family:var(--sans);resize:vertical;min-height:48px;outline:none;line-height:1.5">${it.observacao?String(it.observacao).replace(/</g,"&lt;"):""}</textarea>
+          style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:12px;color:var(--danger);font-weight:500;font-family:var(--sans);resize:vertical;min-height:48px;outline:none;line-height:1.5">${it.observacao?String(it.observacao).replace(/</g,"&lt;"):""}</textarea>
       </div>
       <label style="display:inline-flex;align-items:center;gap:7px;margin-top:12px;cursor:pointer;font-size:12px;color:var(--text2);user-select:none">
         <input type="checkbox" ${it.concluido?"checked":""} onchange="toggleConcluido(${i},this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:var(--ok)">
@@ -655,7 +658,7 @@ function fileBox(i, tipo, label, url){
     <div class="file-actions">
       ${view}
       <label class="btn-file">${has?'trocar':'adicionar'}
-        <input type="file" accept="application/pdf" class="hidden-file" onchange="uploadArquivo(${i},'${tipo}',this)">
+        <input type="file" accept="application/pdf,image/*,.tif,.tiff,.heic" class="hidden-file" onchange="uploadArquivo(${i},'${tipo}',this)">
       </label>
     </div>
   </div>`;

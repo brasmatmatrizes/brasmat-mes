@@ -259,6 +259,11 @@ function abrirClienteDemanda(c){
   selecionarCliente();
 }
 
+function voltarResumo(){
+  document.getElementById("cliente-sel").value = "";
+  selecionarCliente();
+}
+
 // ---------- Selecionar cliente ----------
 async function selecionarCliente(){
   CLIENTE = document.getElementById("cliente-sel").value;
@@ -566,7 +571,7 @@ async function salvar(){
 function render(){
   const c = document.getElementById("content");
   if(!ITENS.length){
-    c.innerHTML = `<div class="chdr"><div><div class="ctitle">${CLIENTE}</div><div class="csub">0 itens na demanda</div></div></div>
+    c.innerHTML = `<div class="chdr"><div><div class="ctitle">${CLIENTE}</div><div class="csub">0 itens na demanda</div></div><button class="btn-rm" onclick="voltarResumo()">← voltar</button></div>
       <div class="placeholder" style="height:60%"><div class="ph-ico">➕</div><div class="ph-txt">Pesquise um código no painel à esquerda e lance o primeiro item.</div></div>`;
     return;
   }
@@ -613,6 +618,7 @@ function render(){
   }).join("");
   c.innerHTML = `<div class="chdr">
       <div><div class="ctitle">${CLIENTE}</div><div class="csub">${ITENS.length} ${ITENS.length===1?"item":"itens"} na demanda</div></div>
+      <button class="btn-rm" onclick="voltarResumo()">← voltar</button>
     </div>${cards}`;
 }
 

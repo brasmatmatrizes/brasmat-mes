@@ -76,6 +76,7 @@
 .files-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .file-box{background:var(--bg3);border:1px dashed var(--border2);border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .file-box.has-file{border-style:solid;border-color:rgba(45,191,126,0.4)}
+.file-box.drag{border-color:var(--accent);background:rgba(59,127,255,0.1)}
 .file-info{min-width:0;flex:1}
 .file-lbl{font-size:11px;color:var(--text2);font-weight:500}
 .file-state{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -447,10 +448,20 @@ function toggleConcluido(i, checked){
 }
 
 // ---------- Upload de PDF ----------
-async function uploadArquivo(i, tipo, inputEl){
+function uploadArquivo(i, tipo, inputEl){
   const file = inputEl.files && inputEl.files[0];
-  if(!file) return;
-  if(file.type !== "application/pdf"){ flash("Apenas PDF é aceito"); inputEl.value=""; return; }
+  if(file) uploadArquivoFile(i, tipo, file);
+}
+
+function dropArquivo(ev, i, tipo){
+  ev.preventDefault();
+  if(ev.currentTarget) ev.currentTarget.classList.remove("drag");
+  const file = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+  if(file) uploadArquivoFile(i, tipo, file);
+}
+
+async function uploadArquivoFile(i, tipo, file){
+  if(file.type !== "application/pdf"){ flash("Apenas PDF é aceito"); return; }
   const it = ITENS[i];
   const campo = tipo==="desenho"?"desenho_url":"fluxo_url";
   const oldUrl = it[campo];   // guarda o anterior para apagar após troca
@@ -633,11 +644,14 @@ function fileBox(i, tipo, label, url){
                     : `<div class="file-state" id="fst-${i}-${tipo}">nenhum arquivo</div>`;
   const view = has ? `<a class="btn-file view" href="${url}" target="_blank" rel="noopener">abrir</a>
                       <button class="btn-file" onclick="removerArquivo(${i},'${tipo}')">×</button>` : "";
-  return `<div class="file-box ${has?'has-file':''}">
+  return `<div class="file-box ${has?'has-file':''}"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="dropArquivo(event,${i},'${tipo}')" title="Arraste um PDF aqui ou clique em adicionar">
     <div class="file-info"><div class="file-lbl">${label}</div>${state}</div>
     <div class="file-actions">
       ${view}
-      <label class="btn-file">${has?'trocar':'enviar'}
+      <label class="btn-file">${has?'trocar':'adicionar'}
         <input type="file" accept="application/pdf" class="hidden-file" onchange="uploadArquivo(${i},'${tipo}',this)">
       </label>
     </div>

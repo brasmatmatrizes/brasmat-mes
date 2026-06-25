@@ -538,7 +538,7 @@ async function salvar(){
       const payload = {
         cliente:CLIENTE, codigo_peca:it.codigo_peca, pedido:it.pedido||null, os:it.os||null,
         descricao:it.descricao||null,
-        data_desejada:it.data_desejada||null, prazo_confirmado:it.prazo_confirmado||null,
+        data_desejada:it.data_desejada||null, prazo_confirmado:it.prazo_confirmado||null, observacao:it.observacao||null,
         desenho_url:it.desenho_url||null, fluxo_url:it.fluxo_url||null,
         concluido:!!it.concluido
       };
@@ -609,6 +609,11 @@ function render(){
       <div class="files-row">
         ${fileBox(i,"desenho","Desenho (PDF)",it.desenho_url)}
         ${fileBox(i,"fluxo","Fluxo do processo (PDF)",it.fluxo_url)}
+      </div>
+      <div style="margin-top:12px">
+        <div class="field-lbl">Observações</div>
+        <textarea oninput="setCampo(${i},'observacao',this.value)" placeholder="Anotações sobre este item..."
+          style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:12px;color:var(--text);font-family:var(--sans);resize:vertical;min-height:48px;outline:none;line-height:1.5">${it.observacao?String(it.observacao).replace(/</g,"&lt;"):""}</textarea>
       </div>
       <label style="display:inline-flex;align-items:center;gap:7px;margin-top:12px;cursor:pointer;font-size:12px;color:var(--text2);user-select:none">
         <input type="checkbox" ${it.concluido?"checked":""} onchange="toggleConcluido(${i},this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:var(--ok)">

@@ -285,7 +285,7 @@ async function carregarDemanda(){
   ITENS = []; REMOVIDOS = [];
   try{
     const rows = await supaFetch(
-      `/rest/v1/demanda_itens?select=*&cliente=eq.${encodeURIComponent(CLIENTE)}&order=id.asc`
+      `/rest/v1/demanda_itens?select=*&cliente=eq.${encodeURIComponent(CLIENTE)}&order=ordem.asc.nullslast,id.asc`
     );
     if(Array.isArray(rows)) ITENS = rows.map(r=>{
       const existe = !!r.pedido || POS.some(p=>String(p.codigo_peca||"").toUpperCase()===String(r.codigo_peca||"").toUpperCase());
@@ -428,6 +428,14 @@ function lancarItem(codigo, pedido, os, novo){
   if(!novo) enriquecerItem(item).then(render);
 }
 
+function moverItem(i, dir){
+  const j = i + dir;
+  if(j < 0 || j >= ITENS.length) return;
+  const tmp = ITENS[i]; ITENS[i] = ITENS[j]; ITENS[j] = tmp;
+  render();
+  agendarSalvar();
+}
+
 function removerItem(i){
   const it = ITENS[i];
   if(it){
@@ -550,12 +558,13 @@ async function salvar(){
       });
     }
     REMOVIDOS = [];
+    ITENS.forEach((it,idx)=>it.ordem=idx);   // posição atual = ordem
     // Insere/atualiza
     for(const it of ITENS){
       const payload = {
         cliente:CLIENTE, codigo_peca:it.codigo_peca, pedido:it.pedido||null, os:it.os||null,
         descricao:it.descricao||null,
-        data_desejada:it.data_desejada||null, prazo_confirmado:it.prazo_confirmado||null, observacao:it.observacao||null,
+        data_desejada:it.data_desejada||null, prazo_confirmado:it.prazo_confirmado||null, observacao:it.observacao||null, ordem:it.ordem,
         desenho_url:it.desenho_url||null, fluxo_url:it.fluxo_url||null,
         concluido:!!it.concluido
       };
@@ -610,7 +619,11 @@ function render(){
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="item-cod">${it.codigo_peca}${novo}</div>${renderTipoBadge(it)}${concBadge}</div>
           ${subLine}${tlHint}
         </div>
-        <button class="btn-rm" onclick="removerItem(${i})">remover</button>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button class="btn-rm" onclick="moverItem(${i},-1)" ${i===0?"disabled style='opacity:0.3'":""} title="Subir">↑</button>
+          <button class="btn-rm" onclick="moverItem(${i},1)" ${i===ITENS.length-1?"disabled style='opacity:0.3'":""} title="Descer">↓</button>
+          <button class="btn-rm" onclick="removerItem(${i})">remover</button>
+        </div>
       </div>
       ${progHtml}
       <div class="item-grid">

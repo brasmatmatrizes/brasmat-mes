@@ -280,6 +280,7 @@ async function buscar(){
     }
   }));
 
+  await carregarDemandaSet();
   renderResultados(resultados);
   document.getElementById("btn-buscar").disabled = false;
   document.getElementById("slbl").textContent = `${resultados.length} peça(s) consultadas · ${new Date().toLocaleTimeString("pt-BR")}`;
@@ -341,6 +342,46 @@ function renderResultados(resultados){
     `<div id="secao-cards">${resultados.map(r=>renderCard(r)).join("")}</div>`;
 }
 
+let _DEMANDA = new Set(), _DEMANDA_COD = new Set();
+async function carregarDemandaSet(){
+  _DEMANDA = new Set(); _DEMANDA_COD = new Set();
+  try{
+    const rows = await supaFetch("/rest/v1/demanda_itens?select=codigo_peca,pedido&limit=10000");
+    (Array.isArray(rows)?rows:[]).forEach(r=>{
+      const c=String(r.codigo_peca||"").trim().toUpperCase(); const p=String(r.pedido||"").trim();
+      if(!c) return; if(p) _DEMANDA.add(c+"|"+p); else _DEMANDA_COD.add(c);
+    });
+  }catch(e){}
+}
+function naDemanda(cod, ped){
+  const c=String(cod||"").toUpperCase(), p=String(ped||"").trim();
+  return _DEMANDA.has(c+"|"+p) || _DEMANDA_COD.has(c);
+}
+function demandaFooter(d){
+  const cod=String(d.codigo_peca||"").trim(), ped=String(d.pedido||"").trim(), cli=String(d.cliente||"").trim();
+  if(naDemanda(cod, ped)){
+    return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);font-weight:600;padding:4px 11px;border-radius:6px;background:rgba(240,69,69,0.13);color:var(--danger);border:1px solid rgba(240,69,69,0.35)">📋 Já está na demanda do cliente</span></div>`;
+  }
+  return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><button onclick="event.stopPropagation();incluirNaDemanda('${esc(cod)}','${esc(ped)}','${esc(d.os||"")}','${esc(cli)}',this)" style="font-size:11px;font-family:var(--sans);font-weight:500;padding:6px 13px;border-radius:6px;background:var(--accent);color:#fff;border:none;cursor:pointer">➕ Incluir na demanda</button></div>`;
+}
+async function incluirNaDemanda(cod, ped, os, cli, btn){
+  if(!cli){ flash("Peça sem cliente definido"); return; }
+  btn.disabled=true; btn.textContent="incluindo…";
+  try{
+    const r = await fetch(`${SUPA_URL}/rest/v1/demanda_itens`, {
+      method:"POST", headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer:"return=minimal" },
+      body:JSON.stringify({ cliente:cli, codigo_peca:cod, pedido:ped||null, os:os||null })
+    });
+    if(!r.ok) throw new Error();
+    const c=cod.toUpperCase(); if(ped) _DEMANDA.add(c+"|"+ped); else _DEMANDA_COD.add(c);
+    btn.outerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);font-weight:600;padding:4px 11px;border-radius:6px;background:rgba(45,191,126,0.15);color:var(--ok);border:1px solid rgba(45,191,126,0.4)">✓ Incluído na demanda</span>`;
+  }catch(e){ btn.disabled=false; btn.textContent="➕ Incluir na demanda"; flash("Erro ao incluir"); }
+}
+function flash(txt){
+  const el=document.getElementById("slbl"); if(!el) return;
+  const old=el.textContent; el.textContent=txt; setTimeout(()=>{el.textContent=old;},2200);
+}
+
 function renderCard(r){
   if(r.status==="encontrada"){
     const d = r.dados;
@@ -378,6 +419,7 @@ function renderCard(r){
         <div class="peca-info-item"><div class="peca-info-lbl">Prazo entrega</div><div class="peca-info-val" style="color:${prazoVencido?"var(--danger)":"var(--text)"}">${prazoFmt}${prazoVencido?" ⚠":""}</div></div>
       </div>
       ${r.codigoBusca!==d.codigo_peca?`<div class="match-info">Buscado: ${r.codigoBusca} → Encontrado: ${d.codigo_peca}</div>`:""}
+      ${demandaFooter(d)}
     </div>`;
   }
 
@@ -410,6 +452,7 @@ function renderCard(r){
         <div class="peca-info-item"><div class="peca-info-lbl">Cliente</div><div class="peca-info-val" style="font-size:11px">${d.cliente||"—"}</div></div>
         <div class="peca-info-item"><div class="peca-info-lbl">Prazo entrega</div><div class="peca-info-val" style="color:${prazoVencido?"var(--danger)":"var(--text)"}">${prazoFmt}${prazoVencido?" ⚠":""}</div></div>
       </div>
+      ${demandaFooter(d)}
     </div>`;
   }
 
@@ -440,6 +483,7 @@ function renderCard(r){
         <div class="peca-info-item"><div class="peca-info-lbl">Data</div><div class="peca-info-val">${dataFmt}</div></div>
         <div class="peca-info-item"><div class="peca-info-lbl">Cliente</div><div class="peca-info-val" style="font-size:11px">${d.cliente||"—"}</div></div>
       </div>
+      ${demandaFooter(d)}
     </div>`;
   }
 

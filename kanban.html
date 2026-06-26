@@ -311,6 +311,18 @@ async function abrirDet(pedido,codigo){
 function fechar(){document.getElementById("dp").classList.remove("open");}
 function navTo(p){window.location.href=p;}
 ["fop","fcl"].forEach(id=>document.getElementById(id).addEventListener("change",renderBoard));
+
+// Atualização automática silenciosa (para o painel ficar sempre vivo na produção)
+async function atualizarAuto(){
+  try{
+    POS = await buscarPosicao();
+    await carregarDemanda();
+    renderBoard();
+    document.getElementById("slbl").textContent = `${POS.length} peças · ${new Date().toLocaleTimeString("pt-BR")}`;
+  }catch(e){}
+}
+setInterval(atualizarAuto, 20000);
+
 init();
 </script>
 </body>

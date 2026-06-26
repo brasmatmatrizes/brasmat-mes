@@ -589,7 +589,25 @@ function limpar(){
   document.getElementById("lista-input").value="";
   document.getElementById("content").innerHTML=`<div class="placeholder"><div class="ph-ico">📋</div><div class="ph-txt">Cole a lista do cliente na área à esquerda e clique em "Localizar peças".</div></div>`;
   document.getElementById("slbl").textContent="pronto";
+  try{ localStorage.removeItem("cc_lista"); }catch(e){}
 }
+
+// Persiste a última lista consultada por 1 dia
+const CC_TTL = 24*60*60*1000;
+function salvarLista(){
+  try{ localStorage.setItem("cc_lista", JSON.stringify({t:document.getElementById("lista-input").value, ts:Date.now()})); }catch(e){}
+}
+function restaurarLista(){
+  try{
+    const raw = localStorage.getItem("cc_lista"); if(!raw) return;
+    const o = JSON.parse(raw);
+    if(!o || !o.t || (Date.now()-o.ts) > CC_TTL){ localStorage.removeItem("cc_lista"); return; }
+    document.getElementById("lista-input").value = o.t;
+    buscar();   // re-exibe a última consulta
+  }catch(e){}
+}
+document.getElementById("lista-input").addEventListener("input", salvarLista);
+restaurarLista();
 
 function diasStr(d){ return d===0?"hoje":d===1?"1 dia":d+" dias"; }
 function navTo(p){ window.location.href=p; }

@@ -14,12 +14,16 @@
 .bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
 .nav{display:flex;gap:4px;overflow-x:auto;flex:1;min-width:0;-webkit-overflow-scrolling:touch}
 .nav::-webkit-scrollbar{height:0}
+.mobile-nav{display:none;overflow-x:auto;padding:8px 12px;gap:6px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.mobile-nav::-webkit-scrollbar{height:0}
+.mnb{font-size:11px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.mnb.active{background:var(--accent);border-color:var(--accent);color:#fff}
 @media(max-width:768px){
-  .bs,.sync-lbl,.btn-sm{display:none}
+  .bs,.sync-lbl{display:none}
+  .nav{display:none}
+  .mobile-nav{display:flex}
   .topbar{padding:0 10px;gap:8px}
-  .nav{gap:6px}
-  .nb{border:1px solid var(--border);border-radius:20px;padding:6px 14px}
-  .nb.active{border-color:var(--accent)}
+  .board-wrap{height:auto;flex:1;min-height:0}
 }
 .nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
 .nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
@@ -144,6 +148,18 @@
     <div class="sync-dot"></div>
     <span class="sync-lbl" id="slbl">carregando...</span>
   </div>
+</div>
+<div class="mobile-nav">
+  <button class="mnb" onclick="navTo('index.html')">Buscar Peça</button>
+  <button class="mnb" onclick="navTo('ordens.html')">Ordens</button>
+  <button class="mnb active">Kanban</button>
+  <button class="mnb" onclick="navTo('paradas.html')">Paradas</button>
+  <button class="mnb" onclick="navTo('apontamentos.html')">Apontamentos</button>
+  <button class="mnb" onclick="navTo('operadores.html')">Performance</button>
+  <button class="mnb" onclick="navTo('prazos.html')">Prazos</button>
+  <button class="mnb" onclick="navTo('otd.html')">OTD</button>
+  <button class="mnb" onclick="navTo('cliente.html')">Cliente</button>
+  <button class="mnb" onclick="navTo('demanda.html')">Demanda</button>
 </div>
 <div class="toolbar">
 

@@ -185,6 +185,7 @@
   <div class="det-hdr"><div id="dt"></div><button class="det-close" onclick="fechar()">✕ fechar</button></div>
   <div class="det-body" id="db"></div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="status.js"></script>
 <script>
 let POS=[];
@@ -321,7 +322,21 @@ async function atualizarAuto(){
     document.getElementById("slbl").textContent = `${POS.length} peças · ${new Date().toLocaleTimeString("pt-BR")}`;
   }catch(e){}
 }
-setInterval(atualizarAuto, 20000);
+
+// Realtime do Supabase: atualiza na hora a cada novo evento (entrada/saída)
+let _rtTimer = null;
+function refreshDebounced(){ clearTimeout(_rtTimer); _rtTimer = setTimeout(atualizarAuto, 1200); }
+function iniciarRealtime(){
+  try{
+    if(!window.supabase) return;
+    const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+    sb.channel("kanban-producao")
+      .on("postgres_changes", { event:"*", schema:"public", table:"producao_eventos" }, refreshDebounced)
+      .subscribe();
+  }catch(e){}
+}
+iniciarRealtime();
+setInterval(atualizarAuto, 60000);   // rede de segurança caso o websocket caia
 
 init();
 </script>

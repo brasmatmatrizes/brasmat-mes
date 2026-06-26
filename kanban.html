@@ -14,6 +14,13 @@
 .bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
 .nav{display:flex;gap:4px;overflow-x:auto;flex:1;min-width:0;-webkit-overflow-scrolling:touch}
 .nav::-webkit-scrollbar{height:0}
+@media(max-width:768px){
+  .bs,.sync-lbl,.btn-sm{display:none}
+  .topbar{padding:0 10px;gap:8px}
+  .nav{gap:6px}
+  .nb{border:1px solid var(--border);border-radius:20px;padding:6px 14px}
+  .nb.active{border-color:var(--accent)}
+}
 .nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
 .nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
 .tr-right{display:flex;align-items:center;gap:8px}

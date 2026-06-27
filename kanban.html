@@ -282,11 +282,16 @@ function renderBoard(){
   if(flags.e) document.getElementById("che").textContent=cntE+" erro prov.";
   const board=document.getElementById("board");
   board.innerHTML="";
-  COLUNAS_KANBAN.forEach(col=>{
+  // Monta colunas e ordena: as com cards primeiro (esquerda), mantendo a ordem dos processos
+  const cols=COLUNAS_KANBAN.map(col=>{
     const pcs=pecas.filter(r=>{
       const p=String(r.processo||"").trim().toUpperCase();
       return p===col.key||p.includes(col.key)||col.key.includes(p);
     }).sort((a,b)=>diasDesde(b)-diasDesde(a));
+    return {col,pcs};
+  });
+  cols.sort((a,b)=>(b.pcs.length>0)-(a.pcs.length>0));
+  cols.forEach(({col,pcs})=>{
     const el=document.createElement("div");
     el.className="col";
     const cards=pcs.length===0?`<div class="col-empty">sem peças</div>`

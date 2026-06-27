@@ -11,11 +11,11 @@ Sistema de execução de manufatura (MES) para a Brasmat — ferramentaria de ma
 
 ## Páginas (11)
 
-`index.html` (Buscar Peça), `ordens.html`, `kanban.html`, `op-kanban.html` (Kanban Operadores), `paradas.html`, `apontamentos.html`, `operadores.html` (Performance), `prazos.html`, `otd.html`, `cliente.html` (Consulta Cliente), `demanda.html` (Demanda Cliente).
+`index.html` (Buscar Peça), `ordens.html`, `kanban.html`, `op-kanban.html` (Painel — Kanban de operadores), `paradas.html`, `apontamentos.html`, `operadores.html` (Performance), `prazos.html`, `otd.html`, `cliente.html` (Consulta Cliente), `demanda.html` (Demanda Cliente).
 
 O menu de navegação (`.nav` no topbar) deve conter as 11 páginas, em **todas** as páginas, na mesma ordem.
 
-- **Kanban Operadores** (`op-kanban.html`): colunas = operadores selecionados; cada coluna mostra as peças abertas (em produção, último evento Entrada) com aquele operador. Config (⚙) escolhe quais operadores aparecem (tabela `kanban_operadores`). Realtime + fallback 60s. Nomes exibidos sem prefixo numérico.
+- **Painel** (`op-kanban.html`, menu "Painel"): card por operador (verde+bolinha piscando = operando; amarelo estático = sem atividade), ordenado por atividade; nº de itens em aberto; clicar mostra as peças do operador. Config (⚙) escolhe operadores (tabela `kanban_operadores`). Flag "Prov. erro (5+d)" destaca operador com item ≥5d; flag "Tempo parado" (timer) mostra no canto inferior direito do card o tempo sem atividade (último evento em `producao_eventos`). Realtime + fallback 60s. Nomes sem prefixo numérico.
 
 ## Dados Supabase
 

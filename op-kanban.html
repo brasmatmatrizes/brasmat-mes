@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BRASMAT MES — Kanban Operadores</title>
+<title>BRASMAT MES — Painel</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -26,10 +26,15 @@
 .mobile-nav::-webkit-scrollbar{height:0}
 .mnb{font-size:11px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;white-space:nowrap;flex-shrink:0}
 .mnb.active{background:var(--accent);border-color:var(--accent);color:#fff}
-.toolbar{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 20px;flex-shrink:0}
-.toolbar .tt{font-size:13px;font-weight:500;color:var(--text)}
-.btn-cfg{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--text2);cursor:pointer}
+.toolbar{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 20px;flex-shrink:0;overflow-x:auto}
+.toolbar::-webkit-scrollbar{height:0}
+.toolbar .tt{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;flex-shrink:0}
+.btn-cfg{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--text2);cursor:pointer;white-space:nowrap;flex-shrink:0}
 .btn-cfg:hover{border-color:var(--accent);color:var(--text)}
+.flag-btn{display:flex;align-items:center;gap:5px;font-size:11px;padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;white-space:nowrap;height:28px;flex-shrink:0}
+.flag-btn:hover{border-color:var(--border2);color:var(--text2)}
+.flag-btn.on{color:#fff;border-color:transparent}
+.flag-btn.on.fe{background:#7A1212}.flag-btn.on.ft{background:#1A4FA0}
 .board-wrap{height:calc(100vh - 104px);display:flex;flex-direction:column}
 .board{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;padding:16px 20px;height:100%;overflow-y:auto;align-content:start}
 .board::-webkit-scrollbar{width:10px}.board::-webkit-scrollbar-track{background:var(--bg2);border-radius:4px}
@@ -49,6 +54,11 @@
 .op-lbl{font-size:11px;color:var(--text3);line-height:1.2}
 .op-status{font-size:11px;font-weight:500;line-height:1.2}
 .op-card.working .op-status{color:var(--ok)}.op-card.idle .op-status{color:var(--warn)}
+.op-card{position:relative}
+.op-card.erro{border-color:var(--danger)!important;background:linear-gradient(135deg,rgba(240,69,69,0.16),rgba(240,69,69,0.05))}
+.op-card.erro .op-num{color:var(--danger)}
+.op-badge{position:absolute;top:10px;right:12px;font-size:9px;font-family:var(--mono);font-weight:600;color:var(--danger)}
+.op-idle{position:absolute;right:12px;bottom:11px;font-size:10px;font-family:var(--mono);font-weight:500;color:var(--warn)}
 .col{width:210px;min-width:210px;display:flex;flex-direction:column;height:100%;flex-shrink:0}
 .col-hdr{background:var(--bg2);border:1px solid var(--border);border-radius:10px 10px 0 0;padding:9px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0}
 .col-stripe{width:3px;height:18px;border-radius:2px;flex-shrink:0;background:var(--accent)}
@@ -133,7 +143,7 @@
     <button class="nb" onclick="navTo('index.html')">Buscar Peça</button>
     <button class="nb" onclick="navTo('ordens.html')">Ordens em Aberto</button>
     <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
-    <button class="nb active">Kanban Operadores</button>
+    <button class="nb active">Painel</button>
     <button class="nb" onclick="navTo('paradas.html')">Peças paradas</button>
     <button class="nb" onclick="navTo('apontamentos.html')">Apontamentos</button>
     <button class="nb" onclick="navTo('operadores.html')">Performance</button>
@@ -151,7 +161,7 @@
   <button class="mnb" onclick="navTo('index.html')">Buscar Peça</button>
   <button class="mnb" onclick="navTo('ordens.html')">Ordens</button>
   <button class="mnb" onclick="navTo('kanban.html')">Kanban</button>
-  <button class="mnb active">Operadores</button>
+  <button class="mnb active">Painel</button>
   <button class="mnb" onclick="navTo('paradas.html')">Paradas</button>
   <button class="mnb" onclick="navTo('apontamentos.html')">Apontamentos</button>
   <button class="mnb" onclick="navTo('operadores.html')">Performance</button>
@@ -161,8 +171,10 @@
   <button class="mnb" onclick="navTo('demanda.html')">Demanda</button>
 </div>
 <div class="toolbar">
-  <span class="tt">Peças abertas por operador</span>
+  <span class="tt">Painel de operadores</span>
   <button class="btn-cfg" onclick="abrirCfg()">⚙ Escolher operadores</button>
+  <button class="flag-btn fe" id="flagE" onclick="toggleErro()">🔴 Prov. erro (5+d)</button>
+  <button class="flag-btn ft" id="flagT" onclick="toggleTimer()">⏱️ Tempo parado</button>
 </div>
 <div class="board-wrap"><div class="board" id="board"><div class="loading"><div class="spinner"></div>carregando...</div></div></div>
 </div>
@@ -192,9 +204,35 @@
 let POS = [];
 let OPERS = [];        // operadores selecionados (na ordem)
 let TODOS_OPS = [];    // todos os operadores da base
+let flagErro = false, flagTimer = false;
+let LAST_EVENT = {};   // operador -> data do último evento (p/ tempo parado)
 
 function navTo(p){ window.location.href=p; }
 function limpaNome(o){ return String(o||"").replace(/^\d+_/,"").trim()||"—"; }
+
+function toggleErro(){ flagErro=!flagErro; document.getElementById("flagE").classList.toggle("on",flagErro); renderBoard(); }
+async function toggleTimer(){
+  flagTimer=!flagTimer; document.getElementById("flagT").classList.toggle("on",flagTimer);
+  if(flagTimer) await carregarUltimoEvento();
+  renderBoard();
+}
+async function carregarUltimoEvento(){
+  LAST_EVENT={};
+  if(!OPERS.length) return;
+  const lst = OPERS.map(o=>encodeURIComponent('"'+o+'"')).join(",");
+  try{
+    const rows = await supaFetch(`/rest/v1/producao_eventos?select=operador,data_evento&operador=in.(${lst})&order=data_evento.desc&limit=3000`);
+    (Array.isArray(rows)?rows:[]).forEach(r=>{ const o=String(r.operador||"").trim(); if(o && !(o in LAST_EVENT)) LAST_EVENT[o]=r.data_evento; });
+  }catch(e){}
+}
+function tempoParado(op){
+  const t=LAST_EVENT[op]; if(!t) return "";
+  const ms=Date.now()-new Date(t); if(ms<0) return "";
+  const h=Math.floor(ms/3600000), d=Math.floor(h/24), m=Math.floor(ms/60000);
+  if(d>0) return d+"d "+(h%24)+"h";
+  if(h>0) return h+"h "+(m%60)+"m";
+  return m+"m";
+}
 
 async function init(){
   document.getElementById("slbl").textContent="carregando...";
@@ -228,16 +266,20 @@ function renderBoard(){
   }
   board.style.display="grid";
   // monta com contagem e ordena: operando primeiro, depois alfabético
-  const arr=OPERS.map(op=>({op,n:pecasDoOperador(op).length}));
+  const arr=OPERS.map(op=>{ const pcs=pecasDoOperador(op); const maxD=pcs.reduce((m,p)=>Math.max(m,diasDesde(p)),0); return {op,n:pcs.length,maxD}; });
   arr.sort((a,b)=> (b.n>0)-(a.n>0) || limpaNome(a.op).localeCompare(limpaNome(b.op),"pt-BR"));
   const trabalhando=arr.filter(x=>x.n>0).length;
-  board.innerHTML=arr.map(({op,n})=>{
+  board.innerHTML=arr.map(({op,n,maxD})=>{
     const w=n>0;
-    return `<div class="op-card ${w?'working':'idle'}" onclick="abrirOperador('${esc(op)}')">
+    const erro=flagErro && w && maxD>=5;
+    const idleT=(flagTimer && !w) ? tempoParado(op) : "";
+    return `<div class="op-card ${w?'working':'idle'}${erro?' erro':''}" onclick="abrirOperador('${esc(op)}')">
+      ${erro?`<div class="op-badge">⚠ ${maxD}d</div>`:""}
       <div class="op-top"><span class="op-dot ${w?'on':'off'}"></span><span class="op-name">${limpaNome(op)}</span></div>
       <div class="op-num">${n}</div>
       <div class="op-lbl">${n===1?'item em aberto':'itens em aberto'}</div>
       <div class="op-status">${w?'operando agora':'sem atividade'}</div>
+      ${idleT?`<div class="op-idle">⏱ ${idleT}</div>`:""}
     </div>`;
   }).join("");
   document.getElementById("slbl").textContent=`${trabalhando}/${OPERS.length} operando · ${new Date().toLocaleTimeString("pt-BR")}`;
@@ -319,6 +361,7 @@ async function salvarCfg(){
 async function atualizarAuto(){
   try{
     POS = await buscarPosicao();
+    if(flagTimer) await carregarUltimoEvento();
     renderBoard();
   }catch(e){}
 }

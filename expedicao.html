@@ -139,6 +139,7 @@
   <div class="det-body" id="db"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="status.js"></script>
 <script>
 let ITENS=[], CFG={}, POSMAP={}, POSMAPC={}, FILTRO="todos";
@@ -262,6 +263,21 @@ async function abrirDet(pedido,codigo){
 }
 function fechar(){ document.getElementById("dp").classList.remove("open"); }
 
+// Realtime: atualiza quando a produção concluir peça ou a demanda mudar
+let _rtTimer=null;
+function refreshDebounced(){ clearTimeout(_rtTimer); _rtTimer=setTimeout(init,1200); }
+function iniciarRealtime(){
+  try{
+    if(!window.supabase) return;
+    const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+    sb.channel("exp-rt")
+      .on("postgres_changes",{event:"*",schema:"public",table:"producao_eventos"},refreshDebounced)
+      .on("postgres_changes",{event:"*",schema:"public",table:"demanda_itens"},refreshDebounced)
+      .subscribe();
+  }catch(e){}
+}
+iniciarRealtime();
+setInterval(init,60000);
 init();
 </script>
 </body>

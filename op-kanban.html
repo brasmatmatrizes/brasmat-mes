@@ -31,9 +31,24 @@
 .btn-cfg{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--text2);cursor:pointer}
 .btn-cfg:hover{border-color:var(--accent);color:var(--text)}
 .board-wrap{height:calc(100vh - 104px);display:flex;flex-direction:column}
-.board{display:flex;gap:10px;padding:14px 20px;height:100%;overflow-x:auto;overflow-y:hidden;align-items:flex-start}
-.board::-webkit-scrollbar{height:12px}.board::-webkit-scrollbar-track{background:var(--bg2);border-radius:4px}
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;padding:16px 20px;height:100%;overflow-y:auto;align-content:start}
+.board::-webkit-scrollbar{width:10px}.board::-webkit-scrollbar-track{background:var(--bg2);border-radius:4px}
 .board::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+/* CARDS DE OPERADOR */
+.op-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;cursor:pointer;transition:all 0.15s;display:flex;flex-direction:column;gap:6px;min-height:118px}
+.op-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,0.3)}
+.op-card.working{background:linear-gradient(135deg,rgba(45,191,126,0.20),rgba(45,191,126,0.06));border-color:rgba(45,191,126,0.5)}
+.op-card.idle{opacity:0.5}
+.op-top{display:flex;align-items:center;gap:8px}
+.op-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.op-dot.on{background:var(--ok);animation:pulse 1.4s infinite}
+.op-dot.off{background:var(--warn)}
+.op-name{font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.op-num{font-size:34px;font-weight:700;font-family:var(--mono);line-height:1;margin-top:2px}
+.op-card.working .op-num{color:var(--ok)}.op-card.idle .op-num{color:var(--text3)}
+.op-lbl{font-size:11px;color:var(--text3)}
+.op-status{font-size:11px;font-weight:500;margin-top:2px}
+.op-card.working .op-status{color:var(--ok)}.op-card.idle .op-status{color:var(--warn)}
 .col{width:210px;min-width:210px;display:flex;flex-direction:column;height:100%;flex-shrink:0}
 .col-hdr{background:var(--bg2);border:1px solid var(--border);border-radius:10px 10px 0 0;padding:9px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0}
 .col-stripe{width:3px;height:18px;border-radius:2px;flex-shrink:0;background:var(--accent)}
@@ -125,7 +140,6 @@
     <button class="nb" onclick="navTo('demanda.html')">Demanda Cliente</button>
   </div>
   <div class="tr-right">
-    <button class="btn-sm" onclick="atualizarAuto()">↻ atualizar</button>
     <div class="sync-dot"></div>
     <span class="sync-lbl" id="slbl">carregando...</span>
   </div>
@@ -184,7 +198,6 @@ async function init(){
   POS = await buscarPosicao();
   await carregarSelecionados();
   renderBoard();
-  document.getElementById("slbl").textContent=`${OPERS.length} operadores · ${new Date().toLocaleTimeString("pt-BR")}`;
 }
 
 async function carregarSelecionados(){
@@ -203,33 +216,48 @@ function pecasDoOperador(op){
   }).sort((a,b)=>diasDesde(b)-diasDesde(a));
 }
 
-function catDias(d){ return d>=5?"e":d>=3?"a":"n"; }
-
 function renderBoard(){
   const board=document.getElementById("board");
   if(!OPERS.length){
+    board.style.display="block";
     board.innerHTML=`<div class="empty-cfg"><div class="ico">👷</div><div>Nenhum operador selecionado ainda.<br>Clique em <b>⚙ Escolher operadores</b> para montar o painel.</div></div>`;
     return;
   }
-  board.innerHTML="";
-  OPERS.forEach(op=>{
-    const pcs=pecasDoOperador(op);
-    const cards=pcs.length===0?`<div class="col-empty">sem peça aberta</div>`
-      :pcs.map(p=>{
-        const d=diasDesde(p);const cat=catDias(d);const ds=d===0?"hoje":d===1?"1d":d+"d";
-        return `<div class="card card-${cat}" onclick="abrirDet('${esc(p.pedido)}','${esc(p.codigo_peca)}')">
-          <div class="c1">${p.codigo_peca||"—"}</div>
-          <div class="c2">Ped: ${p.pedido||"—"}</div>
-          <div class="cproc">${String(p.processo||"").trim()||"—"}</div>
-          <div class="c3">${getSubop(p)}</div>
-          <div class="c4"><span class="c4a">${p.cliente||"—"}</span><span class="c4b">${ds}</span></div>
-        </div>`;
-      }).join("");
-    const el=document.createElement("div");
-    el.className="col";
-    el.innerHTML=`<div class="col-hdr"><div class="col-stripe"></div><div class="col-name">${limpaNome(op)}</div><span class="col-cnt">${pcs.length}</span></div><div class="col-body">${cards}</div>`;
-    board.appendChild(el);
-  });
+  board.style.display="grid";
+  // monta com contagem e ordena: operando primeiro, depois alfabético
+  const arr=OPERS.map(op=>({op,n:pecasDoOperador(op).length}));
+  arr.sort((a,b)=> (b.n>0)-(a.n>0) || limpaNome(a.op).localeCompare(limpaNome(b.op),"pt-BR"));
+  const trabalhando=arr.filter(x=>x.n>0).length;
+  board.innerHTML=arr.map(({op,n})=>{
+    const w=n>0;
+    return `<div class="op-card ${w?'working':'idle'}" onclick="abrirOperador('${esc(op)}')">
+      <div class="op-top"><span class="op-dot ${w?'on':'off'}"></span><span class="op-name">${limpaNome(op)}</span></div>
+      <div class="op-num">${n}</div>
+      <div class="op-lbl">${n===1?'peça em aberto':'peças em aberto'}</div>
+      <div class="op-status">${w?'operando agora':'sem peça aberta'}</div>
+    </div>`;
+  }).join("");
+  document.getElementById("slbl").textContent=`${trabalhando}/${OPERS.length} operando · ${new Date().toLocaleTimeString("pt-BR")}`;
+}
+
+// Painel: peças que o operador está operando agora
+function abrirOperador(op){
+  const pcs=pecasDoOperador(op);
+  document.getElementById("dp").classList.add("open");
+  document.getElementById("dt").innerHTML=`<div>
+    <div style="font-size:15px;font-weight:600;color:var(--text)">${limpaNome(op)}</div>
+    <div style="font-size:12px;color:${pcs.length?'var(--ok)':'var(--text3)'};font-family:var(--mono);margin-top:2px">${pcs.length} ${pcs.length===1?'peça':'peças'} em aberto</div>
+  </div>`;
+  const body=document.getElementById("db");
+  if(!pcs.length){ body.innerHTML=`<p style="color:var(--text3);font-size:13px;padding:8px 0">Sem peça aberta no momento.</p>`; return; }
+  body.innerHTML=`<div class="tl-lbl">peças operando agora</div>`+pcs.map(p=>{
+    const d=diasDesde(p);const ds=d===0?'hoje':d===1?'1 dia':d+' dias';
+    return `<div onclick="abrirDet('${esc(p.pedido)}','${esc(p.codigo_peca)}')" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:8px;cursor:pointer">
+      <div style="font-size:13px;font-weight:500;font-family:var(--mono);color:var(--text)">${p.codigo_peca||'—'}</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:3px">${String(p.processo||'').trim()||'—'} · ${getSubop(p)}</div>
+      <div style="display:flex;justify-content:space-between;gap:8px;margin-top:5px"><span style="font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.cliente||'—'}</span><span style="font-size:11px;font-family:var(--mono);color:var(--text3);flex-shrink:0">${ds} · Ped ${p.pedido||'—'}</span></div>
+    </div>`;
+  }).join("");
 }
 
 async function abrirDet(pedido,codigo){
@@ -282,7 +310,6 @@ async function salvarCfg(){
   OPERS = novos;
   fecharCfg();
   renderBoard();
-  document.getElementById("slbl").textContent=`${OPERS.length} operadores · ${new Date().toLocaleTimeString("pt-BR")}`;
 }
 
 // ---- Atualização ----
@@ -290,7 +317,6 @@ async function atualizarAuto(){
   try{
     POS = await buscarPosicao();
     renderBoard();
-    document.getElementById("slbl").textContent=`${OPERS.length} operadores · ${new Date().toLocaleTimeString("pt-BR")}`;
   }catch(e){}
 }
 let _rtTimer=null;

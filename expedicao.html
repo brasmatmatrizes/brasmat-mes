@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRASMAT MES — Expedição</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#C4CBDA;--text3:#8E9AB0;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+.wrap{display:grid;grid-template-rows:56px auto 1fr;height:100vh;overflow:hidden}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:8px}
+.brand{display:flex;align-items:center;gap:8px;flex-shrink:0}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:#fff;flex-shrink:0}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.nav{display:flex;gap:4px;overflow-x:auto;flex:1;justify-content:center}.nav::-webkit-scrollbar{height:0}
+.nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
+.tr-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-lbl{font-size:11px;color:var(--text2);font-family:var(--mono)}
+.mobile-nav{display:none;overflow-x:auto;padding:8px 12px;gap:6px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.mobile-nav::-webkit-scrollbar{height:0}
+.mnb{font-size:11px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.mnb.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.toolbar{background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:10px 16px;overflow-x:auto}
+.toolbar::-webkit-scrollbar{height:0}
+.tt{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;flex-shrink:0;margin-right:6px}
+.fchip{font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.fchip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.content{overflow-y:auto;padding:16px 18px 40px}
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:70%;color:var(--text3);gap:12px}
+.ph-ico{font-size:46px;opacity:0.3}.ph-txt{font-size:14px;text-align:center;max-width:340px;line-height:1.6}
+/* GRUPO CLIENTE */
+.cli-group{margin-bottom:20px}
+.cli-hdr{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:8px}
+.cli-name{font-size:14px;font-weight:600;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cli-cnt{font-size:11px;font-family:var(--mono);color:var(--text2)}
+/* ITEM */
+.exp-item{display:grid;grid-template-columns:150px 1fr 110px 150px 200px;gap:12px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:11px 14px;margin-bottom:7px}
+.ei-cod{font-size:14px;font-weight:500;font-family:var(--mono);color:var(--text);cursor:pointer}
+.ei-cod:hover{color:var(--accent)}
+.ei-desc{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ei-prazo{font-size:12px;font-family:var(--mono);color:var(--text2)}
+.ei-prazo.venc{color:var(--danger)}
+.sit{font-size:11px;font-weight:500;padding:3px 10px;border-radius:10px;white-space:nowrap;text-align:center}
+.seg{display:flex;gap:4px;justify-content:flex-end}
+.seg button{font-size:10px;padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);cursor:pointer;white-space:nowrap}
+.seg button:hover{border-color:var(--border2);color:var(--text2)}
+.seg button.on-p{background:var(--text3);color:#0F172A;border-color:transparent}
+.seg button.on-s{background:var(--warn);color:#3A2800;border-color:transparent}
+.seg button.on-e{background:var(--ok);color:#06281A;border-color:transparent}
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* PAINEL DETALHE */
+.det-panel{display:none;position:fixed;right:0;top:56px;bottom:0;width:460px;background:var(--bg2);border-left:1px solid var(--border);z-index:100;overflow-y:auto;animation:si 0.18s ease}
+.det-panel.open{display:block}
+@keyframes si{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+.det-hdr{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--bg2);z-index:1}
+.det-close{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer}
+.det-body{padding:16px 20px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.mb{background:var(--bg3);border-radius:8px;padding:10px 12px}.ml{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.07em}.mv{font-size:13px;font-weight:500;color:var(--text)}
+.pos-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px}
+.tl-lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:12px}
+.timeline{list-style:none;position:relative;padding-left:28px}
+.timeline::before{content:"";position:absolute;left:9px;top:0;bottom:0;width:1px;background:var(--border)}
+.tl-item{position:relative;margin-bottom:12px}.tl-item:last-child{margin-bottom:0}
+.tl-dot{position:absolute;left:-28px;top:4px;width:13px;height:13px;border-radius:50%;border:2px solid var(--bg2)}
+.tl-dot.entrada{background:var(--accent)}.tl-dot.saida{background:var(--ok)}.tl-dot.atual{background:var(--warn);box-shadow:0 0 0 3px rgba(245,166,35,0.2)}
+.tl-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}.tl-card.atual{border-color:rgba(245,166,35,0.4)}
+.tl-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.tl-proc{font-size:12px;font-weight:500;color:var(--text)}
+.tl-evt{font-size:10px;padding:1px 7px;border-radius:8px}
+.ent{background:rgba(59,127,255,0.12);color:var(--accent)}.sai{background:rgba(45,191,126,0.1);color:var(--ok)}
+.tl-tag{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(245,166,35,0.12);color:var(--warn)}
+.tl-ret{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(240,69,69,0.12);color:var(--danger)}
+.tl-sub{font-size:11px;color:var(--text2);margin-bottom:6px}
+.tl-foot{display:flex;gap:12px;flex-wrap:wrap}.tl-m{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.tl-obs{margin-top:6px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:6px;line-height:1.5}
+@media(max-width:768px){
+  .bs,.sync-lbl{display:none}.nav{display:none}.mobile-nav{display:flex}
+  .topbar{padding:0 10px}
+  .exp-item{grid-template-columns:1fr auto;gap:6px 10px}
+  .ei-desc{grid-column:1/-1;order:5}
+  .ei-prazo{order:3}.sit{order:2;justify-self:end}.seg{grid-column:1/-1;order:6;justify-content:flex-start}
+  .det-panel{width:100%;max-width:100vw}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="topbar">
+  <div class="brand"><div class="bm">BM</div><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="nav">
+    <button class="nb" onclick="navTo('index.html')">Buscar Peça</button>
+    <button class="nb" onclick="navTo('demanda.html')">Demanda Cliente</button>
+    <button class="nb active">Expedição</button>
+    <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
+    <button class="nb" onclick="navTo('op-kanban.html')">Painel</button>
+    <button class="nb" onclick="navTo('cliente.html')">Consulta Cliente</button>
+    <button class="nb" onclick="navTo('apontamentos.html')">Apontamentos</button>
+    <button class="nb" onclick="navTo('prazos.html')">Prazos</button>
+    <button class="nb" onclick="navTo('otd.html')">OTD</button>
+    <button class="nb" onclick="navTo('ordens.html')">Ordens em Aberto</button>
+    <button class="nb" onclick="navTo('paradas.html')">Peças paradas</button>
+    <button class="nb" onclick="navTo('operadores.html')">Performance</button>
+  </div>
+  <div class="tr-right"><div class="sync-dot"></div><span class="sync-lbl" id="slbl">carregando...</span></div>
+</div>
+<div class="mobile-nav">
+  <button class="mnb" onclick="navTo('index.html')">Buscar Peça</button>
+  <button class="mnb" onclick="navTo('demanda.html')">Demanda</button>
+  <button class="mnb active">Expedição</button>
+  <button class="mnb" onclick="navTo('kanban.html')">Kanban</button>
+  <button class="mnb" onclick="navTo('op-kanban.html')">Painel</button>
+  <button class="mnb" onclick="navTo('cliente.html')">Cliente</button>
+  <button class="mnb" onclick="navTo('apontamentos.html')">Apontamentos</button>
+  <button class="mnb" onclick="navTo('prazos.html')">Prazos</button>
+  <button class="mnb" onclick="navTo('otd.html')">OTD</button>
+  <button class="mnb" onclick="navTo('ordens.html')">Ordens</button>
+  <button class="mnb" onclick="navTo('paradas.html')">Paradas</button>
+  <button class="mnb" onclick="navTo('operadores.html')">Performance</button>
+</div>
+<div class="toolbar">
+  <span class="tt">📦 Expedição</span>
+  <button class="fchip on" id="f-todos" onclick="setFiltro('todos')">Todos</button>
+  <button class="fchip" id="f-pendente" onclick="setFiltro('pendente')">Pendentes</button>
+  <button class="fchip" id="f-separado" onclick="setFiltro('separado')">Separados</button>
+  <button class="fchip" id="f-expedido" onclick="setFiltro('expedido')">Expedidos</button>
+</div>
+<div class="content" id="content"><div class="loading"><div class="spinner"></div>carregando...</div></div>
+</div>
+
+<div class="det-panel" id="dp">
+  <div class="det-hdr"><div id="dt"></div><button class="det-close" onclick="fechar()">✕ fechar</button></div>
+  <div class="det-body" id="db"></div>
+</div>
+
+<script src="status.js"></script>
+<script>
+let ITENS=[], CFG={}, POSMAP={}, POSMAPC={}, FILTRO="todos";
+
+function navTo(p){ window.location.href=p; }
+function nomeExib(c){ return (CFG[c]&&CFG[c].nome_fantasia)||c; }
+const PALETA=["#3B7FFF","#2DBF7E","#F5A623","#9B5DE5","#DC2626","#0891B2","#DB2777","#65A30D","#D97706","#7C3AED","#0E7490","#B45309"];
+function autoCor(c){let h=0;const s=String(c||"");for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return PALETA[h%PALETA.length];}
+function corCliente(c){ return (CFG[c]&&CFG[c].cor)||autoCor(c); }
+function hexRgba(hex,a){const n=parseInt(String(hex).replace("#",""),16);return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;}
+
+async function init(){
+  try{
+    const [itens, pos, cfg] = await Promise.all([
+      supaFetch("/rest/v1/demanda_itens?select=*&order=id.asc"),
+      buscarPosicao(),
+      supaFetch("/rest/v1/demanda_clientes?select=*")
+    ]);
+    ITENS = Array.isArray(itens)?itens:[];
+    (Array.isArray(cfg)?cfg:[]).forEach(r=>{ if(r.cliente) CFG[r.cliente]={nome_fantasia:r.nome_fantasia||"",cor:r.cor||""}; });
+    POSMAP={}; POSMAPC={};
+    (Array.isArray(pos)?pos:[]).forEach(r=>{
+      const k=(r.codigo_peca||"")+"|"+(r.pedido||"");
+      POSMAP[k]=r;
+      if(!(r.codigo_peca in POSMAPC)) POSMAPC[r.codigo_peca]=r;
+    });
+    render();
+  }catch(e){
+    document.getElementById("content").innerHTML=`<div class="placeholder"><div class="ph-ico">⚠️</div><div class="ph-txt">Erro ao carregar.</div></div>`;
+  }
+}
+
+// Situação de produção do item
+function situacao(it){
+  if(it.concluido) return {key:"pronto",label:"Pronto p/ expedir",cor:"var(--ok)"};
+  const row = POSMAP[(it.codigo_peca||"")+"|"+(it.pedido||"")] || POSMAPC[it.codigo_peca];
+  if(row){
+    const s=status(row).s;
+    if(s==="expedida") return {key:"expedido",label:"Expedido (sistema)",cor:"var(--text3)"};
+    if(s==="em_estoque"||s==="aprovada") return {key:"pronto",label:"Pronto p/ expedir",cor:"var(--ok)"};
+    return {key:"producao",label:"Em produção",cor:"var(--accent)"};
+  }
+  return {key:"producao",label:"Em produção",cor:"var(--text3)"};
+}
+
+const SIT_ORDEM={pronto:0,producao:1,expedido:2};
+
+function setFiltro(f){
+  FILTRO=f;
+  ["todos","pendente","separado","expedido"].forEach(t=>document.getElementById("f-"+t).classList.toggle("on",t===f));
+  render();
+}
+
+function render(){
+  const cont=document.getElementById("content");
+  let itens = ITENS.slice();
+  if(FILTRO!=="todos") itens = itens.filter(it=>(it.exp_status||"pendente")===FILTRO);
+  if(!itens.length){
+    cont.innerHTML=`<div class="placeholder"><div class="ph-ico">📦</div><div class="ph-txt">${ITENS.length?'Nenhum item neste filtro.':'Nenhum item na demanda ainda. Os itens lançados na Demanda Cliente aparecem aqui.'}</div></div>`;
+    document.getElementById("slbl").textContent=`${ITENS.length} itens`;
+    return;
+  }
+  // agrupa por cliente
+  const grupos={};
+  itens.forEach(it=>{ const c=it.cliente||"—"; (grupos[c]=grupos[c]||[]).push(it); });
+  const clientes=Object.keys(grupos).sort((a,b)=>nomeExib(a).localeCompare(nomeExib(b),"pt-BR"));
+  cont.innerHTML=clientes.map(c=>{
+    const cor=corCliente(c);
+    const lista=grupos[c].sort((a,b)=>{
+      const sa=situacao(a),sb=situacao(b);
+      return (SIT_ORDEM[sa.key]-SIT_ORDEM[sb.key]) || String(a.codigo_peca).localeCompare(String(b.codigo_peca));
+    });
+    const rows=lista.map(it=>{
+      const sit=situacao(it);
+      const st=it.exp_status||"pendente";
+      const prazoD=it.prazo_confirmado?new Date(it.prazo_confirmado+"T00:00:00"):null;
+      const venc=prazoD && prazoD<new Date(new Date().toDateString());
+      const prazo=prazoD?prazoD.toLocaleDateString("pt-BR"):"—";
+      return `<div class="exp-item">
+        <div class="ei-cod" onclick="abrirDet('${esc(it.pedido||"")}','${esc(it.codigo_peca||"")}')">${it.codigo_peca||"—"}</div>
+        <div class="ei-desc">${it.descricao?String(it.descricao).replace(/</g,"&lt;"):(it.pedido?"Ped: "+it.pedido:"")}</div>
+        <div class="ei-prazo ${venc?'venc':''}">${prazo}${venc?" ⚠":""}</div>
+        <div class="sit" style="background:${sit.cor}22;color:${sit.cor}">${sit.label}</div>
+        <div class="seg">
+          <button class="${st==='pendente'?'on-p':''}" onclick="marcar(${it.id},'pendente')">Pendente</button>
+          <button class="${st==='separado'?'on-s':''}" onclick="marcar(${it.id},'separado')">Separado</button>
+          <button class="${st==='expedido'?'on-e':''}" onclick="marcar(${it.id},'expedido')">Expedido</button>
+        </div>
+      </div>`;
+    }).join("");
+    const nExp=lista.filter(it=>(it.exp_status||"pendente")==="expedido").length;
+    return `<div class="cli-group">
+      <div class="cli-hdr" style="background:${hexRgba(cor,0.14)};border-left:4px solid ${cor}">
+        <div class="cli-name">${nomeExib(c)}</div>
+        <div class="cli-cnt">${lista.length} ${lista.length===1?'item':'itens'} · ${nExp} expedido(s)</div>
+      </div>
+      ${rows}
+    </div>`;
+  }).join("");
+  document.getElementById("slbl").textContent=`${itens.length} itens`;
+}
+
+async function marcar(id, novo){
+  const it=ITENS.find(x=>x.id===id); if(!it) return;
+  const antigo=it.exp_status||"pendente";
+  it.exp_status = (antigo===novo) ? "pendente" : novo;   // clicar no mesmo volta p/ pendente
+  render();
+  try{
+    await fetch(`${SUPA_URL}/rest/v1/demanda_itens?id=eq.${id}`, {
+      method:"PATCH",
+      headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer:"return=minimal" },
+      body:JSON.stringify({ exp_status: it.exp_status })
+    });
+  }catch(e){}
+}
+
+async function abrirDet(pedido,codigo){
+  if(!pedido && !codigo) return;
+  document.getElementById("dp").classList.add("open");
+  await abrirPainelDetalhe(pedido,codigo,"dp","dt","db");
+}
+function fechar(){ document.getElementById("dp").classList.remove("open"); }
+
+init();
+</script>
+</body>
+</html>

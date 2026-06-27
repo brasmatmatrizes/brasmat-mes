@@ -9,11 +9,13 @@ Sistema de execução de manufatura (MES) para a Brasmat — ferramentaria de ma
 - **Supabase** (PostgreSQL na nuvem) é o backend. O front usa **só a chave pública (publishable)** definida no topo do `status.js` (`SUPA_URL`, `SUPA_KEY`). Project ref: `hjvlznijsgdwurtsyukl`.
 - Deploy automático via **Vercel** (`brasmat-mes.vercel.app`) a cada push no `main`. Após mudança, lembrar de Ctrl+F5 (cache).
 
-## Páginas (11)
+## Páginas (12)
 
-`index.html` (Buscar Peça), `ordens.html`, `kanban.html`, `op-kanban.html` (Painel — Kanban de operadores), `paradas.html`, `apontamentos.html`, `operadores.html` (Performance), `prazos.html`, `otd.html`, `cliente.html` (Consulta Cliente), `demanda.html` (Demanda Cliente).
+`index.html` (Buscar Peça), `demanda.html` (Demanda Cliente), `expedicao.html` (Expedição), `kanban.html`, `op-kanban.html` (Painel), `cliente.html` (Consulta Cliente), `apontamentos.html`, `prazos.html`, `otd.html`, `ordens.html`, `paradas.html`, `operadores.html` (Performance).
 
-O menu de navegação (`.nav` no topbar) deve conter as 11 páginas, em **todas** as páginas, na mesma ordem.
+O menu de navegação (`.nav` no topbar) deve conter as 12 páginas, em **todas** as páginas, na mesma ordem (a sequência acima). Reordenar/inserir via script Node que reescreve o bloco `.nav` (e `.mobile-nav` onde existir).
+
+- **Expedição** (`expedicao.html`): tela simples para o almoxarifado. Lê todos os itens de `demanda_itens`, agrupa por cliente (cor/nome fantasia de `demanda_clientes`) e ordena por situação. Situação derivada do status da peça (`posicao_atual`/`status()`) + flag `concluido`: "Em produção" / "Pronto p/ expedir" / "Expedido (sistema)". Almoxarifado marca cada item Pendente/Separado/Expedido (coluna `exp_status` em `demanda_itens`). Filtro por exp_status no topo. Clicar no código abre a linha do tempo.
 
 - **Painel** (`op-kanban.html`, menu "Painel"): card por operador (verde+bolinha piscando = operando; amarelo estático = sem atividade), ordenado por atividade; nº de itens em aberto; clicar mostra as peças do operador. Config (⚙) escolhe operadores (tabela `kanban_operadores`). Flag "Prov. erro (5+d)" destaca operador com item ≥5d; flag "Tempo parado" (timer) mostra no canto inferior direito do card o tempo sem atividade (último evento em `producao_eventos`). Realtime + fallback 60s. Nomes sem prefixo numérico.
 

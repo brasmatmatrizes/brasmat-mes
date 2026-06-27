@@ -9,11 +9,13 @@ Sistema de execução de manufatura (MES) para a Brasmat — ferramentaria de ma
 - **Supabase** (PostgreSQL na nuvem) é o backend. O front usa **só a chave pública (publishable)** definida no topo do `status.js` (`SUPA_URL`, `SUPA_KEY`). Project ref: `hjvlznijsgdwurtsyukl`.
 - Deploy automático via **Vercel** (`brasmat-mes.vercel.app`) a cada push no `main`. Após mudança, lembrar de Ctrl+F5 (cache).
 
-## Páginas (10)
+## Páginas (11)
 
-`index.html` (Buscar Peça), `ordens.html`, `kanban.html`, `paradas.html`, `apontamentos.html`, `operadores.html` (Performance), `prazos.html`, `otd.html`, `cliente.html` (Consulta Cliente), `demanda.html` (Demanda Cliente).
+`index.html` (Buscar Peça), `ordens.html`, `kanban.html`, `op-kanban.html` (Kanban Operadores), `paradas.html`, `apontamentos.html`, `operadores.html` (Performance), `prazos.html`, `otd.html`, `cliente.html` (Consulta Cliente), `demanda.html` (Demanda Cliente).
 
-O menu de navegação (`.nav` no topbar) deve conter as 10 páginas, em **todas** as páginas, na mesma ordem.
+O menu de navegação (`.nav` no topbar) deve conter as 11 páginas, em **todas** as páginas, na mesma ordem.
+
+- **Kanban Operadores** (`op-kanban.html`): colunas = operadores selecionados; cada coluna mostra as peças abertas (em produção, último evento Entrada) com aquele operador. Config (⚙) escolhe quais operadores aparecem (tabela `kanban_operadores`). Realtime + fallback 60s. Nomes exibidos sem prefixo numérico.
 
 ## Dados Supabase
 

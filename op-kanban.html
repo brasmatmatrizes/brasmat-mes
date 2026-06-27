@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRASMAT MES — Kanban Operadores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#C4CBDA;--text3:#8E9AB0;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.nav{display:flex;gap:4px;overflow-x:auto;flex:1;min-width:0;justify-content:center}
+.nav::-webkit-scrollbar{height:0}
+.nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
+.tr-right{display:flex;align-items:center;gap:8px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-lbl{font-size:11px;color:var(--text2);font-family:var(--mono)}
+.btn-sm{background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--mono)}
+.btn-sm:hover{border-color:var(--border2);color:var(--text2)}
+.mobile-nav{display:none;overflow-x:auto;padding:8px 12px;gap:6px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.mobile-nav::-webkit-scrollbar{height:0}
+.mnb{font-size:11px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.mnb.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.toolbar{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 20px;flex-shrink:0}
+.toolbar .tt{font-size:13px;font-weight:500;color:var(--text)}
+.btn-cfg{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;color:var(--text2);cursor:pointer}
+.btn-cfg:hover{border-color:var(--accent);color:var(--text)}
+.board-wrap{height:calc(100vh - 104px);display:flex;flex-direction:column}
+.board{display:flex;gap:10px;padding:14px 20px;height:100%;overflow-x:auto;overflow-y:hidden;align-items:flex-start}
+.board::-webkit-scrollbar{height:12px}.board::-webkit-scrollbar-track{background:var(--bg2);border-radius:4px}
+.board::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.col{width:210px;min-width:210px;display:flex;flex-direction:column;height:100%;flex-shrink:0}
+.col-hdr{background:var(--bg2);border:1px solid var(--border);border-radius:10px 10px 0 0;padding:9px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.col-stripe{width:3px;height:18px;border-radius:2px;flex-shrink:0;background:var(--accent)}
+.col-name{font-size:12px;font-weight:500;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.col-cnt{font-size:11px;font-family:var(--mono);padding:1px 7px;border-radius:10px;background:var(--bg3);color:var(--text2);flex-shrink:0}
+.col-body{background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;flex:1;overflow-y:auto;padding:6px;display:flex;flex-direction:column;gap:5px;min-height:0}
+.col-body::-webkit-scrollbar{width:3px}.col-body::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.col-empty{font-size:11px;color:var(--text3);text-align:center;padding:20px 6px;font-family:var(--mono)}
+.card{border-radius:8px;padding:9px 11px;cursor:pointer;transition:transform 0.1s,box-shadow 0.1s;border:1px solid #D1D8E0;background:#F8FAFC}
+.card:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+.card-n{border-left:4px solid #16A34A;background:#F0FDF4;border-color:#BBF7D0}
+.card-a{border-left:4px solid #EA580C;background:#FFF7ED;border-color:#FED7AA}
+.card-e{border-left:4px solid #7C3AED;background:#F5F3FF;border-color:#DDD6FE}
+.c1{font-size:12px;font-weight:500;font-family:var(--mono);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#0F172A}
+.c2{font-size:10px;font-family:var(--mono);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#475569}
+.cproc{font-size:11px;font-weight:600;color:#0F172A;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c3{font-size:10px;border-radius:4px;padding:2px 6px;margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:500;background:#DCFCE7;color:#15803D}
+.card-a .c3{background:#FFEDD5;color:#C2410C}.card-e .c3{background:#EDE9FE;color:#6D28D9}
+.c4{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.c4a{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;color:#64748B}
+.c4b{font-size:10px;font-family:var(--mono);font-weight:500;white-space:nowrap;flex-shrink:0;color:#15803D}
+.card-a .c4b{color:#C2410C}.card-e .c4b{color:#6D28D9}
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-cfg{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text3);gap:12px;text-align:center;padding:20px}
+.empty-cfg .ico{font-size:42px;opacity:0.3}
+/* DETALHE */
+.det-panel{display:none;position:fixed;right:0;top:0;bottom:0;width:440px;background:var(--bg2);border-left:1px solid var(--border);z-index:200;overflow-y:auto;animation:sl 0.18s ease}
+.det-panel.open{display:block}
+@keyframes sl{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+.det-hdr{padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;position:sticky;top:0;background:var(--bg2);z-index:1}
+.det-close{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text2);cursor:pointer}
+.det-body{padding:16px 20px}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.mb{background:var(--bg3);border-radius:8px;padding:10px 12px}.ml{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.07em}.mv{font-size:13px;font-weight:500;color:var(--text)}
+.pos-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px}
+.tl-lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:12px}
+.timeline{list-style:none;position:relative;padding-left:28px}
+.timeline::before{content:"";position:absolute;left:9px;top:0;bottom:0;width:1px;background:var(--border)}
+.tl-item{position:relative;margin-bottom:12px}.tl-item:last-child{margin-bottom:0}
+.tl-dot{position:absolute;left:-28px;top:4px;width:13px;height:13px;border-radius:50%;border:2px solid var(--bg2)}
+.tl-dot.entrada{background:var(--accent)}.tl-dot.saida{background:var(--ok)}.tl-dot.atual{background:var(--warn);box-shadow:0 0 0 3px rgba(245,166,35,0.2)}
+.tl-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.tl-card.atual{border-color:rgba(245,166,35,0.4)}
+.tl-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:5px}
+.tl-proc{font-size:12px;font-weight:500;color:var(--text)}
+.tl-evt{font-size:10px;padding:1px 7px;border-radius:8px}
+.ent{background:rgba(59,127,255,0.12);color:var(--accent)}.sai{background:rgba(45,191,126,0.1);color:var(--ok)}
+.tl-tag{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(245,166,35,0.12);color:var(--warn)}
+.tl-ret{font-size:10px;padding:1px 7px;border-radius:8px;background:rgba(240,69,69,0.12);color:var(--danger)}
+.tl-sub{font-size:11px;color:var(--text2);margin-bottom:6px}
+.tl-foot{display:flex;gap:12px;flex-wrap:wrap}.tl-m{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.tl-obs{margin-top:6px;font-size:11px;color:var(--text3);border-top:1px solid var(--border);padding-top:6px;line-height:1.5}
+/* MODAL CONFIG */
+.cfg-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:300;align-items:center;justify-content:center;padding:20px}
+.cfg-box{background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:20px;width:100%;max-width:460px;max-height:80vh;display:flex;flex-direction:column}
+.cfg-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px}
+.cfg-desc{font-size:11px;color:var(--text3);margin-bottom:14px}
+.cfg-search{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--text);outline:none;margin-bottom:10px}
+.cfg-list{overflow-y:auto;flex:1;border:1px solid var(--border);border-radius:8px;padding:4px}
+.cfg-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text2)}
+.cfg-item:hover{background:var(--bg3)}
+.cfg-item input{width:15px;height:15px;accent-color:var(--accent);cursor:pointer}
+.cfg-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+@media(max-width:768px){
+  .bs,.sync-lbl{display:none}
+  .nav{display:none}.mobile-nav{display:flex}
+  .topbar{padding:0 10px;gap:8px}
+  .board-wrap{height:auto;flex:1;min-height:0}
+}
+</style>
+</head>
+<body>
+<div style="display:flex;flex-direction:column;height:100vh;overflow:hidden">
+<div class="topbar">
+  <div class="brand"><div class="bm">BM</div><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="nav">
+    <button class="nb" onclick="navTo('index.html')">Buscar Peça</button>
+    <button class="nb" onclick="navTo('ordens.html')">Ordens em Aberto</button>
+    <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
+    <button class="nb active">Kanban Operadores</button>
+    <button class="nb" onclick="navTo('paradas.html')">Peças paradas</button>
+    <button class="nb" onclick="navTo('apontamentos.html')">Apontamentos</button>
+    <button class="nb" onclick="navTo('operadores.html')">Performance</button>
+    <button class="nb" onclick="navTo('prazos.html')">Prazos</button>
+    <button class="nb" onclick="navTo('otd.html')">OTD</button>
+    <button class="nb" onclick="navTo('cliente.html')">Consulta Cliente</button>
+    <button class="nb" onclick="navTo('demanda.html')">Demanda Cliente</button>
+  </div>
+  <div class="tr-right">
+    <button class="btn-sm" onclick="atualizarAuto()">↻ atualizar</button>
+    <div class="sync-dot"></div>
+    <span class="sync-lbl" id="slbl">carregando...</span>
+  </div>
+</div>
+<div class="mobile-nav">
+  <button class="mnb" onclick="navTo('index.html')">Buscar Peça</button>
+  <button class="mnb" onclick="navTo('ordens.html')">Ordens</button>
+  <button class="mnb" onclick="navTo('kanban.html')">Kanban</button>
+  <button class="mnb active">Operadores</button>
+  <button class="mnb" onclick="navTo('paradas.html')">Paradas</button>
+  <button class="mnb" onclick="navTo('apontamentos.html')">Apontamentos</button>
+  <button class="mnb" onclick="navTo('operadores.html')">Performance</button>
+  <button class="mnb" onclick="navTo('prazos.html')">Prazos</button>
+  <button class="mnb" onclick="navTo('otd.html')">OTD</button>
+  <button class="mnb" onclick="navTo('cliente.html')">Cliente</button>
+  <button class="mnb" onclick="navTo('demanda.html')">Demanda</button>
+</div>
+<div class="toolbar">
+  <span class="tt">Peças abertas por operador</span>
+  <button class="btn-cfg" onclick="abrirCfg()">⚙ Escolher operadores</button>
+</div>
+<div class="board-wrap"><div class="board" id="board"><div class="loading"><div class="spinner"></div>carregando...</div></div></div>
+</div>
+
+<div class="det-panel" id="dp">
+  <div class="det-hdr"><div id="dt"></div><button class="det-close" onclick="fechar()">✕ fechar</button></div>
+  <div class="det-body" id="db"></div>
+</div>
+
+<!-- MODAL CONFIG OPERADORES -->
+<div class="cfg-ov" id="cfg-ov">
+  <div class="cfg-box">
+    <div class="cfg-title">Operadores no painel</div>
+    <div class="cfg-desc">Marque quem deve aparecer como coluna. (a base tem todos os funcionários; aqui você filtra só os operadores)</div>
+    <input class="cfg-search" id="cfg-search" placeholder="Filtrar nome..." oninput="filtrarCfg()">
+    <div class="cfg-list" id="cfg-list"></div>
+    <div class="cfg-actions">
+      <button onclick="fecharCfg()" style="background:transparent;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;color:var(--text2);cursor:pointer">Cancelar</button>
+      <button onclick="salvarCfg()" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;font-weight:500;cursor:pointer">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="status.js"></script>
+<script>
+let POS = [];
+let OPERS = [];        // operadores selecionados (na ordem)
+let TODOS_OPS = [];    // todos os operadores da base
+
+function navTo(p){ window.location.href=p; }
+function limpaNome(o){ return String(o||"").replace(/^\d+_/,"").trim()||"—"; }
+
+async function init(){
+  document.getElementById("slbl").textContent="carregando...";
+  POS = await buscarPosicao();
+  await carregarSelecionados();
+  renderBoard();
+  document.getElementById("slbl").textContent=`${OPERS.length} operadores · ${new Date().toLocaleTimeString("pt-BR")}`;
+}
+
+async function carregarSelecionados(){
+  OPERS = [];
+  try{
+    const rows = await supaFetch("/rest/v1/kanban_operadores?select=*&order=ordem.asc.nullslast,operador.asc");
+    if(Array.isArray(rows)) OPERS = rows.map(r=>r.operador);
+  }catch(e){}
+}
+
+function pecasDoOperador(op){
+  return POS.filter(r=>{
+    if(String(r.operador||"").trim()!==op) return false;
+    const evt=String(r.evento||"").trim().toUpperCase();
+    return evt==="ENTRADA";   // peça aberta = em produção com ele agora
+  }).sort((a,b)=>diasDesde(b)-diasDesde(a));
+}
+
+function catDias(d){ return d>=5?"e":d>=3?"a":"n"; }
+
+function renderBoard(){
+  const board=document.getElementById("board");
+  if(!OPERS.length){
+    board.innerHTML=`<div class="empty-cfg"><div class="ico">👷</div><div>Nenhum operador selecionado ainda.<br>Clique em <b>⚙ Escolher operadores</b> para montar o painel.</div></div>`;
+    return;
+  }
+  board.innerHTML="";
+  OPERS.forEach(op=>{
+    const pcs=pecasDoOperador(op);
+    const cards=pcs.length===0?`<div class="col-empty">sem peça aberta</div>`
+      :pcs.map(p=>{
+        const d=diasDesde(p);const cat=catDias(d);const ds=d===0?"hoje":d===1?"1d":d+"d";
+        return `<div class="card card-${cat}" onclick="abrirDet('${esc(p.pedido)}','${esc(p.codigo_peca)}')">
+          <div class="c1">${p.codigo_peca||"—"}</div>
+          <div class="c2">Ped: ${p.pedido||"—"}</div>
+          <div class="cproc">${String(p.processo||"").trim()||"—"}</div>
+          <div class="c3">${getSubop(p)}</div>
+          <div class="c4"><span class="c4a">${p.cliente||"—"}</span><span class="c4b">${ds}</span></div>
+        </div>`;
+      }).join("");
+    const el=document.createElement("div");
+    el.className="col";
+    el.innerHTML=`<div class="col-hdr"><div class="col-stripe"></div><div class="col-name">${limpaNome(op)}</div><span class="col-cnt">${pcs.length}</span></div><div class="col-body">${cards}</div>`;
+    board.appendChild(el);
+  });
+}
+
+async function abrirDet(pedido,codigo){
+  document.getElementById("dp").classList.add("open");
+  await abrirPainelDetalhe(pedido,codigo,"dp","dt","db");
+}
+function fechar(){document.getElementById("dp").classList.remove("open");}
+
+// ---- Config ----
+let _selSet = new Set();
+async function abrirCfg(){
+  // carrega todos os operadores da base (uma vez)
+  if(!TODOS_OPS.length){
+    try{
+      const rows = await supaFetch("/rest/v1/producao_eventos?select=operador&operador=not.is.null&limit=20000");
+      const set=new Set(); (Array.isArray(rows)?rows:[]).forEach(r=>{const o=String(r.operador||"").trim(); if(o) set.add(o);});
+      TODOS_OPS=[...set].sort((a,b)=>limpaNome(a).localeCompare(limpaNome(b),"pt-BR"));
+    }catch(e){}
+  }
+  _selSet = new Set(OPERS);
+  document.getElementById("cfg-search").value="";
+  renderCfgList("");
+  document.getElementById("cfg-ov").style.display="flex";
+}
+function fecharCfg(){ document.getElementById("cfg-ov").style.display="none"; }
+function filtrarCfg(){ renderCfgList(document.getElementById("cfg-search").value.trim().toUpperCase()); }
+function renderCfgList(q){
+  const lista = TODOS_OPS.filter(o=>!q || limpaNome(o).toUpperCase().includes(q) || o.toUpperCase().includes(q));
+  document.getElementById("cfg-list").innerHTML = lista.map(o=>
+    `<label class="cfg-item"><input type="checkbox" ${_selSet.has(o)?"checked":""} onchange="toggleSel('${esc(o)}',this.checked)"> ${limpaNome(o)}</label>`
+  ).join("") || `<div style="padding:14px;color:var(--text3);font-size:12px">Nenhum operador encontrado.</div>`;
+}
+function toggleSel(op,on){ if(on)_selSet.add(op); else _selSet.delete(op); }
+
+async function salvarCfg(){
+  const novos=[...TODOS_OPS].filter(o=>_selSet.has(o)); // mantém ordem alfabética
+  try{
+    // limpa tudo e regrava a seleção
+    await fetch(`${SUPA_URL}/rest/v1/kanban_operadores?operador=neq.__none__`, {
+      method:"DELETE", headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY }
+    });
+    if(novos.length){
+      await fetch(`${SUPA_URL}/rest/v1/kanban_operadores`, {
+        method:"POST",
+        headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer:"return=minimal" },
+        body:JSON.stringify(novos.map((o,i)=>({operador:o,ordem:i})))
+      });
+    }
+  }catch(e){}
+  OPERS = novos;
+  fecharCfg();
+  renderBoard();
+  document.getElementById("slbl").textContent=`${OPERS.length} operadores · ${new Date().toLocaleTimeString("pt-BR")}`;
+}
+
+// ---- Atualização ----
+async function atualizarAuto(){
+  try{
+    POS = await buscarPosicao();
+    renderBoard();
+    document.getElementById("slbl").textContent=`${OPERS.length} operadores · ${new Date().toLocaleTimeString("pt-BR")}`;
+  }catch(e){}
+}
+let _rtTimer=null;
+function refreshDebounced(){ clearTimeout(_rtTimer); _rtTimer=setTimeout(atualizarAuto,1200); }
+function iniciarRealtime(){
+  try{
+    if(!window.supabase) return;
+    const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+    sb.channel("opkanban-producao")
+      .on("postgres_changes",{event:"*",schema:"public",table:"producao_eventos"},refreshDebounced)
+      .subscribe();
+  }catch(e){}
+}
+iniciarRealtime();
+setInterval(atualizarAuto,60000);
+init();
+</script>
+</body>
+</html>

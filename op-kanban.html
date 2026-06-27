@@ -254,7 +254,7 @@ function pecasDoOperador(op){
     if(String(r.operador||"").trim()!==op) return false;
     const evt=String(r.evento||"").trim().toUpperCase();
     if(evt!=="ENTRADA") return false;          // peça aberta = em produção com ele agora
-    if(flagErro && diasDesde(r)>=5) return false;  // oculta prováveis erros (5+ dias)
+    if(!flagErro && diasDesde(r)>=5) return false;  // por padrão oculta prováveis erros (5+ dias); botão exibe
     return true;
   }).sort((a,b)=>diasDesde(b)-diasDesde(a));
 }

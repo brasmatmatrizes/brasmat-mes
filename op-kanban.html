@@ -295,7 +295,7 @@ function abrirOperador(op){
   </div>`;
   const body=document.getElementById("db");
   if(!pcs.length){ body.innerHTML=`<p style="color:var(--text3);font-size:13px;padding:8px 0">Sem peça aberta no momento.</p>`; return; }
-  body.innerHTML=`<div class="tl-lbl">peças operando agora</div>`+pcs.map(p=>{
+  body.innerHTML=`<div class="tl-lbl">itens em produção</div>`+pcs.map(p=>{
     const d=diasDesde(p);const ds=d===0?'hoje':d===1?'1 dia':d+' dias';
     return `<div onclick="abrirDet('${esc(p.pedido)}','${esc(p.codigo_peca)}')" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 13px;margin-bottom:8px;cursor:pointer">
       <div style="font-size:13px;font-weight:500;font-family:var(--mono);color:var(--text)">${p.codigo_peca||'—'}</div>

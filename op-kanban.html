@@ -253,7 +253,9 @@ function pecasDoOperador(op){
   return POS.filter(r=>{
     if(String(r.operador||"").trim()!==op) return false;
     const evt=String(r.evento||"").trim().toUpperCase();
-    return evt==="ENTRADA";   // peça aberta = em produção com ele agora
+    if(evt!=="ENTRADA") return false;          // peça aberta = em produção com ele agora
+    if(flagErro && diasDesde(r)>=5) return false;  // oculta prováveis erros (5+ dias)
+    return true;
   }).sort((a,b)=>diasDesde(b)-diasDesde(a));
 }
 
@@ -266,15 +268,13 @@ function renderBoard(){
   }
   board.style.display="grid";
   // monta com contagem e ordena: operando primeiro, depois alfabético
-  const arr=OPERS.map(op=>{ const pcs=pecasDoOperador(op); const maxD=pcs.reduce((m,p)=>Math.max(m,diasDesde(p)),0); return {op,n:pcs.length,maxD}; });
+  const arr=OPERS.map(op=>({op,n:pecasDoOperador(op).length}));
   arr.sort((a,b)=> (b.n>0)-(a.n>0) || limpaNome(a.op).localeCompare(limpaNome(b.op),"pt-BR"));
   const trabalhando=arr.filter(x=>x.n>0).length;
-  board.innerHTML=arr.map(({op,n,maxD})=>{
+  board.innerHTML=arr.map(({op,n})=>{
     const w=n>0;
-    const erro=flagErro && w && maxD>=5;
     const idleT=(flagTimer && !w) ? tempoParado(op) : "";
-    return `<div class="op-card ${w?'working':'idle'}${erro?' erro':''}" onclick="abrirOperador('${esc(op)}')">
-      ${erro?`<div class="op-badge">⚠ ${maxD}d</div>`:""}
+    return `<div class="op-card ${w?'working':'idle'}" onclick="abrirOperador('${esc(op)}')">
       <div class="op-top"><span class="op-dot ${w?'on':'off'}"></span><span class="op-name">${limpaNome(op)}</span></div>
       <div class="op-num">${n}</div>
       <div class="op-lbl">${n===1?'item em aberto':'itens em aberto'}</div>
@@ -317,7 +317,7 @@ async function abrirCfg(){
   // carrega todos os operadores da base (uma vez)
   if(!TODOS_OPS.length){
     try{
-      const rows = await supaFetch("/rest/v1/producao_eventos?select=operador&operador=not.is.null&limit=20000");
+      const rows = await supaFetch("/rest/v1/operadores_distintos?select=operador&limit=100000");
       const set=new Set(); (Array.isArray(rows)?rows:[]).forEach(r=>{const o=String(r.operador||"").trim(); if(o) set.add(o);});
       TODOS_OPS=[...set].sort((a,b)=>limpaNome(a).localeCompare(limpaNome(b),"pt-BR"));
     }catch(e){}

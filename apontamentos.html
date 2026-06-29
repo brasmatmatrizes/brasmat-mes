@@ -122,7 +122,6 @@
     <button class="nb" onclick="navTo('operadores.html')">Performance</button>
   </div>
   <div class="tr-right">
-    <button class="btn-sm" onclick="init()">↻ atualizar</button>
     <div class="sync-dot"></div>
     <span class="sync-lbl" id="slbl">carregando...</span>
   </div>
@@ -159,6 +158,7 @@
 </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="status.js"></script>
 <script>
 const hoje = new Date();
@@ -452,7 +452,33 @@ function renderLista(eventos){
 }
 
 function navTo(p){ window.location.href=p; }
-// Não faz auto-busca — usuário clica no botão para buscar
+
+// Realtime: atualiza sozinho a cada novo apontamento (entrada/saída)
+async function refreshRealtime(){
+  const prev = document.getElementById("sel-op").value;
+  const prevFiltro = filtroCard;
+  await init();
+  const sel = document.getElementById("sel-op");
+  if(prev && [...sel.options].some(o=>o.value===prev)) sel.value = prev;
+  if(sel.value.trim()){
+    await buscar();
+    if(prevFiltro) setFiltroCard(prevFiltro);
+  }
+}
+let _rtTimer = null;
+function refreshDebounced(){ clearTimeout(_rtTimer); _rtTimer = setTimeout(refreshRealtime, 1200); }
+function iniciarRealtime(){
+  try{
+    if(!window.supabase) return;
+    const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+    sb.channel("apontamentos-producao")
+      .on("postgres_changes", { event:"*", schema:"public", table:"producao_eventos" }, refreshDebounced)
+      .subscribe();
+  }catch(e){}
+}
+iniciarRealtime();
+setInterval(refreshRealtime, 60000);   // rede de segurança caso o websocket caia
+
 init();
 </script>
 </body>

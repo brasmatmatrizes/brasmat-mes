@@ -393,7 +393,15 @@ function imprimir(){
     .bar button.on{background:#3B7FFF;border-color:#3B7FFF;color:#fff;font-weight:600}
     .bar .fechar{background:#3a2530;border-color:#5a2f3f;color:#f0a8b8}
     .bar .imp{margin-left:auto;background:#2DBF7E;border-color:#2DBF7E;color:#06281A;font-weight:700}
-    @media print{body{background:#fff}.page{max-width:none;margin:0;padding:0;box-shadow:none}.noprint{display:none!important}}
+    @media print{
+      body{background:#fff}
+      .page{max-width:none;margin:0;padding:0;box-shadow:none}
+      .noprint{display:none!important}
+      .cli{margin-bottom:10px}
+      .cli:last-of-type{margin-bottom:0}
+      .foot{margin-top:8px;padding-top:5px}
+      table{margin-bottom:0}
+    }
   </style></head><body>
     <div class="bar noprint">
       <span>Orientação:</span>

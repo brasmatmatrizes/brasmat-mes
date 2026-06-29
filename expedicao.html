@@ -364,7 +364,8 @@ function imprimir(){
   <style id="page-style">@page{size:A4 landscape;margin:12mm}</style>
   <style>
     *{box-sizing:border-box}
-    body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;font-size:11px}
+    body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;font-size:11px;background:#525659}
+    .page{background:#fff;max-width:1080px;margin:16px auto;padding:22px 26px;box-shadow:0 2px 14px rgba(0,0,0,0.4)}
     .top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px}
     .ttl{font-size:18px;font-weight:700;letter-spacing:0.5px}
     .sub{font-size:11px;color:#444;margin-top:3px}
@@ -386,25 +387,29 @@ function imprimir(){
     tbody tr:nth-child(even) td{background:#fafbfc}
     tbody tr.crit:nth-child(even) td{background:#fce0e0}
     .foot{margin-top:14px;font-size:9px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:6px}
-    .bar{position:sticky;top:0;display:flex;gap:8px;align-items:center;background:#1F2433;padding:10px 14px;margin:-12mm -12mm 12px;border-bottom:1px solid #333}
+    .bar{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#1F2433;padding:10px 14px;border-bottom:1px solid #333}
     .bar span{color:#8E9AB0;font-size:12px;margin-right:4px}
     .bar button{font-size:13px;padding:7px 16px;border-radius:7px;border:1px solid #3A4560;background:#2A3045;color:#C4CBDA;cursor:pointer}
     .bar button.on{background:#3B7FFF;border-color:#3B7FFF;color:#fff;font-weight:600}
+    .bar .fechar{background:#3a2530;border-color:#5a2f3f;color:#f0a8b8}
     .bar .imp{margin-left:auto;background:#2DBF7E;border-color:#2DBF7E;color:#06281A;font-weight:700}
-    @media print{.noprint{display:none!important}}
+    @media print{body{background:#fff}.page{max-width:none;margin:0;padding:0;box-shadow:none}.noprint{display:none!important}}
   </style></head><body>
     <div class="bar noprint">
       <span>Orientação:</span>
       <button id="o-l" class="on" onclick="setOrient('landscape')">Paisagem</button>
       <button id="o-p" onclick="setOrient('portrait')">Retrato</button>
+      <button class="fechar" onclick="window.close()">✕ Fechar</button>
       <button class="imp" onclick="window.print()">🖨️ Imprimir</button>
     </div>
+    <div class="page">
     <div class="top">
       <div><div class="ttl">BRASMAT — Lista de Expedição</div><div class="sub">Cliente: ${escH(fCliTxt)} &nbsp;·&nbsp; Filtro: ${escH(fStatus)} &nbsp;·&nbsp; ${itens.length} ${itens.length===1?"item":"itens"}</div></div>
       <div class="meta">Emitido em<br>${escH(agora)}</div>
     </div>
     ${secoes}
     <div class="foot">BRASMAT MES — documento gerado automaticamente</div>
+    </div>
     <script>
       function setOrient(o){
         document.getElementById("page-style").textContent="@page{size:A4 "+o+";margin:12mm}";

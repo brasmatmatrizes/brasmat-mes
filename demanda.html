@@ -725,7 +725,7 @@ function render(){
     const subLine = sub ? `<div class="item-desc">${sub}</div>` : (it._novo?`<div class="item-desc">item novo — sem registro no sistema</div>`:"");
     // Itens existentes (com pedido) abrem a linha do tempo ao clicar
     const podeTimeline = !it._novo;
-    const clickAttr = podeTimeline ? `style="cursor:pointer" onclick="abrirDetalhe('${esc(it.pedido||"")}','${esc(it.codigo_peca||"")}')"` : "";
+    const clickAttr = podeTimeline ? `style="cursor:pointer;flex:1;min-width:0" onclick="abrirDetalhe('${esc(it.pedido||"")}','${esc(it.codigo_peca||"")}')"` : `style="flex:1;min-width:0"`;
     const tlHint = podeTimeline ? `<div style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-top:3px">ver linha do tempo →</div>` : "";
     const concBadge = it.concluido ? `<span style="font-size:10px;font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:6px;background:rgba(45,191,126,0.15);color:var(--ok);border:1px solid rgba(45,191,126,0.4)">✓ Concluído</span>` : "";
     const expBadge = it.exp_status==="expedido" ? `<span style="font-size:10px;font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:6px;background:rgba(45,191,126,0.15);color:var(--ok);border:1px solid rgba(45,191,126,0.4)">🚚 Expedido (almox.)</span>`
@@ -737,7 +737,7 @@ function render(){
         ondragover="dragOver(event,${i})" ondrop="dragDrop(event,${i})" ondragleave="dragLeave(event)">
       <div class="item-top">
         <div class="drag-handle" draggable="true" ondragstart="dragStart(event,${i})" ondragend="dragEnd(event)" title="Arraste para reordenar">⠿</div>
-        <div ${clickAttr} style="flex:1;min-width:0">
+        <div ${clickAttr}>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="item-cod">${it.codigo_peca}${novo}</div>${renderTipoBadge(it)}${concBadge}${expBadge}</div>
           ${subLine}${tlHint}
         </div>

@@ -153,7 +153,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="status.js"></script>
 <script>
-let ITENS=[], CFG={}, POSMAP={}, POSMAPC={}, TIPOMAP={}, TIPOMAPC={}, FILTRO="todos", FCLI="";
+let ITENS=[], CFG={}, POSMAP={}, POSMAPC={}, TIPO_CACHE={}, FILTRO="todos", FCLI="";
 
 function navTo(p){ window.location.href=p; }
 function nomeExib(c){ return (CFG[c]&&CFG[c].nome_fantasia)||c; }
@@ -164,11 +164,10 @@ function hexRgba(hex,a){const n=parseInt(String(hex).replace("#",""),16);return 
 
 async function init(){
   try{
-    const [itens, pos, cfg, tipos] = await Promise.all([
+    const [itens, pos, cfg] = await Promise.all([
       supaFetch("/rest/v1/demanda_itens?select=*&order=id.asc"),
       buscarPosicao(),
-      supaFetch("/rest/v1/demanda_clientes?select=*"),
-      supaFetch("/rest/v1/producao_eventos?select=codigo_peca,pedido,razao_social,classificacao_fiscal&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=10000")
+      supaFetch("/rest/v1/demanda_clientes?select=*")
     ]);
     ITENS = Array.isArray(itens)?itens:[];
     (Array.isArray(cfg)?cfg:[]).forEach(r=>{ if(r.cliente) CFG[r.cliente]={nome_fantasia:r.nome_fantasia||"",cor:r.cor||""}; });
@@ -178,13 +177,9 @@ async function init(){
       POSMAP[k]=r;
       if(!(r.codigo_peca in POSMAPC)) POSMAPC[r.codigo_peca]=r;
     });
-    TIPOMAP={}; TIPOMAPC={};
-    (Array.isArray(tipos)?tipos:[]).forEach(r=>{   // id.desc → primeiro = mais recente
-      const k=(r.codigo_peca||"")+"|"+(r.pedido||"");
-      if(!(k in TIPOMAP)) TIPOMAP[k]=r;
-      if(!(r.codigo_peca in TIPOMAPC)) TIPOMAPC[r.codigo_peca]=r;
-    });
     popularFiltroClientes();
+    render();
+    await enriquecerTipos();   // tipo V/I — mesmo critério da linha do tempo (por pedido+código)
     render();
   }catch(e){
     document.getElementById("content").innerHTML=`<div class="placeholder"><div class="ph-ico">⚠️</div><div class="ph-txt">Erro ao carregar.</div></div>`;
@@ -207,8 +202,26 @@ function situacao(it){
 const SIT_ORDEM={pronto:0,producao:1,expedido:2};
 
 // Tipo (V/I) e quantidade solicitada — vêm de producao_eventos / posicao_atual
+// Mesmo critério da linha do tempo: registro mais recente por pedido+código (order=id.desc)
+async function enriquecerTipos(){
+  const pend=[], seen=new Set();
+  ITENS.forEach(it=>{
+    const key=(it.codigo_peca||"")+"|"+(it.pedido||"");
+    if(seen.has(key)||(key in TIPO_CACHE)) return;
+    seen.add(key); pend.push(it);
+  });
+  await Promise.all(pend.map(async it=>{
+    const key=(it.codigo_peca||"")+"|"+(it.pedido||"");
+    const c=encodeURIComponent(it.codigo_peca||"");
+    const ped=it.pedido?`&pedido=eq.${encodeURIComponent(it.pedido)}`:"";
+    try{
+      const r=await supaFetch(`/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${c}${ped}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`);
+      TIPO_CACHE[key]=(Array.isArray(r)&&r[0])?r[0]:null;
+    }catch(e){ TIPO_CACHE[key]=null; }
+  }));
+}
 function tipoRowDe(it){
-  return TIPOMAP[(it.codigo_peca||"")+"|"+(it.pedido||"")] || TIPOMAPC[it.codigo_peca] || null;
+  return TIPO_CACHE[(it.codigo_peca||"")+"|"+(it.pedido||"")] || null;
 }
 function tipoBadgeDe(it){ const r=tipoRowDe(it); return r?renderTipoBadge(r):""; }
 function tipoTextoDe(it){ const r=tipoRowDe(it); const t=r?getTipo(r):null; return t?t.full:"—"; }

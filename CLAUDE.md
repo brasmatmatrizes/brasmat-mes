@@ -23,8 +23,13 @@ O menu de navegação (`.nav` no topbar) deve conter as 12 páginas, em **todas*
 
 - **`producao_eventos`** (tabela) — um registro por evento (Entrada/Saída) de cada peça em cada processo. Colunas-chave: `pedido`, `codigo_peca`, `processo`, `evento`, `data_evento`, `os`, `operador`, `cliente`, `prazo_entrega`, `quantidade_solicitada`, `quantidade_produzida`, `retrabalho`, `sequencial_operacao`, `quantidade_operacoes`, `razao_social`, `classificacao_fiscal`, `operacao_*` (subop por setor).
 - **`posicao_atual`** (view) — posição atual (último evento) de cada peça, um registro por peça+pedido. **NÃO tem** `razao_social`, `classificacao_fiscal`, `sequencial_operacao` nem `quantidade_operacoes` — esses só existem em `producao_eventos`.
-- **`demanda_itens`** (tabela) — itens da tela Demanda Cliente. Colunas: `id`, `cliente`, `codigo_peca`, `pedido`, `os`, `descricao`, `data_desejada`, `prazo_confirmado`, `desenho_url`, `fluxo_url`, `concluido` (bool), `created_at`, `updated_at`. RLS liberado para `anon` (tela aberta, sem login).
-- **Bucket `demanda-arquivos`** (Storage, público) — PDFs de desenho/roteiro. Caminho: `CLIENTE/CODIGO/{desenho|fluxo}-{timestamp}.pdf`.
+- **`demanda_itens`** (tabela) — itens da Demanda Cliente. Colunas: `id`, `cliente`, `codigo_peca`, `pedido`, `os`, `descricao`, `data_desejada`, `prazo_confirmado`, `desenho_url`, `fluxo_url`, `concluido` (bool), `observacao`, `ordem` (int, ordenação dos cards), `exp_status` (almoxarifado: `pendente`/`separado`/`expedido`), `created_at`, `updated_at`. RLS liberado para `anon`.
+- **`demanda_clientes`** (tabela) — personalização por cliente: `cliente` (PK = nome real), `nome_fantasia`, `cor` (hex). Usada na Demanda e na Expedição (cor de fundo + nome curto).
+- **`kanban_operadores`** (tabela) — operadores selecionados para o Painel: `operador` (PK), `ordem`.
+- **`operadores_distintos`** (view) — `select distinct operador from producao_eventos` (lista completa p/ a config do Painel).
+- **Bucket `demanda-arquivos`** (Storage, público) — anexos de desenho/roteiro (PDF **ou imagem** — `allowed_mime_types` liberado). Caminho: `CLIENTE/CODIGO/{desenho|fluxo}-{timestamp}.ext`. Ao remover anexo / trocar / remover item, o arquivo é apagado do bucket.
+- **Realtime** habilitado (publication `supabase_realtime`) nas tabelas `producao_eventos` e `demanda_itens`. Kanban, Painel e Expedição usam `@supabase/supabase-js` (CDN) para atualizar instantaneamente; todas têm fallback `setInterval` (60s).
+- Criação de tabela/coluna/view/bucket exige credencial elevada (ver seção própria). Tabelas novas seguem o padrão: `grant all to anon, authenticated` + RLS com policy permissiva `using(true) with check(true)`.
 
 > A mesma `codigo_peca` pode existir em **vários pedidos**, cada um com `razao_social`/tipo diferente. Sempre que buscar tipo/progresso, filtrar por **pedido + código**, não só por código.
 

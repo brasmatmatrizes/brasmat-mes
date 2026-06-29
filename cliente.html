@@ -344,14 +344,15 @@ function renderResultados(resultados){
     `<div id="secao-cards">${resultados.map(r=>renderCard(r)).join("")}</div>`;
 }
 
-let _DEMANDA = new Set(), _DEMANDA_COD = new Set();
+let _DEMANDA = new Set(), _DEMANDA_COD = new Set(), _CRITICO = new Set(), _CRITICO_COD = new Set();
 async function carregarDemandaSet(){
-  _DEMANDA = new Set(); _DEMANDA_COD = new Set();
+  _DEMANDA = new Set(); _DEMANDA_COD = new Set(); _CRITICO = new Set(); _CRITICO_COD = new Set();
   try{
-    const rows = await supaFetch("/rest/v1/demanda_itens?select=codigo_peca,pedido&limit=10000");
+    const rows = await supaFetch("/rest/v1/demanda_itens?select=codigo_peca,pedido,critico&limit=10000");
     (Array.isArray(rows)?rows:[]).forEach(r=>{
       const c=String(r.codigo_peca||"").trim().toUpperCase(); const p=String(r.pedido||"").trim();
       if(!c) return; if(p) _DEMANDA.add(c+"|"+p); else _DEMANDA_COD.add(c);
+      if(r.critico){ if(p) _CRITICO.add(c+"|"+p); else _CRITICO_COD.add(c); }
     });
   }catch(e){}
 }
@@ -359,10 +360,16 @@ function naDemanda(cod, ped){
   const c=String(cod||"").toUpperCase(), p=String(ped||"").trim();
   return _DEMANDA.has(c+"|"+p) || _DEMANDA_COD.has(c);
 }
+function eCriticoCliente(cod, ped){
+  const c=String(cod||"").toUpperCase(), p=String(ped||"").trim();
+  return _CRITICO.has(c+"|"+p) || _CRITICO_COD.has(c);
+}
 function demandaFooter(d){
   const cod=String(d.codigo_peca||"").trim(), ped=String(d.pedido||"").trim(), cli=String(d.cliente||"").trim();
+  const crit=eCriticoCliente(cod,ped);
   if(naDemanda(cod, ped)){
-    return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);font-weight:600;padding:4px 11px;border-radius:6px;background:rgba(240,69,69,0.13);color:var(--danger);border:1px solid rgba(240,69,69,0.35)">📋 Já está na demanda do cliente</span></div>`;
+    const critBadge = crit ? `<span style="display:inline-flex;align-items:center;font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(220,38,38,0.12);color:#DC2626;border:1px solid rgba(220,38,38,0.45)">🔴 CRÍTICO</span>` : "";
+    return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);font-weight:600;padding:4px 11px;border-radius:6px;background:rgba(240,69,69,0.13);color:var(--danger);border:1px solid rgba(240,69,69,0.35)">📋 Já está na demanda do cliente</span>${critBadge}</div>`;
   }
   return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><button onclick="event.stopPropagation();incluirNaDemanda('${esc(cod)}','${esc(ped)}','${esc(d.os||"")}','${esc(cli)}',this)" style="font-size:11px;font-family:var(--sans);font-weight:500;padding:6px 13px;border-radius:6px;background:var(--accent);color:#fff;border:none;cursor:pointer">➕ Incluir na demanda</button></div>`;
 }

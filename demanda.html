@@ -61,8 +61,10 @@
 .ph-ico{font-size:48px;opacity:0.3}.ph-txt{font-size:14px;text-align:center;line-height:1.6;max-width:340px}
 
 /* ITEM CARD */
+@keyframes pisca-critico{0%,100%{opacity:1}50%{opacity:0.45}}
 .item-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px}
 .item-card.dragging{opacity:0.4}
+.badge-critico{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-family:var(--mono);font-weight:700;padding:2px 8px;border-radius:6px;background:rgba(220,38,38,0.12);color:#DC2626;border:1px solid rgba(220,38,38,0.45);animation:pisca-critico 1s ease-in-out infinite}
 .item-card.drag-over{border-color:var(--accent);box-shadow:0 -2px 0 var(--accent) inset}
 .drag-handle{cursor:grab;color:var(--text3);font-size:16px;line-height:1;padding:2px 6px;border:1px solid var(--border);border-radius:6px;user-select:none;flex-shrink:0;align-self:flex-start}
 .drag-handle:active{cursor:grabbing}
@@ -569,6 +571,12 @@ function removerItem(i){
 // ---------- Edição de campos ----------
 function setCampo(i, campo, valor){ if(ITENS[i]){ ITENS[i][campo] = valor || null; agendarSalvar(); } }
 
+function toggleCritico(i, checked){
+  if(!ITENS[i]) return;
+  ITENS[i].critico = !!checked;
+  render();
+  agendarSalvar();
+}
 function toggleConcluido(i, checked){
   if(!ITENS[i]) return;
   ITENS[i].concluido = !!checked;
@@ -684,7 +692,7 @@ async function salvar(){
         descricao:it.descricao||null,
         data_desejada:it.data_desejada||null, prazo_confirmado:it.prazo_confirmado||null, observacao:it.observacao||null, ordem:it.ordem,
         desenho_url:it.desenho_url||null, fluxo_url:it.fluxo_url||null,
-        concluido:!!it.concluido
+        concluido:!!it.concluido, critico:!!it.critico
       };
       if(it.id){
         await fetch(`${SUPA_URL}/rest/v1/demanda_itens?id=eq.${it.id}`, {
@@ -728,17 +736,18 @@ function render(){
     const clickAttr = podeTimeline ? `style="cursor:pointer;flex:1;min-width:0" onclick="abrirDetalhe('${esc(it.pedido||"")}','${esc(it.codigo_peca||"")}')"` : `style="flex:1;min-width:0"`;
     const tlHint = podeTimeline ? `<div style="font-size:10px;color:var(--accent);font-family:var(--mono);margin-top:3px">ver linha do tempo →</div>` : "";
     const concBadge = it.concluido ? `<span style="font-size:10px;font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:6px;background:rgba(45,191,126,0.15);color:var(--ok);border:1px solid rgba(45,191,126,0.4)">✓ Concluído</span>` : "";
+    const criticoBadge = it.critico ? `<span class="badge-critico">🔴 CRÍTICO</span>` : "";
     const expBadge = it.exp_status==="expedido" ? `<span style="font-size:10px;font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:6px;background:rgba(45,191,126,0.15);color:var(--ok);border:1px solid rgba(45,191,126,0.4)">🚚 Expedido (almox.)</span>`
                   : it.exp_status==="separado" ? `<span style="font-size:10px;font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:6px;background:rgba(245,166,35,0.15);color:var(--warn);border:1px solid rgba(245,166,35,0.4)">📦 Separado (almox.)</span>` : "";
     const progHtml = it.concluido
       ? `<div style="margin:10px 0 14px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><span style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em">Progresso da Peça</span><span style="font-size:11px;font-family:var(--mono);font-weight:600;color:var(--ok)">✓ Concluído (manual)</span></div><div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;width:100%;background:var(--ok);border-radius:3px"></div></div></div>`
       : renderProgresso(it._prog || calcProgressoRow(it));
-    return `<div class="item-card" data-idx="${i}" style="${it.concluido?'border-left:4px solid var(--ok)':''}"
+    return `<div class="item-card" data-idx="${i}" style="${it.concluido?'border-left:4px solid var(--ok)':it.critico?'border-left:4px solid #DC2626':''}"
         ondragover="dragOver(event,${i})" ondrop="dragDrop(event,${i})" ondragleave="dragLeave(event)">
       <div class="item-top">
         <div class="drag-handle" draggable="true" ondragstart="dragStart(event,${i})" ondragend="dragEnd(event)" title="Arraste para reordenar">⠿</div>
         <div ${clickAttr}>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="item-cod">${it.codigo_peca}${novo}</div>${renderTipoBadge(it)}${concBadge}${expBadge}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="item-cod">${it.codigo_peca}${novo}</div>${renderTipoBadge(it)}${concBadge}${expBadge}${criticoBadge}</div>
           ${subLine}${tlHint}
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">
@@ -770,6 +779,10 @@ function render(){
       <label style="display:inline-flex;align-items:center;gap:7px;margin-top:12px;cursor:pointer;font-size:12px;color:var(--text2);user-select:none">
         <input type="checkbox" ${it.concluido?"checked":""} onchange="toggleConcluido(${i},this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:var(--ok)">
         Marcar como concluído (independente do apontamento)
+      </label>
+      <label style="display:inline-flex;align-items:center;gap:7px;margin-top:8px;cursor:pointer;font-size:12px;color:#DC2626;font-weight:600;user-select:none">
+        <input type="checkbox" ${it.critico?"checked":""} onchange="toggleCritico(${i},this.checked)" style="width:15px;height:15px;cursor:pointer;accent-color:#DC2626">
+        🔴 Marcar como crítico (aparece destacado em todas as telas)
       </label>
     </div>`;
   }).join("");

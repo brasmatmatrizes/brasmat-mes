@@ -75,6 +75,11 @@
 .card-w{border-left:4px solid #D97706;background:#FFFBEB;border-color:#FDE68A;border-left-color:#D97706}
 /* Na demanda do cliente — fundo vermelho clarinho (sobrepõe os demais) */
 .card-demanda{background:#FEE2E2 !important;border-color:#FCA5A5 !important;border-left-color:#DC2626 !important}
+/* Item crítico — glow pulsante */
+@keyframes glow-critico{0%,100%{box-shadow:0 0 0 2px rgba(220,38,38,0.75)}50%{box-shadow:0 0 0 5px rgba(220,38,38,0),0 0 20px rgba(220,38,38,0.45)}}
+@keyframes pisca-critico{0%,100%{opacity:1}50%{opacity:0.35}}
+.card-critico{animation:glow-critico 1.4s ease-in-out infinite !important}
+.badge-crit{display:inline-block;background:#DC2626;color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;font-family:var(--mono);letter-spacing:0.07em;animation:pisca-critico 0.85s ease-in-out infinite;vertical-align:middle;margin-left:4px}
 /* Textos — escuros para contrastar com fundo claro */
 .c1{font-size:12px;font-weight:500;font-family:var(--mono);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-n .c1,.card-a .c1,.card-e .c1,.card-s .c1,.card-w .c1{color:#0F172A}
@@ -205,6 +210,8 @@ function toggleFlag(f){
 
 let DEMANDA=new Set();      // 'CODIGO|PEDIDO' (itens com pedido)
 let DEMANDA_COD=new Set();  // 'CODIGO' (itens sem pedido)
+let CRITICO=new Set();      // 'CODIGO|PEDIDO' críticos
+let CRITICO_COD=new Set();  // 'CODIGO' críticos sem pedido
 
 async function init(){
   document.getElementById("slbl").textContent="carregando...";
@@ -215,16 +222,23 @@ async function init(){
 }
 
 async function carregarDemanda(){
-  DEMANDA=new Set();DEMANDA_COD=new Set();
+  DEMANDA=new Set();DEMANDA_COD=new Set();CRITICO=new Set();CRITICO_COD=new Set();
   try{
-    const rows=await supaFetch("/rest/v1/demanda_itens?select=codigo_peca,pedido&limit=10000");
+    const rows=await supaFetch("/rest/v1/demanda_itens?select=codigo_peca,pedido,critico&limit=10000");
     (Array.isArray(rows)?rows:[]).forEach(r=>{
       const c=String(r.codigo_peca||"").trim().toUpperCase();
       const p=String(r.pedido||"").trim();
       if(!c) return;
       if(p) DEMANDA.add(c+"|"+p); else DEMANDA_COD.add(c);
+      if(r.critico){ if(p) CRITICO.add(c+"|"+p); else CRITICO_COD.add(c); }
     });
   }catch(e){}
+}
+
+function eCritico(row){
+  const c=String(row.codigo_peca||"").trim().toUpperCase();
+  const p=String(row.pedido||"").trim();
+  return CRITICO.has(c+"|"+p)||CRITICO_COD.has(c);
 }
 
 function naDemanda(row){
@@ -300,8 +314,9 @@ function renderBoard(){
       :pcs.map(p=>{
         const cat=catCard(p);const d=diasDesde(p);const sub=getSubop(p);
         const ds=d===0?"hoje":d===1?"1d":d+"d";
-        return `<div class="card card-${cat}${naDemanda(p)?' card-demanda':''}" onclick="abrirDet('${esc(p.pedido)}','${esc(p.codigo_peca)}')">
-          <div class="c1">${p.codigo_peca||"—"}</div>
+        const crit=eCritico(p);
+        return `<div class="card card-${cat}${naDemanda(p)?' card-demanda':''}${crit?' card-critico':''}" onclick="abrirDet('${esc(p.pedido)}','${esc(p.codigo_peca)}')">
+          <div class="c1">${p.codigo_peca||"—"}${crit?'<span class="badge-crit">⚠ CRÍTICO</span>':''}</div>
           <div class="c2">Ped: ${p.pedido||"—"}</div>
           <div class="c3">${sub}</div>
           <div class="c4"><span class="c4a">${p.cliente||"—"}</span><span class="c4b">${ds}</span></div>

@@ -37,6 +37,9 @@
 .cli-hdr{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:8px}
 .cli-name{font-size:14px;font-weight:600;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cli-cnt{font-size:11px;font-family:var(--mono);color:var(--text2)}
+.sub-tipo{display:flex;align-items:center;gap:10px;margin:12px 0 6px}
+.sub-tipo .pill{font-size:11px;font-weight:600;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.04em;padding:3px 11px;border-radius:10px}
+.sub-tipo .ln{flex:1;height:1px;background:var(--border)}
 /* ITEM */
 .exp-item{display:grid;grid-template-columns:160px 1fr 70px 105px 140px 185px;gap:12px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:11px 14px;margin-bottom:7px}
 .ei-cod{font-size:14px;font-weight:500;font-family:var(--mono);color:var(--text);cursor:pointer}
@@ -260,44 +263,56 @@ function render(){
   const grupos={};
   itens.forEach(it=>{ const c=it.cliente||"—"; (grupos[c]=grupos[c]||[]).push(it); });
   const clientes=Object.keys(grupos).sort((a,b)=>nomeExib(a).localeCompare(nomeExib(b),"pt-BR"));
+  const sortSit=(a,b)=>(SIT_ORDEM[situacao(a).key]-SIT_ORDEM[situacao(b).key])||String(a.codigo_peca).localeCompare(String(b.codigo_peca));
+  // sub-grupos por classificação (mesmo critério da linha do tempo)
+  const TIPOS=[
+    {k:"I", full:"Industrialização", cor:"#F5A623", bg:"rgba(245,166,35,0.15)"},
+    {k:"V", full:"Vendas",           cor:"#3B7FFF", bg:"rgba(59,127,255,0.15)"},
+    {k:"?", full:"Sem classificação",cor:"#8E9AB0", bg:"rgba(142,154,176,0.15)"}
+  ];
+  function chaveTipo(it){ const r=tipoRowDe(it); const t=r?getTipo(r):null; return t?t.label:"?"; }
   cont.innerHTML=clientes.map(c=>{
     const cor=corCliente(c);
-    const lista=grupos[c].sort((a,b)=>{
-      const sa=situacao(a),sb=situacao(b);
-      return (SIT_ORDEM[sa.key]-SIT_ORDEM[sb.key]) || String(a.codigo_peca).localeCompare(String(b.codigo_peca));
-    });
-    const rows=lista.map(it=>{
-      const sit=situacao(it);
-      const st=it.exp_status||"pendente";
-      const prazoD=it.prazo_confirmado?new Date(it.prazo_confirmado+"T00:00:00"):null;
-      const venc=prazoD && prazoD<new Date(new Date().toDateString());
-      const prazo=prazoD?prazoD.toLocaleDateString("pt-BR"):"—";
-      return `<div class="exp-item">
-        <div class="ei-cod" onclick="abrirDet('${esc(it.pedido||"")}','${esc(it.codigo_peca||"")}')">
-          <div><span class="ei-cnum">${it.codigo_peca||"—"}</span>${it.critico?'<span class="badge-critico-exp">🔴 CRÍTICO</span>':''}</div>
-          ${tipoBadgeDe(it)?`<div class="ei-tipo">${tipoBadgeDe(it)}</div>`:""}
-        </div>
-        <div class="ei-desc">${it.descricao?String(it.descricao).replace(/</g,"&lt;"):(it.pedido?"Ped: "+it.pedido:"")}</div>
-        <div class="ei-qtd">${qtdDe(it)}<span class="ei-qcap">qtd</span></div>
-        <div class="ei-prazo ${venc?'venc':''}">${prazo}${venc?" ⚠":""}</div>
-        <div class="sit" style="background:${sit.cor}22;color:${sit.cor}">${sit.label}</div>
-        <div class="seg">
-          <button class="${st==='pendente'?'on-p':''}" onclick="marcar(${it.id},'pendente')">Pendente</button>
-          <button class="${st==='separado'?'on-s':''}" onclick="marcar(${it.id},'separado')">Separado</button>
-          <button class="${st==='expedido'?'on-e':''}" onclick="marcar(${it.id},'expedido')">Expedido</button>
-        </div>
-      </div>`;
-    }).join("");
+    const lista=grupos[c];
     const nExp=lista.filter(it=>(it.exp_status||"pendente")==="expedido").length;
+    const corpos=TIPOS.map(tp=>{
+      const subset=lista.filter(it=>chaveTipo(it)===tp.k).sort(sortSit);
+      if(!subset.length) return "";
+      return `<div class="sub-tipo"><span class="pill" style="background:${tp.bg};color:${tp.cor};border:1px solid ${tp.cor}44">${tp.full} · ${subset.length}</span><span class="ln"></span></div>`
+        + subset.map(linhaItem).join("");
+    }).join("");
     return `<div class="cli-group">
       <div class="cli-hdr" style="background:${hexRgba(cor,0.14)};border-left:4px solid ${cor}">
         <div class="cli-name">${nomeExib(c)}</div>
         <div class="cli-cnt">${lista.length} ${lista.length===1?'item':'itens'} · ${nExp} expedido(s)</div>
       </div>
-      ${rows}
+      ${corpos}
     </div>`;
   }).join("");
   document.getElementById("slbl").textContent=`${itens.length} itens`;
+}
+
+function linhaItem(it){
+  const sit=situacao(it);
+  const st=it.exp_status||"pendente";
+  const prazoD=it.prazo_confirmado?new Date(it.prazo_confirmado+"T00:00:00"):null;
+  const venc=prazoD && prazoD<new Date(new Date().toDateString());
+  const prazo=prazoD?prazoD.toLocaleDateString("pt-BR"):"—";
+  return `<div class="exp-item">
+    <div class="ei-cod" onclick="abrirDet('${esc(it.pedido||"")}','${esc(it.codigo_peca||"")}')">
+      <div><span class="ei-cnum">${it.codigo_peca||"—"}</span>${it.critico?'<span class="badge-critico-exp">🔴 CRÍTICO</span>':''}</div>
+      ${tipoBadgeDe(it)?`<div class="ei-tipo">${tipoBadgeDe(it)}</div>`:""}
+    </div>
+    <div class="ei-desc">${it.descricao?String(it.descricao).replace(/</g,"&lt;"):(it.pedido?"Ped: "+it.pedido:"")}</div>
+    <div class="ei-qtd">${qtdDe(it)}<span class="ei-qcap">qtd</span></div>
+    <div class="ei-prazo ${venc?'venc':''}">${prazo}${venc?" ⚠":""}</div>
+    <div class="sit" style="background:${sit.cor}22;color:${sit.cor}">${sit.label}</div>
+    <div class="seg">
+      <button class="${st==='pendente'?'on-p':''}" onclick="marcar(${it.id},'pendente')">Pendente</button>
+      <button class="${st==='separado'?'on-s':''}" onclick="marcar(${it.id},'separado')">Separado</button>
+      <button class="${st==='expedido'?'on-e':''}" onclick="marcar(${it.id},'expedido')">Expedido</button>
+    </div>
+  </div>`;
 }
 
 async function marcar(id, novo){
@@ -339,29 +354,35 @@ function imprimir(){
   const fCliTxt = FCLI ? nomeExib(FCLI) : "Todos os clientes";
   const agora = new Date().toLocaleString("pt-BR");
 
+  const sortSit=(a,b)=>(SIT_ORDEM[situacao(a).key]-SIT_ORDEM[situacao(b).key])||String(a.codigo_peca).localeCompare(String(b.codigo_peca));
+  const chaveTipo=(it)=>{ const r=tipoRowDe(it); const t=r?getTipo(r):null; return t?t.label:"?"; };
+  const TIPOS_P=[{k:"I",full:"Industrialização"},{k:"V",full:"Vendas"},{k:"?",full:"Sem classificação"}];
+  const linhaTr=(it)=>{
+    const sit=situacao(it);
+    const st=it.exp_status||"pendente";
+    const prazoD=it.prazo_confirmado?new Date(it.prazo_confirmado+"T00:00:00"):null;
+    const prazo=prazoD?prazoD.toLocaleDateString("pt-BR"):"—";
+    const desc=it.descricao?escH(it.descricao):(it.pedido?"Ped: "+escH(it.pedido):"—");
+    return `<tr${it.critico?' class="crit"':''}>
+      <td class="ck"></td>
+      <td class="cod">${escH(it.codigo_peca||"—")}${it.critico?' <b>CRÍTICO</b>':''}</td>
+      <td class="tp">${escH(tipoTextoDe(it))}</td>
+      <td>${desc}</td>
+      <td class="ped">${escH(it.pedido||"—")}</td>
+      <td class="num">${escH(qtdDe(it))}</td>
+      <td class="dt">${prazo}</td>
+      <td>${escH(sit.label)}</td>
+      <td>${escH(EXP_LBL[st]||st)}</td>
+    </tr>`;
+  };
   const secoes = clientes.map(c=>{
     const cor=corCliente(c);
-    const lista=grupos[c].sort((a,b)=>{
-      const sa=situacao(a),sb=situacao(b);
-      return (SIT_ORDEM[sa.key]-SIT_ORDEM[sb.key]) || String(a.codigo_peca).localeCompare(String(b.codigo_peca));
-    });
-    const linhas=lista.map(it=>{
-      const sit=situacao(it);
-      const st=it.exp_status||"pendente";
-      const prazoD=it.prazo_confirmado?new Date(it.prazo_confirmado+"T00:00:00"):null;
-      const prazo=prazoD?prazoD.toLocaleDateString("pt-BR"):"—";
-      const desc=it.descricao?escH(it.descricao):(it.pedido?"Ped: "+escH(it.pedido):"—");
-      return `<tr${it.critico?' class="crit"':''}>
-        <td class="ck"></td>
-        <td class="cod">${escH(it.codigo_peca||"—")}${it.critico?' <b>CRÍTICO</b>':''}</td>
-        <td class="tp">${escH(tipoTextoDe(it))}</td>
-        <td>${desc}</td>
-        <td class="ped">${escH(it.pedido||"—")}</td>
-        <td class="num">${escH(qtdDe(it))}</td>
-        <td class="dt">${prazo}</td>
-        <td>${escH(sit.label)}</td>
-        <td>${escH(EXP_LBL[st]||st)}</td>
-      </tr>`;
+    const lista=grupos[c];
+    const linhas=TIPOS_P.map(tp=>{
+      const subset=lista.filter(it=>chaveTipo(it)===tp.k).sort(sortSit);
+      if(!subset.length) return "";
+      return `<tr class="subt"><td colspan="9">${escH(tp.full)} · ${subset.length} ${subset.length===1?"item":"itens"}</td></tr>`
+        + subset.map(linhaTr).join("");
     }).join("");
     return `<div class="cli">
       <div class="clihdr" style="border-left:5px solid ${cor}"><span class="clinome">${escH(nomeExib(c))}</span><span class="cliqt">${lista.length} ${lista.length===1?"item":"itens"}</span></div>
@@ -395,6 +416,7 @@ function imprimir(){
     td.num{text-align:center;font-weight:700}
     td.dt{white-space:nowrap}
     th.ck,td.ck{text-align:center}
+    tr.subt td{background:#dfe4ea;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:0.04em;border-color:#b8bfc9}
     tr.crit td{background:#fdeaea}
     tr.crit td.cod b{color:#c00}
     tbody tr:nth-child(even) td{background:#fafbfc}

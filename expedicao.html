@@ -353,6 +353,7 @@ function imprimir(){
     return `<div class="cli">
       <div class="clihdr" style="border-left:5px solid ${cor}"><span class="clinome">${escH(nomeExib(c))}</span><span class="cliqt">${lista.length} ${lista.length===1?"item":"itens"}</span></div>
       <table>
+        <colgroup><col style="width:3%"><col style="width:11%"><col style="width:13%"><col style="width:27%"><col style="width:11%"><col style="width:6%"><col style="width:9%"><col style="width:12%"><col style="width:8%"></colgroup>
         <thead><tr><th class="ck">✓</th><th>Código</th><th>Tipo</th><th>Descrição</th><th>Pedido</th><th>Qtd</th><th>Prazo</th><th>Situação produção</th><th>Status expedição</th></tr></thead>
         <tbody>${linhas}</tbody>
       </table>
@@ -372,15 +373,14 @@ function imprimir(){
     .clihdr{display:flex;justify-content:space-between;align-items:center;background:#f1f3f6;padding:5px 9px;border-radius:4px;margin-bottom:4px}
     .clinome{font-size:13px;font-weight:700}
     .cliqt{font-size:10px;color:#555}
-    table{width:100%;border-collapse:collapse}
-    th,td{border:1px solid #c8ccd4;padding:4px 6px;text-align:left;vertical-align:top}
+    table{width:100%;border-collapse:collapse;table-layout:fixed}
+    th,td{border:1px solid #c8ccd4;padding:4px 6px;text-align:left;vertical-align:top;overflow-wrap:break-word;word-break:break-word}
     th{background:#e9ecf1;font-size:9px;text-transform:uppercase;letter-spacing:0.03em}
-    td.cod{font-family:'Courier New',monospace;font-weight:700;white-space:nowrap}
-    td.ped{font-family:'Courier New',monospace;white-space:nowrap}
-    td.tp{white-space:nowrap}
+    td.cod{font-family:'Courier New',monospace;font-weight:700}
+    td.ped{font-family:'Courier New',monospace}
     td.num{text-align:center;font-weight:700}
     td.dt{white-space:nowrap}
-    th.ck,td.ck{width:22px;text-align:center}
+    th.ck,td.ck{text-align:center}
     tr.crit td{background:#fdeaea}
     tr.crit td.cod b{color:#c00}
     tbody tr:nth-child(even) td{background:#fafbfc}

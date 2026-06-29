@@ -38,9 +38,15 @@
 .cli-name{font-size:14px;font-weight:600;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cli-cnt{font-size:11px;font-family:var(--mono);color:var(--text2)}
 /* ITEM */
-.exp-item{display:grid;grid-template-columns:150px 1fr 110px 150px 200px;gap:12px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:11px 14px;margin-bottom:7px}
+.exp-item{display:grid;grid-template-columns:160px 1fr 70px 105px 140px 185px;gap:12px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:11px 14px;margin-bottom:7px}
 .ei-cod{font-size:14px;font-weight:500;font-family:var(--mono);color:var(--text);cursor:pointer}
-.ei-cod:hover{color:var(--accent)}
+.ei-cod:hover .ei-cnum{color:var(--accent)}
+.ei-tipo{margin-top:4px}
+.ei-qtd{font-size:14px;font-family:var(--mono);color:var(--text);text-align:center;font-weight:500}
+.ei-qcap{display:block;font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.05em;font-weight:400}
+.fsel-exp{font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;outline:none;height:30px;flex-shrink:0}
+.btn-print{font-size:12px;padding:6px 13px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;white-space:nowrap;margin-left:auto;flex-shrink:0}
+.btn-print:hover{border-color:var(--accent);color:var(--text)}
 @keyframes pisca-critico{0%,100%{opacity:1}50%{opacity:0.45}}
 .badge-critico-exp{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-family:var(--mono);font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(220,38,38,0.12);color:#DC2626;border:1px solid rgba(220,38,38,0.45);animation:pisca-critico 1s ease-in-out infinite;margin-left:5px;vertical-align:middle}
 .ei-desc{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -87,6 +93,7 @@
   .topbar{padding:0 10px}
   .exp-item{grid-template-columns:1fr auto;gap:6px 10px}
   .ei-desc{grid-column:1/-1;order:5}
+  .ei-qtd{order:4;text-align:left}.ei-qcap{display:inline;margin-left:4px}
   .ei-prazo{order:3}.sit{order:2;justify-self:end}.seg{grid-column:1/-1;order:6;justify-content:flex-start}
   .det-panel{width:100%;max-width:100vw}
 }
@@ -132,6 +139,8 @@
   <button class="fchip" id="f-pendente" onclick="setFiltro('pendente')">Pendentes</button>
   <button class="fchip" id="f-separado" onclick="setFiltro('separado')">Separados</button>
   <button class="fchip" id="f-expedido" onclick="setFiltro('expedido')">Expedidos</button>
+  <select class="fsel-exp" id="fcli" onchange="setCliente(this.value)"><option value="">Todos os clientes</option></select>
+  <button class="btn-print" onclick="imprimir()">🖨️ Imprimir lista</button>
 </div>
 <div class="content" id="content"><div class="loading"><div class="spinner"></div>carregando...</div></div>
 </div>
@@ -144,7 +153,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="status.js"></script>
 <script>
-let ITENS=[], CFG={}, POSMAP={}, POSMAPC={}, FILTRO="todos";
+let ITENS=[], CFG={}, POSMAP={}, POSMAPC={}, TIPOMAP={}, TIPOMAPC={}, FILTRO="todos", FCLI="";
 
 function navTo(p){ window.location.href=p; }
 function nomeExib(c){ return (CFG[c]&&CFG[c].nome_fantasia)||c; }
@@ -155,10 +164,11 @@ function hexRgba(hex,a){const n=parseInt(String(hex).replace("#",""),16);return 
 
 async function init(){
   try{
-    const [itens, pos, cfg] = await Promise.all([
+    const [itens, pos, cfg, tipos] = await Promise.all([
       supaFetch("/rest/v1/demanda_itens?select=*&order=id.asc"),
       buscarPosicao(),
-      supaFetch("/rest/v1/demanda_clientes?select=*")
+      supaFetch("/rest/v1/demanda_clientes?select=*"),
+      supaFetch("/rest/v1/producao_eventos?select=codigo_peca,pedido,razao_social,classificacao_fiscal&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=10000")
     ]);
     ITENS = Array.isArray(itens)?itens:[];
     (Array.isArray(cfg)?cfg:[]).forEach(r=>{ if(r.cliente) CFG[r.cliente]={nome_fantasia:r.nome_fantasia||"",cor:r.cor||""}; });
@@ -168,6 +178,13 @@ async function init(){
       POSMAP[k]=r;
       if(!(r.codigo_peca in POSMAPC)) POSMAPC[r.codigo_peca]=r;
     });
+    TIPOMAP={}; TIPOMAPC={};
+    (Array.isArray(tipos)?tipos:[]).forEach(r=>{   // id.desc → primeiro = mais recente
+      const k=(r.codigo_peca||"")+"|"+(r.pedido||"");
+      if(!(k in TIPOMAP)) TIPOMAP[k]=r;
+      if(!(r.codigo_peca in TIPOMAPC)) TIPOMAPC[r.codigo_peca]=r;
+    });
+    popularFiltroClientes();
     render();
   }catch(e){
     document.getElementById("content").innerHTML=`<div class="placeholder"><div class="ph-ico">⚠️</div><div class="ph-txt">Erro ao carregar.</div></div>`;
@@ -189,6 +206,27 @@ function situacao(it){
 
 const SIT_ORDEM={pronto:0,producao:1,expedido:2};
 
+// Tipo (V/I) e quantidade solicitada — vêm de producao_eventos / posicao_atual
+function tipoRowDe(it){
+  return TIPOMAP[(it.codigo_peca||"")+"|"+(it.pedido||"")] || TIPOMAPC[it.codigo_peca] || null;
+}
+function tipoBadgeDe(it){ const r=tipoRowDe(it); return r?renderTipoBadge(r):""; }
+function tipoTextoDe(it){ const r=tipoRowDe(it); const t=r?getTipo(r):null; return t?t.full:"—"; }
+function qtdDe(it){
+  const r = POSMAP[(it.codigo_peca||"")+"|"+(it.pedido||"")] || POSMAPC[it.codigo_peca];
+  const q = r && r.quantidade_solicitada!=null ? String(r.quantidade_solicitada).trim() : "";
+  return q || "—";
+}
+
+function popularFiltroClientes(){
+  const sel=document.getElementById("fcli"); if(!sel) return;
+  const clientes=[...new Set(ITENS.map(it=>it.cliente||"—"))].sort((a,b)=>nomeExib(a).localeCompare(nomeExib(b),"pt-BR"));
+  const atual=FCLI;
+  sel.innerHTML='<option value="">Todos os clientes</option>'+clientes.map(c=>`<option value="${esc(c)}">${nomeExib(c)}</option>`).join("");
+  if(atual && clientes.includes(atual)) sel.value=atual; else FCLI="";
+}
+function setCliente(v){ FCLI=v; render(); }
+
 function setFiltro(f){
   FILTRO=f;
   ["todos","pendente","separado","expedido"].forEach(t=>document.getElementById("f-"+t).classList.toggle("on",t===f));
@@ -199,6 +237,7 @@ function render(){
   const cont=document.getElementById("content");
   let itens = ITENS.slice();
   if(FILTRO!=="todos") itens = itens.filter(it=>(it.exp_status||"pendente")===FILTRO);
+  if(FCLI) itens = itens.filter(it=>(it.cliente||"—")===FCLI);
   if(!itens.length){
     cont.innerHTML=`<div class="placeholder"><div class="ph-ico">📦</div><div class="ph-txt">${ITENS.length?'Nenhum item neste filtro.':'Nenhum item na demanda ainda. Os itens lançados na Demanda Cliente aparecem aqui.'}</div></div>`;
     document.getElementById("slbl").textContent=`${ITENS.length} itens`;
@@ -221,8 +260,12 @@ function render(){
       const venc=prazoD && prazoD<new Date(new Date().toDateString());
       const prazo=prazoD?prazoD.toLocaleDateString("pt-BR"):"—";
       return `<div class="exp-item">
-        <div class="ei-cod" onclick="abrirDet('${esc(it.pedido||"")}','${esc(it.codigo_peca||"")}')">${it.codigo_peca||"—"}${it.critico?'<span class="badge-critico-exp">🔴 CRÍTICO</span>':''}</div>
+        <div class="ei-cod" onclick="abrirDet('${esc(it.pedido||"")}','${esc(it.codigo_peca||"")}')">
+          <div><span class="ei-cnum">${it.codigo_peca||"—"}</span>${it.critico?'<span class="badge-critico-exp">🔴 CRÍTICO</span>':''}</div>
+          ${tipoBadgeDe(it)?`<div class="ei-tipo">${tipoBadgeDe(it)}</div>`:""}
+        </div>
         <div class="ei-desc">${it.descricao?String(it.descricao).replace(/</g,"&lt;"):(it.pedido?"Ped: "+it.pedido:"")}</div>
+        <div class="ei-qtd">${qtdDe(it)}<span class="ei-qcap">qtd</span></div>
         <div class="ei-prazo ${venc?'venc':''}">${prazo}${venc?" ⚠":""}</div>
         <div class="sit" style="background:${sit.cor}22;color:${sit.cor}">${sit.label}</div>
         <div class="seg">
@@ -264,6 +307,102 @@ async function abrirDet(pedido,codigo){
   await abrirPainelDetalhe(pedido,codigo,"dp","dt","db");
 }
 function fechar(){ document.getElementById("dp").classList.remove("open"); }
+
+// ---------- Impressão A4 ----------
+function escH(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+const EXP_LBL={pendente:"Pendente",separado:"Separado",expedido:"Expedido"};
+
+function imprimir(){
+  let itens=ITENS.slice();
+  if(FILTRO!=="todos") itens=itens.filter(it=>(it.exp_status||"pendente")===FILTRO);
+  if(FCLI) itens=itens.filter(it=>(it.cliente||"—")===FCLI);
+  if(!itens.length){ alert("Nenhum item para imprimir com os filtros atuais."); return; }
+
+  const grupos={};
+  itens.forEach(it=>{ const c=it.cliente||"—"; (grupos[c]=grupos[c]||[]).push(it); });
+  const clientes=Object.keys(grupos).sort((a,b)=>nomeExib(a).localeCompare(nomeExib(b),"pt-BR"));
+
+  const fStatus = FILTRO==="todos" ? "Todos os status" : EXP_LBL[FILTRO]||FILTRO;
+  const fCliTxt = FCLI ? nomeExib(FCLI) : "Todos os clientes";
+  const agora = new Date().toLocaleString("pt-BR");
+
+  const secoes = clientes.map(c=>{
+    const cor=corCliente(c);
+    const lista=grupos[c].sort((a,b)=>{
+      const sa=situacao(a),sb=situacao(b);
+      return (SIT_ORDEM[sa.key]-SIT_ORDEM[sb.key]) || String(a.codigo_peca).localeCompare(String(b.codigo_peca));
+    });
+    const linhas=lista.map(it=>{
+      const sit=situacao(it);
+      const st=it.exp_status||"pendente";
+      const prazoD=it.prazo_confirmado?new Date(it.prazo_confirmado+"T00:00:00"):null;
+      const prazo=prazoD?prazoD.toLocaleDateString("pt-BR"):"—";
+      const desc=it.descricao?escH(it.descricao):(it.pedido?"Ped: "+escH(it.pedido):"—");
+      return `<tr${it.critico?' class="crit"':''}>
+        <td class="ck"></td>
+        <td class="cod">${escH(it.codigo_peca||"—")}${it.critico?' <b>CRÍTICO</b>':''}</td>
+        <td class="tp">${escH(tipoTextoDe(it))}</td>
+        <td>${desc}</td>
+        <td class="ped">${escH(it.pedido||"—")}</td>
+        <td class="num">${escH(qtdDe(it))}</td>
+        <td class="dt">${prazo}</td>
+        <td>${escH(sit.label)}</td>
+        <td>${escH(EXP_LBL[st]||st)}</td>
+      </tr>`;
+    }).join("");
+    return `<div class="cli">
+      <div class="clihdr" style="border-left:5px solid ${cor}"><span class="clinome">${escH(nomeExib(c))}</span><span class="cliqt">${lista.length} ${lista.length===1?"item":"itens"}</span></div>
+      <table>
+        <thead><tr><th class="ck">✓</th><th>Código</th><th>Tipo</th><th>Descrição</th><th>Pedido</th><th>Qtd</th><th>Prazo</th><th>Situação produção</th><th>Status expedição</th></tr></thead>
+        <tbody>${linhas}</tbody>
+      </table>
+    </div>`;
+  }).join("");
+
+  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Lista de Expedição — Brasmat</title>
+  <style>
+    @page{size:A4;margin:13mm}
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;font-size:11px}
+    .top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:12px}
+    .ttl{font-size:18px;font-weight:700;letter-spacing:0.5px}
+    .sub{font-size:11px;color:#444;margin-top:3px}
+    .meta{font-size:10px;color:#555;text-align:right;line-height:1.5}
+    .cli{margin-bottom:16px;page-break-inside:avoid}
+    .clihdr{display:flex;justify-content:space-between;align-items:center;background:#f1f3f6;padding:5px 9px;border-radius:4px;margin-bottom:4px}
+    .clinome{font-size:13px;font-weight:700}
+    .cliqt{font-size:10px;color:#555}
+    table{width:100%;border-collapse:collapse}
+    th,td{border:1px solid #c8ccd4;padding:4px 6px;text-align:left;vertical-align:top}
+    th{background:#e9ecf1;font-size:9px;text-transform:uppercase;letter-spacing:0.03em}
+    td.cod{font-family:'Courier New',monospace;font-weight:700;white-space:nowrap}
+    td.ped{font-family:'Courier New',monospace;white-space:nowrap}
+    td.tp{white-space:nowrap}
+    td.num{text-align:center;font-weight:700}
+    td.dt{white-space:nowrap}
+    th.ck,td.ck{width:22px;text-align:center}
+    tr.crit td{background:#fdeaea}
+    tr.crit td.cod b{color:#c00}
+    tbody tr:nth-child(even) td{background:#fafbfc}
+    tbody tr.crit:nth-child(even) td{background:#fce0e0}
+    .foot{margin-top:14px;font-size:9px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:6px}
+    @media print{.noprint{display:none}}
+  </style></head><body>
+    <div class="top">
+      <div><div class="ttl">BRASMAT — Lista de Expedição</div><div class="sub">Cliente: ${escH(fCliTxt)} &nbsp;·&nbsp; Filtro: ${escH(fStatus)} &nbsp;·&nbsp; ${itens.length} ${itens.length===1?"item":"itens"}</div></div>
+      <div class="meta">Emitido em<br>${escH(agora)}</div>
+    </div>
+    ${secoes}
+    <div class="foot">BRASMAT MES — documento gerado automaticamente</div>
+  </body></html>`;
+
+  const win=window.open("","_blank");
+  if(!win){ alert("Permita pop-ups para imprimir."); return; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>win.print(), 350);
+}
 
 // Realtime: atualiza quando a produção concluir peça ou a demanda mudar
 let _rtTimer=null;

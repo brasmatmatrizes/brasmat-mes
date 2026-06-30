@@ -318,7 +318,7 @@ async function renderResumoClientes(){
     const cor = corCliente(c);
     const n = o.total;
     const semConf = o.semConf;
-    const avisoConf = semConf>0 ? `<div style="font-size:11px;font-weight:600;color:var(--warn);font-family:var(--mono);margin-top:4px;display:flex;align-items:center;gap:5px">⏳ ${semConf} aguardando confirmação produção</div>` : "";
+    const avisoConf = semConf>0 ? `<div style="font-size:11px;font-weight:600;color:var(--warn);font-family:var(--mono);margin-top:4px;display:flex;align-items:center;gap:5px">⏳ ${semConf} aguardando confirmação</div>` : "";
     const contagens = `<div style="display:flex;gap:12px;margin-top:6px;font-size:11px;font-family:var(--mono)">
         <span style="color:var(--ok)" title="Saíram da inspeção final">✅ ${o.inspecao} insp.</span>
         <span style="color:var(--accent)" title="Ainda em processo">⚙ ${o.processo} em proc.</span>

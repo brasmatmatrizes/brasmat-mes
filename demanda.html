@@ -225,6 +225,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="status.js"></script>
 <script>
 const BUCKET = "demanda-arquivos";
@@ -395,6 +396,20 @@ async function carregarDemanda(){
   }catch(e){ ITENS = []; }
 }
 
+// Última operação realizada (do último evento da peça)
+function renderUltimaOp(it){
+  const u = it._ultimaOp; if(!u) return "";
+  const isEnt = u.evento==="ENTRADA";
+  const quando = u.data ? new Date(u.data).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) : "";
+  const proc = [u.processo, (u.subop&&u.subop!=="—")?u.subop:""].filter(Boolean).join(" · ") || "—";
+  return `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;font-family:var(--mono);margin:2px 0 4px">
+    <span style="color:var(--text3);text-transform:uppercase;letter-spacing:0.06em">última op.</span>
+    <span style="color:var(--text);font-weight:500">${proc}</span>
+    <span style="color:${isEnt?'var(--accent)':'var(--ok)'};font-weight:600">${isEnt?'⬆ entrada':'⬇ saída'}</span>
+    ${quando?`<span style="color:var(--text3)">${quando}</span>`:""}
+  </div>`;
+}
+
 // Item já está pronto p/ expedir (ou além)? — mesmo critério da Expedição
 function itemPronto(it){
   return !!it.concluido || ["expedida","em_estoque","aprovada"].includes(it._sit);
@@ -413,7 +428,9 @@ async function enriquecerItem(it){
     // Progresso idêntico ao da linha do tempo: histórico completo + calcProgresso
     const eventos = await buscarHistorico(it.pedido||"", it.codigo_peca||"");
     it._prog = (Array.isArray(eventos)&&eventos.length) ? calcProgresso(eventos) : null;
-    it._sit = (Array.isArray(eventos)&&eventos.length) ? status(eventos[eventos.length-1]).s : null;
+    const ult = (Array.isArray(eventos)&&eventos.length) ? eventos[eventos.length-1] : null;
+    it._sit = ult ? status(ult).s : null;
+    it._ultimaOp = ult ? { processo:String(ult.processo||"").trim(), subop:getSubop(ult), evento:String(ult.evento||"").trim().toUpperCase(), data:ult.data_evento } : null;
     const tipo = await supaFetch(`/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${c}${ped}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`);
     if(Array.isArray(tipo)&&tipo[0]){ it.razao_social=tipo[0].razao_social; it.classificacao_fiscal=tipo[0].classificacao_fiscal; }
   }catch(e){}
@@ -778,6 +795,7 @@ function render(){
           <button class="btn-rm" onclick="removerItem(${i})">remover</button>
         </div>
       </div>
+      ${renderUltimaOp(it)}
       ${progHtml}
       <div class="item-grid">
         <div>
@@ -849,6 +867,31 @@ function flash(txt){
 document.addEventListener("click", e=>{
   if(!e.target.closest(".search-wrap")) hideSugg();
 });
+
+// Realtime: reflete os apontamentos de processo (producao_eventos) na hora —
+// re-enriquece progresso/última op/situação SEM recarregar os campos editáveis
+let _rtTimer = null;
+function refreshApontamentos(){
+  clearTimeout(_rtTimer);
+  _rtTimer = setTimeout(async ()=>{
+    if(!CLIENTE || !ITENS.length) return;
+    // não interromper se o usuário está digitando/editando um campo
+    const ae = document.activeElement, cont = document.getElementById("content");
+    if(ae && cont && cont.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName)){ refreshApontamentos(); return; }
+    await Promise.all(ITENS.filter(it=>!it._novo).map(enriquecerItem));
+    if(!CLIENTE) renderResumoClientes(); else render();
+  }, 2000);
+}
+function iniciarRealtime(){
+  try{
+    if(!window.supabase) return;
+    const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+    sb.channel("demanda-apont")
+      .on("postgres_changes", { event:"*", schema:"public", table:"producao_eventos" }, refreshApontamentos)
+      .subscribe();
+  }catch(e){}
+}
+iniciarRealtime();
 
 init();
 </script>

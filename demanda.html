@@ -235,6 +235,7 @@ function abrirDetalhe(pedido, codigo){
 function fecharDetalhe(){ document.getElementById('dp').classList.remove('open'); }
 let CLIENTE = "";
 let ITENS = [];          // {id?, codigo_peca, descricao, data_desejada, prazo_confirmado, desenho_url, fluxo_url, _novo}
+let FILTRO_NPRONTO = false;  // mostrar só itens ainda não prontos p/ expedir
 let REMOVIDOS = [];      // ids a deletar ao salvar
 let POS = [];            // peças existentes (posicao_atual) p/ busca local
 let _suggTimer = null;
@@ -394,6 +395,15 @@ async function carregarDemanda(){
   }catch(e){ ITENS = []; }
 }
 
+// Item já está pronto p/ expedir (ou além)? — mesmo critério da Expedição
+function itemPronto(it){
+  return !!it.concluido || ["expedida","em_estoque","aprovada"].includes(it._sit);
+}
+function toggleFiltroNPronto(){
+  FILTRO_NPRONTO = !FILTRO_NPRONTO;
+  render();
+}
+
 // Busca tipo (V/I) e progresso da peça — MESMO cálculo da linha do tempo
 async function enriquecerItem(it){
   if(it._novo) return;
@@ -403,6 +413,7 @@ async function enriquecerItem(it){
     // Progresso idêntico ao da linha do tempo: histórico completo + calcProgresso
     const eventos = await buscarHistorico(it.pedido||"", it.codigo_peca||"");
     it._prog = (Array.isArray(eventos)&&eventos.length) ? calcProgresso(eventos) : null;
+    it._sit = (Array.isArray(eventos)&&eventos.length) ? status(eventos[eventos.length-1]).s : null;
     const tipo = await supaFetch(`/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${c}${ped}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`);
     if(Array.isArray(tipo)&&tipo[0]){ it.razao_social=tipo[0].razao_social; it.classificacao_fiscal=tipo[0].classificacao_fiscal; }
   }catch(e){}
@@ -738,6 +749,7 @@ function render(){
     return;
   }
   const cards = ITENS.map((it,i)=>{
+    if(FILTRO_NPRONTO && itemPronto(it)) return "";   // filtro: só não-prontos (índice i mantém-se absoluto)
     const novo = it._novo ? `<span class="item-badge-new">NOVO</span>` : "";
     const sub  = [it.pedido?("Pedido: "+it.pedido):"", it.os?("OS: "+it.os):""].filter(Boolean).join(" · ");
     const subLine = sub ? `<div class="item-desc">${sub}</div>` : (it._novo?`<div class="item-desc">item novo — sem registro no sistema</div>`:"");
@@ -796,10 +808,14 @@ function render(){
       </label>
     </div>`;
   }).join("");
+  const nNaoPronto = ITENS.filter(it=>!itemPronto(it)).length;
+  const btnFiltro = `<button class="btn-rm" onclick="toggleFiltroNPronto()" style="${FILTRO_NPRONTO?'border-color:var(--accent);color:var(--accent);background:rgba(59,127,255,0.1)':''}" title="Mostrar só itens que ainda não estão prontos p/ expedir">${FILTRO_NPRONTO?'✓ ':''}🔧 Só não prontos (${nNaoPronto})</button>`;
+  const vazioFiltro = (FILTRO_NPRONTO && nNaoPronto===0)
+    ? `<div class="placeholder" style="height:50%"><div class="ph-ico">✅</div><div class="ph-txt">Todos os itens já estão prontos p/ expedir.</div></div>` : "";
   c.innerHTML = `<div class="chdr">
-      <div><div class="ctitle">${nomeExib(CLIENTE)}</div><div class="csub">${ITENS.length} ${ITENS.length===1?"item":"itens"} na demanda</div></div>
-      <button class="btn-rm" onclick="voltarResumo()">← voltar</button>
-    </div>${cards}`;
+      <div><div class="ctitle">${nomeExib(CLIENTE)}</div><div class="csub">${ITENS.length} ${ITENS.length===1?"item":"itens"} na demanda${FILTRO_NPRONTO?` · ${nNaoPronto} não pronto(s)`:""}</div></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${btnFiltro}<button class="btn-rm" onclick="voltarResumo()">← voltar</button></div>
+    </div>${vazioFiltro}${cards}`;
 }
 
 function fileBox(i, tipo, label, url){

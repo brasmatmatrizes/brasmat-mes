@@ -206,7 +206,7 @@
 let POS = [];
 let OPERS = [];        // operadores selecionados (na ordem)
 let TODOS_OPS = [];    // todos os operadores da base
-let flagErro = false, flagTimer = false;
+let flagErro = false, flagTimer = (localStorage.getItem("painel_tempoparado")==="1");
 let LAST_EVENT = {};   // operador -> data do último evento (p/ tempo parado)
 
 function navTo(p){ window.location.href=p; }
@@ -214,7 +214,9 @@ function limpaNome(o){ return String(o||"").replace(/^\d+_/,"").trim()||"—"; }
 
 function toggleErro(){ flagErro=!flagErro; document.getElementById("flagE").classList.toggle("on",flagErro); renderBoard(); }
 async function toggleTimer(){
-  flagTimer=!flagTimer; document.getElementById("flagT").classList.toggle("on",flagTimer);
+  flagTimer=!flagTimer;
+  localStorage.setItem("painel_tempoparado", flagTimer?"1":"0");
+  document.getElementById("flagT").classList.toggle("on",flagTimer);
   if(flagTimer) await carregarUltimoEvento();
   renderBoard();
 }
@@ -238,8 +240,10 @@ function tempoParado(op){
 
 async function init(){
   document.getElementById("slbl").textContent="carregando...";
+  document.getElementById("flagT").classList.toggle("on",flagTimer);   // restaura estado salvo
   POS = await buscarPosicao();
   await carregarSelecionados();
+  if(flagTimer) await carregarUltimoEvento();
   renderBoard();
 }
 

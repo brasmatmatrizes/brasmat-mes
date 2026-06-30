@@ -52,7 +52,9 @@
 .btn-print:hover{border-color:var(--accent);color:var(--text)}
 @keyframes pisca-critico{0%,100%{opacity:1}50%{opacity:0.45}}
 .badge-critico-exp{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-family:var(--mono);font-weight:700;padding:1px 6px;border-radius:4px;background:rgba(220,38,38,0.12);color:#DC2626;border:1px solid rgba(220,38,38,0.45);animation:pisca-critico 1s ease-in-out infinite;margin-left:5px;vertical-align:middle}
-.ei-desc{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ei-desc{font-size:12px;color:var(--text3);min-width:0}
+.ei-dtext{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ei-ultop{font-size:10px;font-family:var(--mono);color:var(--text3);margin-top:4px;line-height:1.4;white-space:normal}
 .ei-prazo{font-size:12px;font-family:var(--mono);color:var(--text2)}
 .ei-prazo.venc{color:var(--danger)}
 .sit{font-size:11px;font-weight:500;padding:3px 10px;border-radius:10px;white-space:nowrap;text-align:center}
@@ -292,6 +294,15 @@ function render(){
   document.getElementById("slbl").textContent=`${itens.length} itens`;
 }
 
+function ultimaOpDe(it){
+  const r = POSMAP[(it.codigo_peca||"")+"|"+(it.pedido||"")] || POSMAPC[it.codigo_peca];
+  if(!r) return "";
+  const isEnt = String(r.evento||"").trim().toUpperCase()==="ENTRADA";
+  const sub = getSubop(r);
+  const proc = [String(r.processo||"").trim(), (sub&&sub!=="—")?sub:""].filter(Boolean).join(" · ")||"—";
+  const quando = r.data_evento ? new Date(r.data_evento).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) : "";
+  return `<div class="ei-ultop"><span style="color:${isEnt?'var(--accent)':'var(--ok)'}">${isEnt?'⬆':'⬇'}</span> ${proc}${quando?` · ${quando}`:""}</div>`;
+}
 function linhaItem(it){
   const sit=situacao(it);
   const st=it.exp_status||"pendente";
@@ -303,7 +314,7 @@ function linhaItem(it){
       <div><span class="ei-cnum">${it.codigo_peca||"—"}</span>${it.critico?'<span class="badge-critico-exp">🔴 CRÍTICO</span>':''}</div>
       ${tipoBadgeDe(it)?`<div class="ei-tipo">${tipoBadgeDe(it)}</div>`:""}
     </div>
-    <div class="ei-desc">${it.descricao?String(it.descricao).replace(/</g,"&lt;"):(it.pedido?"Ped: "+it.pedido:"")}</div>
+    <div class="ei-desc"><div class="ei-dtext">${it.descricao?String(it.descricao).replace(/</g,"&lt;"):(it.pedido?"Ped: "+it.pedido:"")}</div>${ultimaOpDe(it)}</div>
     <div class="ei-qtd">${qtdDe(it)}<span class="ei-qcap">qtd</span></div>
     <div class="ei-prazo ${venc?'venc':''}">${prazo}${venc?" ⚠":""}</div>
     <div class="sit" style="background:${sit.cor}22;color:${sit.cor}">${sit.label}</div>

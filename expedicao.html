@@ -145,6 +145,7 @@
   <button class="fchip" id="f-separado" onclick="setFiltro('separado')">Separados</button>
   <button class="fchip" id="f-expedido" onclick="setFiltro('expedido')">Expedidos</button>
   <select class="fsel-exp" id="fcli" onchange="setCliente(this.value)"><option value="">Todos os clientes</option></select>
+  <select class="fsel-exp" id="fsit" onchange="setSituacao(this.value)"><option value="">Todas as situações</option><option value="pronto">Pronto p/ expedir</option><option value="producao">Em produção</option></select>
   <button class="btn-print" onclick="imprimir()">🖨️ Imprimir lista</button>
 </div>
 <div class="content" id="content"><div class="loading"><div class="spinner"></div>carregando...</div></div>
@@ -158,7 +159,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="status.js"></script>
 <script>
-let ITENS=[], CFG={}, POSMAP={}, POSMAPC={}, TIPO_CACHE={}, FILTRO="todos", FCLI="";
+let ITENS=[], CFG={}, POSMAP={}, POSMAPC={}, TIPO_CACHE={}, FILTRO="todos", FCLI="", FSIT="";
 
 function navTo(p){ window.location.href=p; }
 function nomeExib(c){ return (CFG[c]&&CFG[c].nome_fantasia)||c; }
@@ -244,6 +245,7 @@ function popularFiltroClientes(){
   if(atual && clientes.includes(atual)) sel.value=atual; else FCLI="";
 }
 function setCliente(v){ FCLI=v; render(); }
+function setSituacao(v){ FSIT=v; render(); }
 
 function setFiltro(f){
   FILTRO=f;
@@ -256,6 +258,7 @@ function render(){
   let itens = ITENS.slice();
   if(FILTRO!=="todos") itens = itens.filter(it=>(it.exp_status||"pendente")===FILTRO);
   if(FCLI) itens = itens.filter(it=>(it.cliente||"—")===FCLI);
+  if(FSIT) itens = itens.filter(it=>situacao(it).key===FSIT);
   if(!itens.length){
     cont.innerHTML=`<div class="placeholder"><div class="ph-ico">📦</div><div class="ph-txt">${ITENS.length?'Nenhum item neste filtro.':'Nenhum item na demanda ainda. Os itens lançados na Demanda Cliente aparecem aqui.'}</div></div>`;
     document.getElementById("slbl").textContent=`${ITENS.length} itens`;
@@ -355,6 +358,7 @@ function imprimir(){
   let itens=ITENS.slice();
   if(FILTRO!=="todos") itens=itens.filter(it=>(it.exp_status||"pendente")===FILTRO);
   if(FCLI) itens=itens.filter(it=>(it.cliente||"—")===FCLI);
+  if(FSIT) itens=itens.filter(it=>situacao(it).key===FSIT);
   if(!itens.length){ alert("Nenhum item para imprimir com os filtros atuais."); return; }
 
   const grupos={};

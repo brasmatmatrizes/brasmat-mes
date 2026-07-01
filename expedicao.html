@@ -48,6 +48,11 @@
 .ei-qtd{font-size:14px;font-family:var(--mono);color:var(--text);text-align:center;font-weight:500}
 .ei-qcap{display:block;font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.05em;font-weight:400}
 .fsel-exp{font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;outline:none;height:30px;flex-shrink:0}
+.fdata-exp{font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);outline:none;height:30px;flex-shrink:0;font-family:var(--mono)}
+.fdata-wrap{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.fdata-wrap .lbl-mini{font-size:11px;color:var(--text3);white-space:nowrap}
+.btn-x-exp{font-size:12px;padding:5px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);cursor:pointer;height:30px;flex-shrink:0}
+.btn-x-exp:hover{border-color:var(--danger);color:var(--danger)}
 .btn-print{font-size:12px;padding:6px 13px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;white-space:nowrap;margin-left:auto;flex-shrink:0}
 .btn-print:hover{border-color:var(--accent);color:var(--text)}
 @keyframes pisca-critico{0%,100%{opacity:1}50%{opacity:0.45}}
@@ -146,6 +151,13 @@
   <button class="fchip" id="f-expedido" onclick="setFiltro('expedido')">Expedidos</button>
   <select class="fsel-exp" id="fcli" onchange="setCliente(this.value)"><option value="">Todos os clientes</option></select>
   <select class="fsel-exp" id="fsit" onchange="setSituacao(this.value)"><option value="">Todas as situações</option><option value="pronto">Pronto p/ expedir</option><option value="producao">Em produção</option></select>
+  <div class="fdata-wrap">
+    <span class="lbl-mini">Prazo confirmado:</span>
+    <input type="date" class="fdata-exp" id="fprazo-de" onchange="setPrazo()" title="De">
+    <span class="lbl-mini">até</span>
+    <input type="date" class="fdata-exp" id="fprazo-ate" onchange="setPrazo()" title="Até">
+    <button class="btn-x-exp" onclick="limparPrazo()" title="Limpar filtro de prazo">✕</button>
+  </div>
   <button class="btn-print" onclick="imprimir()">🖨️ Imprimir lista</button>
 </div>
 <div class="content" id="content"><div class="loading"><div class="spinner"></div>carregando...</div></div>
@@ -159,7 +171,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="status.js"></script>
 <script>
-let ITENS=[], CFG={}, POSMAP={}, POSMAPC={}, TIPO_CACHE={}, FILTRO="todos", FCLI="", FSIT="";
+let ITENS=[], CFG={}, POSMAP={}, POSMAPC={}, TIPO_CACHE={}, FILTRO="todos", FCLI="", FSIT="", FPRAZO_DE="", FPRAZO_ATE="";
 
 function navTo(p){ window.location.href=p; }
 function nomeExib(c){ return (CFG[c]&&CFG[c].nome_fantasia)||c; }
@@ -246,6 +258,24 @@ function popularFiltroClientes(){
 }
 function setCliente(v){ FCLI=v; render(); }
 function setSituacao(v){ FSIT=v; render(); }
+function setPrazo(){
+  FPRAZO_DE = document.getElementById("fprazo-de").value||"";
+  FPRAZO_ATE = document.getElementById("fprazo-ate").value||"";
+  render();
+}
+function limparPrazo(){
+  document.getElementById("fprazo-de").value="";
+  document.getElementById("fprazo-ate").value="";
+  FPRAZO_DE=""; FPRAZO_ATE="";
+  render();
+}
+function passaPrazo(it){
+  if(!FPRAZO_DE && !FPRAZO_ATE) return true;
+  if(!it.prazo_confirmado) return false;
+  if(FPRAZO_DE && it.prazo_confirmado<FPRAZO_DE) return false;
+  if(FPRAZO_ATE && it.prazo_confirmado>FPRAZO_ATE) return false;
+  return true;
+}
 
 function setFiltro(f){
   FILTRO=f;
@@ -259,6 +289,7 @@ function render(){
   if(FILTRO!=="todos") itens = itens.filter(it=>(it.exp_status||"pendente")===FILTRO);
   if(FCLI) itens = itens.filter(it=>(it.cliente||"—")===FCLI);
   if(FSIT) itens = itens.filter(it=>situacao(it).key===FSIT);
+  itens = itens.filter(passaPrazo);
   if(!itens.length){
     cont.innerHTML=`<div class="placeholder"><div class="ph-ico">📦</div><div class="ph-txt">${ITENS.length?'Nenhum item neste filtro.':'Nenhum item na demanda ainda. Os itens lançados na Demanda Cliente aparecem aqui.'}</div></div>`;
     document.getElementById("slbl").textContent=`${ITENS.length} itens`;
@@ -359,6 +390,7 @@ function imprimir(){
   if(FILTRO!=="todos") itens=itens.filter(it=>(it.exp_status||"pendente")===FILTRO);
   if(FCLI) itens=itens.filter(it=>(it.cliente||"—")===FCLI);
   if(FSIT) itens=itens.filter(it=>situacao(it).key===FSIT);
+  itens=itens.filter(passaPrazo);
   if(!itens.length){ alert("Nenhum item para imprimir com os filtros atuais."); return; }
 
   const grupos={};

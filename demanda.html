@@ -68,6 +68,17 @@
 .item-card.drag-over{border-color:var(--accent);box-shadow:0 -2px 0 var(--accent) inset}
 .drag-handle{cursor:grab;color:var(--text3);font-size:16px;line-height:1;padding:2px 6px;border:1px solid var(--border);border-radius:6px;user-select:none;flex-shrink:0;align-self:flex-start}
 .drag-handle:active{cursor:grabbing}
+.seq-num-badge{font-size:10px;font-weight:700;color:var(--accent);background:rgba(59,127,255,0.12);border:1px solid rgba(59,127,255,0.3);border-radius:6px;padding:3px 7px;flex-shrink:0;align-self:flex-start;font-family:var(--mono)}
+
+/* SEQ PANEL (sidebar) */
+.seq-list{display:flex;flex-direction:column;gap:4px;max-height:340px;overflow-y:auto;padding-right:2px}
+.seq-row{display:flex;align-items:center;gap:6px;padding:5px 7px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);font-size:11px;font-family:var(--mono);cursor:grab;transition:background .15s,border-color .15s}
+.seq-row:active{cursor:grabbing}
+.seq-row.dragging{opacity:0.4}
+.seq-row.drag-over{border-color:var(--accent);box-shadow:0 -2px 0 var(--accent) inset}
+.seq-row .seq-num{color:var(--accent);font-weight:700;flex-shrink:0;width:20px}
+.seq-row .seq-cod{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.seq-row .seq-ped{color:var(--text3);flex-shrink:0;font-size:10px}
 .item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
 .item-cod{font-size:15px;font-weight:500;color:var(--text);font-family:var(--mono)}
 .item-desc{font-size:12px;color:var(--text3);margin-top:2px}
@@ -190,6 +201,8 @@
       <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">💾 Salvamento automático</span>
     </div>
     <div class="saved-msg" id="saved-msg"></div>
+
+    <div id="seqPanel"></div>
   </div>
 
   <!-- CONTENT -->
@@ -393,6 +406,7 @@ async function selecionarCliente(){
   hideSugg();
   if(!CLIENTE){
     renderResumoClientes();
+    renderSeqPanel();
     return;
   }
   document.getElementById("content").innerHTML = `<div class="loading"><div class="spinner"></div>carregando demanda salva...</div>`;
@@ -595,19 +609,19 @@ function dragStart(e,i){
   DRAG_FROM = i;
   e.dataTransfer.effectAllowed = "move";
   try{ e.dataTransfer.setData("text/plain", String(i)); }catch(_){}
-  const card = e.target.closest(".item-card");
+  const card = e.target.closest(".item-card, .seq-row");
   if(card) setTimeout(()=>card.classList.add("dragging"), 0);
 }
 function dragEnd(){
   DRAG_FROM = null;
-  document.querySelectorAll(".item-card").forEach(c=>c.classList.remove("dragging","drag-over"));
+  document.querySelectorAll(".item-card, .seq-row").forEach(c=>c.classList.remove("dragging","drag-over"));
 }
 function dragOver(e,i){
   if(DRAG_FROM===null) return;   // deixa o file-box tratar drops de arquivo
   e.preventDefault();
   e.dataTransfer.dropEffect = "move";
   const card = e.currentTarget;
-  document.querySelectorAll(".item-card.drag-over").forEach(c=>{ if(c!==card) c.classList.remove("drag-over"); });
+  document.querySelectorAll(".item-card.drag-over, .seq-row.drag-over").forEach(c=>{ if(c!==card) c.classList.remove("drag-over"); });
   if(i!==DRAG_FROM) card.classList.add("drag-over");
 }
 function dragLeave(e){ e.currentTarget.classList.remove("drag-over"); }
@@ -784,9 +798,27 @@ async function salvar(){
   setTimeout(()=>{ if(msg && msg.textContent.includes("✓")) msg.textContent=""; }, 2500);
 }
 
+// ---------- Painel de sequência (sidebar) ----------
+function renderSeqPanel(){
+  const panel = document.getElementById("seqPanel");
+  if(!panel) return;
+  if(!CLIENTE || !ITENS.length){ panel.innerHTML=""; return; }
+  const rows = ITENS.map((it,i)=>`
+    <div class="seq-row" data-idx="${i}" draggable="true"
+         ondragstart="dragStart(event,${i})" ondragend="dragEnd(event)"
+         ondragover="dragOver(event,${i})" ondrop="dragDrop(event,${i})" ondragleave="dragLeave(event)"
+         title="Arraste para reordenar">
+      <span class="seq-num">${i+1}ª</span>
+      <span class="seq-cod" title="${esc(it.codigo_peca||"")}">${esc(it.codigo_peca||"(sem código)")}</span>
+      ${it.pedido?`<span class="seq-ped">#${esc(it.pedido)}</span>`:""}
+    </div>`).join("");
+  panel.innerHTML = `<div class="divider"></div><div class="lbl" style="margin-bottom:6px">sequência (${ITENS.length})</div><div class="seq-list">${rows}</div>`;
+}
+
 // ---------- Render ----------
 function render(){
   const c = document.getElementById("content");
+  renderSeqPanel();
   if(!ITENS.length){
     c.innerHTML = `<div class="chdr"><div><div class="ctitle">${nomeExib(CLIENTE)}</div><div class="csub">0 itens na demanda</div></div><button class="btn-rm" onclick="voltarResumo()">← voltar</button></div>
       <div class="placeholder" style="height:60%"><div class="ph-ico">➕</div><div class="ph-txt">Pesquise um código no painel à esquerda e lance o primeiro item.</div></div>`;
@@ -813,6 +845,7 @@ function render(){
         ondragover="dragOver(event,${i})" ondrop="dragDrop(event,${i})" ondragleave="dragLeave(event)">
       <div class="item-top">
         <div class="drag-handle" draggable="true" ondragstart="dragStart(event,${i})" ondragend="dragEnd(event)" title="Arraste para reordenar">⠿</div>
+        <div class="seq-num-badge" title="Sequência">${i+1}ª</div>
         <div ${clickAttr}>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="item-cod">${it.codigo_peca}${novo}</div>${renderTipoBadge(it)}${concBadge}${expBadge}${criticoBadge}</div>
           ${subLine}${tlHint}

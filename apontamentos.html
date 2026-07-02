@@ -202,19 +202,21 @@ async function buscar(){
   document.getElementById("content").innerHTML =
     `<div class="loading"><div class="spinner"></div>carregando apontamentos...</div>`;
 
-  // Busca eventos do período — filtra por operador no browser
-  // (necessário pois nome pode ter prefixo numérico: "7_FELIPE")
+  // Busca eventos do período já filtrando por operador no servidor (ilike pega o nome
+  // com ou sem prefixo numérico, ex: "7_FELIPE"); o filtro exato abaixo protege contra
+  // um nome que termine igual ao de outro operador
+  const opFiltro = encodeURIComponent(op);
   let todos = [], offset = 0;
   while(true){
     const chunk = await supaFetch(
-      `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,processo,operador,evento,data_evento,quantidade_produzida,retrabalho,operacao_retifica_plana,operacao_retifica_cilindrica_interna,operacao_retifica_cilindrica_externa,operacao_erosao_fio,operacao_forma,operacao_polimento,operacao_brunidora,operacao_prensa,operacao_torno,operacao_qualidade,operacao_administrativo,operacao_servico_externo,operacao_erosao_penetracao&data_evento=gte.${diUTC}&data_evento=lte.${dfUTCStr}&order=data_evento.desc&limit=1000&offset=${offset}`
+      `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,processo,operador,evento,data_evento,quantidade_produzida,retrabalho,operacao_retifica_plana,operacao_retifica_cilindrica_interna,operacao_retifica_cilindrica_externa,operacao_erosao_fio,operacao_forma,operacao_polimento,operacao_brunidora,operacao_prensa,operacao_torno,operacao_qualidade,operacao_administrativo,operacao_servico_externo,operacao_erosao_penetracao&data_evento=gte.${diUTC}&data_evento=lte.${dfUTCStr}&operador=ilike.*${opFiltro}&order=data_evento.desc&limit=1000&offset=${offset}`
     );
     if(!Array.isArray(chunk)||chunk.length===0) break;
     todos = todos.concat(chunk);
     if(chunk.length<1000) break;
     offset+=1000;
   }
-  // Filtra pelo operador selecionado (ignora prefixo numérico)
+  // Filtro exato de segurança (ignora prefixo numérico, garante que não veio outro operador)
   const eventos = todos.filter(r=>nomeOp(r.operador)===op);
 
   const diDate = new Date(di+"T00:00:00");

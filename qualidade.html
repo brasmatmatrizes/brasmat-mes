@@ -57,17 +57,20 @@
 .tend-bar:hover::after{content:attr(data-tip);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:10px;font-family:var(--mono);color:var(--text);white-space:nowrap;z-index:10}
 .tend-lbl{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:6px;white-space:nowrap}
 
-/* GRADE 2×2 — Lotes/Peças × Processo/Final, sem precisar filtrar pra comparar */
-.tend-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
-.tend-rowlbl{grid-column:1/-1;font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);display:flex;align-items:center;gap:8px;margin-top:14px}
+/* 4 gráficos empilhados — Lotes/Peças × Processo/Final, sem precisar filtrar pra comparar */
+.tend-grid{display:flex;flex-direction:column;gap:0}
+.tend-rowlbl{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);display:flex;align-items:center;gap:8px;margin-top:16px}
 .tend-rowlbl:first-child{margin-top:0}
 .tend-rowlbl::after{content:"";flex:1;height:1px;background:var(--border)}
-.tend-mini-title{font-size:11px;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.tend-mini{margin-top:14px}
+.tend-mini-title{font-size:11px;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.tend-mini-title-lbl{display:flex;align-items:center;gap:6px}
 .tend-mini-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
-.tend-mini-chart{display:flex;align-items:flex-end;gap:3px;height:96px;padding-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto}
+.tend-mini-total{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text)}
+.tend-mini-chart{display:flex;align-items:flex-end;gap:4px;height:96px;padding-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto}
 .tend-mini-chart .tend-col{min-width:14px}
 .tend-mini-chart .tend-bars{height:66px}
-.tend-mini-chart .tend-bar{width:7px}
+.tend-mini-chart .tend-bar{width:8px}
 
 /* GRÁFICO POR INSPETOR */
 .chart{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px}
@@ -199,21 +202,33 @@
     </div>
     <div class="tend-grid">
       <div class="tend-rowlbl">Lotes</div>
-      <div>
-        <div class="tend-mini-title"><span class="tend-mini-dot" style="background:var(--accent)"></span>Inspeção de processo (10.1)</div>
+      <div class="tend-mini">
+        <div class="tend-mini-title">
+          <span class="tend-mini-title-lbl"><span class="tend-mini-dot" style="background:var(--accent)"></span>Inspeção de processo (10.1)</span>
+          <span class="tend-mini-total" id="tot-lotes-proc">—</span>
+        </div>
         <div class="tend-mini-chart" id="tc-lotes-proc"></div>
       </div>
-      <div>
-        <div class="tend-mini-title"><span class="tend-mini-dot" style="background:var(--ok)"></span>Inspeção final (10.2)</div>
+      <div class="tend-mini">
+        <div class="tend-mini-title">
+          <span class="tend-mini-title-lbl"><span class="tend-mini-dot" style="background:var(--ok)"></span>Inspeção final (10.2)</span>
+          <span class="tend-mini-total" id="tot-lotes-final">—</span>
+        </div>
         <div class="tend-mini-chart" id="tc-lotes-final"></div>
       </div>
       <div class="tend-rowlbl">Peças</div>
-      <div>
-        <div class="tend-mini-title"><span class="tend-mini-dot" style="background:var(--accent)"></span>Inspeção de processo (10.1)</div>
+      <div class="tend-mini">
+        <div class="tend-mini-title">
+          <span class="tend-mini-title-lbl"><span class="tend-mini-dot" style="background:var(--accent)"></span>Inspeção de processo (10.1)</span>
+          <span class="tend-mini-total" id="tot-pecas-proc">—</span>
+        </div>
         <div class="tend-mini-chart" id="tc-pecas-proc"></div>
       </div>
-      <div>
-        <div class="tend-mini-title"><span class="tend-mini-dot" style="background:var(--ok)"></span>Inspeção final (10.2)</div>
+      <div class="tend-mini">
+        <div class="tend-mini-title">
+          <span class="tend-mini-title-lbl"><span class="tend-mini-dot" style="background:var(--ok)"></span>Inspeção final (10.2)</span>
+          <span class="tend-mini-total" id="tot-pecas-final">—</span>
+        </div>
         <div class="tend-mini-chart" id="tc-pecas-final"></div>
       </div>
     </div>
@@ -479,6 +494,14 @@ function renderTendencia(reg){
     return;
   }
   if(keys.length>62) keys = keys.slice(-62); // evita gráfico pesado em intervalos muito longos no modo Dia
+
+  // Totais do período inteiro (independente do corte de colunas exibidas)
+  const porProc = reg.filter(r=>tipoInsp(r)==="processo");
+  const porFinal = reg.filter(r=>tipoInsp(r)==="final");
+  document.getElementById("tot-lotes-proc").textContent  = `${porProc.length} lote(s)`;
+  document.getElementById("tot-lotes-final").textContent = `${porFinal.length} lote(s)`;
+  document.getElementById("tot-pecas-proc").textContent  = `${porProc.reduce((s,r)=>s+(parseFloat(r.quantidade_produzida)||0),0)} pç`;
+  document.getElementById("tot-pecas-final").textContent = `${porFinal.reduce((s,r)=>s+(parseFloat(r.quantidade_produzida)||0),0)} pç`;
 
   renderMiniChart("tc-lotes-proc",  keys, buckets, "lotesProc",  "var(--accent)", "lote(s)");
   renderMiniChart("tc-lotes-final", keys, buckets, "lotesFinal", "var(--ok)",     "lote(s)");

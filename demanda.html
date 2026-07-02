@@ -851,14 +851,6 @@ async function salvar(){
   setTimeout(()=>{ if(msg && msg.textContent.includes("✓")) msg.textContent=""; }, 2500);
 }
 
-// Avisa antes de sair da página se ainda houver alteração não salva
-window.addEventListener("beforeunload", (e)=>{
-  if(_saveTimer || _saving){
-    e.preventDefault();
-    e.returnValue = "";
-  }
-});
-
 // ---------- Painel de sequência (sidebar) ----------
 function renderSeqPanel(){
   const panel = document.getElementById("seqPanel");

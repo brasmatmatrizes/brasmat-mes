@@ -781,9 +781,11 @@ async function removerArquivo(i, tipo){
 let _saveTimer = null;
 let _saving = false;
 let _saveAgain = false;
+let _saveFailCount = 0;
 
 function agendarSalvar(){
   if(!CLIENTE) return;
+  _saveFailCount = 0;
   const msg = document.getElementById("saved-msg");
   if(msg){ msg.style.color = "var(--text3)"; msg.textContent = "alterações pendentes…"; }
   clearTimeout(_saveTimer);
@@ -814,29 +816,48 @@ async function salvar(){
         concluido:!!it.concluido, critico:!!it.critico
       };
       if(it.id){
-        await fetch(`${SUPA_URL}/rest/v1/demanda_itens?id=eq.${it.id}`, {
+        const r = await fetch(`${SUPA_URL}/rest/v1/demanda_itens?id=eq.${it.id}`, {
           method:"PATCH",
           headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer:"return=minimal" },
           body:JSON.stringify(payload)
         });
+        if(!r.ok) throw new Error("patch falhou ("+r.status+"): "+await r.text());
       }else{
         const r = await fetch(`${SUPA_URL}/rest/v1/demanda_itens`, {
           method:"POST",
           headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer:"return=representation" },
           body:JSON.stringify(payload)
         });
+        if(!r.ok) throw new Error("post falhou ("+r.status+"): "+await r.text());
         const data = await r.json();
         if(Array.isArray(data)&&data[0]){ it.id = data[0].id; it._novo=false; }
       }
     }
     if(msg){ msg.style.color = "var(--ok)"; msg.textContent = "✓ salvo automaticamente"; }
+    _saveFailCount = 0;
   }catch(e){
-    if(msg){ msg.style.color = "var(--danger)"; msg.textContent = "erro ao salvar"; }
+    console.error("Falha ao salvar demanda:", e);
+    _saveFailCount++;
+    if(_saveFailCount <= 4){
+      if(msg){ msg.style.color = "var(--danger)"; msg.textContent = "⚠ erro ao salvar — tentando de novo…"; }
+      _saveAgain = true;
+    }else if(msg){
+      msg.style.color = "var(--danger)";
+      msg.textContent = "⚠ não foi possível salvar. Verifique a conexão e edite o campo de novo.";
+    }
   }
   _saving = false;
   if(_saveAgain){ _saveAgain = false; agendarSalvar(); }   // havia mudança durante o save
   setTimeout(()=>{ if(msg && msg.textContent.includes("✓")) msg.textContent=""; }, 2500);
 }
+
+// Avisa antes de sair da página se ainda houver alteração não salva
+window.addEventListener("beforeunload", (e)=>{
+  if(_saveTimer || _saving){
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
 
 // ---------- Painel de sequência (sidebar) ----------
 function renderSeqPanel(){

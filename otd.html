@@ -93,6 +93,10 @@
 .loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
 .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay{position:fixed;inset:0;background:rgba(15,17,23,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:9999}
+.loading-overlay.show{display:flex}
+.loading-overlay .spinner-big{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+.loading-overlay .loading-txt{color:var(--text2);font-family:var(--mono);font-size:13px}
 
 /* DETALHE */
 .det-panel{display:none;position:fixed;right:0;top:56px;bottom:0;width:460px;background:var(--bg2);border-left:1px solid var(--border);z-index:100;overflow-y:auto;animation:si 0.18s ease}
@@ -123,6 +127,7 @@
 </style>
 </head>
 <body>
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner-big"></div><div class="loading-txt">carregando...</div></div>
 <div style="display:grid;grid-template-rows:56px 52px 1fr;height:100vh">
 
 <!-- TOPBAR -->
@@ -144,8 +149,7 @@
   </div>
   <div class="tr-right">
     <button class="btn-sm" onclick="init()">↻ atualizar</button>
-    <div class="spinner" id="spin" style="display:none"></div>
-    <div class="sync-dot" id="syncdot"></div>
+    <div class="sync-dot"></div>
     <span class="sync-lbl" id="slbl">carregando...</span>
   </div>
 </div>
@@ -287,12 +291,10 @@ document.getElementById("di").value = fmtD(iniMes);
 document.getElementById("df").value = fmtD(hoje);
 
 async function init(){
-  const spin = document.getElementById("spin");
-  const syncdot = document.getElementById("syncdot");
+  const overlay = document.getElementById("loadingOverlay");
   const inDi = document.getElementById("di");
   const inDf = document.getElementById("df");
-  spin.style.display = "inline-block";
-  syncdot.style.display = "none";
+  overlay.classList.add("show");
   inDi.disabled = true; inDf.disabled = true;
   document.getElementById("slbl").textContent = "carregando...";
   try{
@@ -316,8 +318,7 @@ async function init(){
     render();
     document.getElementById("slbl").textContent=`${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
   } finally {
-    spin.style.display = "none";
-    syncdot.style.display = "";
+    overlay.classList.remove("show");
     inDi.disabled = false; inDf.disabled = false;
   }
 }

@@ -59,6 +59,7 @@
 .op-card.erro .op-num{color:var(--danger)}
 .op-badge{position:absolute;top:10px;right:12px;font-size:9px;font-family:var(--mono);font-weight:600;color:var(--danger)}
 .op-idle{position:absolute;right:12px;bottom:11px;font-size:10px;font-family:var(--mono);font-weight:500;color:var(--warn)}
+.op-erro-badge{position:absolute;right:12px;top:11px;font-size:10px;font-family:var(--mono);font-weight:600;color:var(--danger);background:rgba(240,69,69,0.14);border-radius:10px;padding:2px 7px}
 .col{width:210px;min-width:210px;display:flex;flex-direction:column;height:100%;flex-shrink:0}
 .col-hdr{background:var(--bg2);border:1px solid var(--border);border-radius:10px 10px 0 0;padding:9px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0}
 .col-stripe{width:3px;height:18px;border-radius:2px;flex-shrink:0;background:var(--accent)}
@@ -236,7 +237,7 @@
 let POS = [];
 let OPERS = [];        // operadores selecionados (na ordem)
 let TODOS_OPS = [];    // todos os operadores da base
-let flagErro = false, flagTimer = (localStorage.getItem("painel_tempoparado")==="1");
+let flagErro = false, flagTimer = (localStorage.getItem("painel_tempoparado")!=="0");
 let LAST_EVENT = {};   // operador -> data do último evento (p/ tempo parado)
 
 function navTo(p){ window.location.href=p; }
@@ -266,6 +267,14 @@ function tempoParado(op){
   if(d>0) return d+"d "+(h%24)+"h";
   if(h>0) return h+"h "+(m%60)+"m";
   return m+"m";
+}
+function itensErro(op){
+  return POS.filter(r=>{
+    if(String(r.operador||"").trim()!==op) return false;
+    const evt=String(r.evento||"").trim().toUpperCase();
+    if(evt!=="ENTRADA") return false;
+    return diasDesde(r)>=5;
+  }).length;
 }
 
 async function init(){
@@ -304,17 +313,19 @@ function renderBoard(){
   }
   board.style.display="grid";
   // monta com contagem e ordena: operando primeiro, depois alfabético
-  const arr=OPERS.map(op=>({op,n:pecasDoOperador(op).length}));
+  const arr=OPERS.map(op=>({op,n:pecasDoOperador(op).length,errN:flagErro?itensErro(op):0}));
   arr.sort((a,b)=> (b.n>0)-(a.n>0) || limpaNome(a.op).localeCompare(limpaNome(b.op),"pt-BR"));
   const trabalhando=arr.filter(x=>x.n>0).length;
-  board.innerHTML=arr.map(({op,n})=>{
+  board.innerHTML=arr.map(({op,n,errN})=>{
     const w=n>0;
+    const hasErro=errN>0;
     const idleT=(flagTimer && !w) ? tempoParado(op) : "";
-    return `<div class="op-card ${w?'working':'idle'}" onclick="abrirOperador('${esc(op)}')">
+    return `<div class="op-card ${w?'working':'idle'}${hasErro?' erro':''}" onclick="abrirOperador('${esc(op)}')">
       <div class="op-top"><span class="op-dot ${w?'on':'off'}"></span><span class="op-name">${limpaNome(op)}</span></div>
       <div class="op-num">${n}</div>
       <div class="op-lbl">${n===1?'item em aberto':'itens em aberto'}</div>
       <div class="op-status">${w?'operando agora':'sem atividade'}</div>
+      ${hasErro?`<div class="op-erro-badge">🔴 ${errN} prov. erro</div>`:""}
       ${idleT?`<div class="op-idle">⏱ ${idleT}</div>`:""}
     </div>`;
   }).join("");

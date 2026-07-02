@@ -193,32 +193,37 @@ async function buscarTipo(codigo, pedido){
   return Array.isArray(r2)&&r2.length>0 ? r2[0] : null;
 }
 
+let _searchTimer = null;
 document.getElementById("search").addEventListener("input", function(){
-  const q = this.value.trim().toUpperCase();
-  const res = document.getElementById("results");
-  if(q.length < 2){ res.innerHTML = ""; return; }
+  const campo = this;
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(()=>{
+    const q = campo.value.trim().toUpperCase();
+    const res = document.getElementById("results");
+    if(q.length < 2){ res.innerHTML = ""; return; }
 
-  const found = POS.filter(r=>
-    String(r.codigo_peca||"").toUpperCase().includes(q)||
-    String(r.pedido||"").toUpperCase().includes(q)||
-    String(r.os||"").toUpperCase().includes(q)
-  ).slice(0, 10);
+    const found = POS.filter(r=>
+      String(r.codigo_peca||"").toUpperCase().includes(q)||
+      String(r.pedido||"").toUpperCase().includes(q)||
+      String(r.os||"").toUpperCase().includes(q)
+    ).slice(0, 10);
 
-  if(!found.length){
-    res.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">Nenhuma peça encontrada para "${this.value}"</div>`;
-    return;
-  }
+    if(!found.length){
+      res.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text3);font-size:13px">Nenhuma peça encontrada para "${campo.value}"</div>`;
+      return;
+    }
 
-  renderFound(res, found);
-  found.forEach(async (r, i)=>{
-    if(getTipo(r)) return;
-    const t = await buscarTipo(r.codigo_peca, r.pedido);
-    if(!t) return;
-    r.razao_social = t.razao_social;
-    r.classificacao_fiscal = t.classificacao_fiscal;
-    const el = document.getElementById(`badge-${i}`);
-    if(el) el.outerHTML = renderTipoBadge(r)||`<span id="badge-${i}"></span>`;
-  });
+    renderFound(res, found);
+    found.forEach(async (r, i)=>{
+      if(getTipo(r)) return;
+      const t = await buscarTipo(r.codigo_peca, r.pedido);
+      if(!t) return;
+      r.razao_social = t.razao_social;
+      r.classificacao_fiscal = t.classificacao_fiscal;
+      const el = document.getElementById(`badge-${i}`);
+      if(el) el.outerHTML = renderTipoBadge(r)||`<span id="badge-${i}"></span>`;
+    });
+  }, 250);
 });
 
 function renderFound(res, found){

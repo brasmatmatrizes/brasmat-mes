@@ -20,7 +20,7 @@
 .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 .sync-lbl{font-size:11px;color:var(--text2);font-family:var(--mono)}
-.mobile-nav{display:none;overflow-x:auto;padding:8px 12px;gap:6px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.mobile-nav{display:none;flex-wrap:wrap;padding:8px 12px;gap:6px;background:var(--bg2);border-bottom:1px solid var(--border)}
 .mobile-nav::-webkit-scrollbar{height:0}
 .mnb{font-size:11px;padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;white-space:nowrap;flex-shrink:0}
 .mnb.active{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -146,17 +146,32 @@
 </div>
 <div class="mobile-nav">
   <button class="mnb" onclick="navTo('index.html')">Buscar Peça</button>
-  <button class="mnb" onclick="navTo('demanda.html')">Demanda</button>
-  <button class="mnb active">Expedição</button>
-  <button class="mnb" onclick="navTo('kanban.html')">Kanban</button>
-  <button class="mnb" onclick="navTo('op-kanban.html')">Painel</button>
-  <button class="mnb" onclick="navTo('cliente.html')">Cliente</button>
-  <button class="mnb" onclick="navTo('apontamentos.html')">Apontamentos</button>
-  <button class="mnb" onclick="navTo('prazos.html')">Prazos</button>
-  <button class="mnb" onclick="navTo('otd.html')">OTD</button>
-  <button class="mnb" onclick="navTo('ordens.html')">Ordens</button>
-  <button class="mnb" onclick="navTo('paradas.html')">Paradas</button>
-  <button class="mnb" onclick="navTo('operadores.html')">Performance</button>
+  <div class="nav-group group-active">
+    <button class="mnb nb-group active">Cliente ▾</button>
+    <div class="nav-dropdown">
+      <button class="mnb" onclick="navTo('demanda.html')">Demanda</button>
+      <button class="mnb" onclick="navTo('cliente.html')">Cliente</button>
+      <button class="mnb active">Expedição</button>
+    </div>
+  </div>
+  <div class="nav-group">
+    <button class="mnb nb-group">Produção ▾</button>
+    <div class="nav-dropdown">
+      <button class="mnb" onclick="navTo('kanban.html')">Kanban</button>
+      <button class="mnb" onclick="navTo('op-kanban.html')">Painel</button>
+      <button class="mnb" onclick="navTo('apontamentos.html')">Apontamentos</button>
+      <button class="mnb" onclick="navTo('paradas.html')">Paradas</button>
+    </div>
+  </div>
+  <div class="nav-group">
+    <button class="mnb nb-group">Indicadores ▾</button>
+    <div class="nav-dropdown">
+      <button class="mnb" onclick="navTo('prazos.html')">Prazos</button>
+      <button class="mnb" onclick="navTo('otd.html')">OTD</button>
+      <button class="mnb" onclick="navTo('ordens.html')">Ordens</button>
+      <button class="mnb" onclick="navTo('operadores.html')">Performance</button>
+    </div>
+  </div>
 </div>
 <div class="toolbar">
   <span class="tt">📦 Expedição</span>

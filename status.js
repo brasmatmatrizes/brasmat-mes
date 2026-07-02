@@ -7,7 +7,8 @@ const SUPA_KEY = "sb_publishable_3N0kbWDpJ542n_aWeFzUqQ_pmVGrFiB";
 
 const SUBOP_ELAB  = "11.3";
 const SUBOP_ALMO  = "11.4";
-const SUBOP_INSP  = "10.2";
+const SUBOP_INSP  = "10.2"; // inspeção final
+const SUBOP_INSP_PROC = "10.1"; // inspeção de processo
 
 const COR = {
   "RETÍFICA PLANA":"#3B7FFF","RETÍFICA CILÍNDRICA INTERNA":"#9B5DE5",

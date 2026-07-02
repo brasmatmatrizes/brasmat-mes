@@ -9,15 +9,17 @@ Sistema de execução de manufatura (MES) para a Brasmat — ferramentaria de ma
 - **Supabase** (PostgreSQL na nuvem) é o backend. O front usa **só a chave pública (publishable)** definida no topo do `status.js` (`SUPA_URL`, `SUPA_KEY`). Project ref: `hjvlznijsgdwurtsyukl`.
 - Deploy automático via **Vercel** (`brasmat-mes.vercel.app`) a cada push no `main`. Após mudança, lembrar de Ctrl+F5 (cache).
 
-## Páginas (12)
+## Páginas (13)
 
-`index.html` (Buscar Peça), `demanda.html` (Demanda Cliente), `expedicao.html` (Expedição), `kanban.html`, `op-kanban.html` (Painel), `cliente.html` (Consulta Cliente), `apontamentos.html`, `prazos.html`, `otd.html`, `ordens.html`, `paradas.html`, `operadores.html` (Performance).
+`index.html` (Buscar Peça), `demanda.html` (Demanda Cliente), `expedicao.html` (Expedição), `kanban.html`, `op-kanban.html` (Painel), `cliente.html` (Consulta Cliente), `apontamentos.html`, `prazos.html`, `otd.html`, `ordens.html`, `paradas.html`, `operadores.html` (Performance), `qualidade.html` (Qualidade).
 
-O menu de navegação (`.nav` no topbar) deve conter as 12 páginas, em **todas** as páginas, na mesma ordem (a sequência acima). Reordenar/inserir via script Node que reescreve o bloco `.nav` (e `.mobile-nav` onde existir).
+O menu de navegação (`.nav` no topbar) deve conter as 13 páginas, em **todas** as páginas, na mesma ordem (a sequência acima). Reordenar/inserir via script Node que reescreve o bloco `.nav` (e `.mobile-nav` onde existir).
 
 - **Expedição** (`expedicao.html`): tela simples para o almoxarifado. Lê todos os itens de `demanda_itens`, agrupa por cliente (cor/nome fantasia de `demanda_clientes`) e ordena por situação. Situação derivada do status da peça (`posicao_atual`/`status()`) + flag `concluido`: "Em produção" / "Pronto p/ expedir" / "Expedido (sistema)". Almoxarifado marca cada item Pendente/Separado/Expedido (coluna `exp_status` em `demanda_itens`). Filtro por exp_status no topo. Clicar no código abre a linha do tempo.
 
 - **Painel** (`op-kanban.html`, menu "Painel"): card por operador (verde+bolinha piscando = operando; amarelo estático = sem atividade), ordenado por atividade; nº de itens em aberto; clicar mostra as peças do operador. Config (⚙) escolhe operadores (tabela `kanban_operadores`). Flag "Prov. erro (5+d)" destaca operador com item ≥5d; flag "Tempo parado" (timer) mostra no canto inferior direito do card o tempo sem atividade (último evento em `producao_eventos`). Realtime + fallback 60s. Nomes sem prefixo numérico.
+
+- **Qualidade** (`qualidade.html`): indicador de produtividade da inspeção — só volume (lotes e peças), sem não-conformidade/causa e sem tempo. Filtros por período (padrão mês corrente), tipo de inspeção e inspetor. Cards de lotes/peças inspecionados (total e por tipo); tendência com toggle dia/semana/mês e lotes/peças; ranking e tabela por inspetor. Conta só eventos de **Saída** (evita contar 2x quando a inspeção de processo aponta entrada+saída; a final hoje só aponta saída).
 
 ## Dados Supabase
 
@@ -38,6 +40,7 @@ O menu de navegação (`.nav` no topbar) deve conter as 12 páginas, em **todas*
 - **Tipo V/I** (`getTipo` em status.js): `classificacao_fiscal` ("Vendas"→V, "Industrialização"→I); fallback `razao_social` (Brasmat→V/Vendas, Mota→I/Industrialização). Lookup sempre por **pedido+código**, pegando o registro mais recente com o campo preenchido (`order=id.desc`). V = azul, I = laranja.
 - **Barra de progresso** (`calcProgresso`/`renderProgresso`): `sequencial_operacao / quantidade_operacoes` do último evento. A linha do tempo é a referência — replicar o mesmo cálculo nos cards (buscar histórico + `calcProgresso`).
 - **Status da peça** (`status()`): expedida, em_estoque, aprovada, aguardando, em_producao, liberada — definido por evento + processo + suboperação (constantes `SUBOP_*`).
+- **Inspeção de qualidade**: processo `QUALIDADE` tem duas suboperações — `SUBOP_INSP_PROC` ("10.1", inspeção de processo, hoje aponta entrada+saída) e `SUBOP_INSP` ("10.2", inspeção final, hoje só aponta saída — não usar para cálculo de tempo). Contagens de produtividade devem considerar só eventos de **Saída** para não contar 2x a inspeção de processo.
 - **Ícones de anexo** na linha do tempo (`renderAnexosIcons`): 📐 Desenho / 📋 Roteiro só aparecem se houver PDF cadastrado na demanda daquela peça (lookup por pedido+código).
 - **Kanban**: peças que estão em alguma demanda ficam com card de **fundo vermelho claro** (`.card-demanda`).
 - **Demanda Cliente**: cliente vem da base; busca de item por código/pedido/OS (igual Buscar Peça) com opção "item novo" só quando não acha nada; **salvamento automático** (sem botão, debounce); check manual **"Concluído"** por item (sobrepõe o progresso quando apontamento está errado); ao remover anexo / trocar PDF / remover item, o arquivo é **apagado do bucket** (`supaDeleteArquivo`).

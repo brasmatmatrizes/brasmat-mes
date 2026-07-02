@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRASMAT MES — Qualidade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="design.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:9px;color:var(--text3);font-family:var(--mono)}
+.nav{display:flex;gap:4px}
+.nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
+.tr-right{display:flex;align-items:center;gap:8px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-lbl{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.btn-sm{background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--mono)}
+.btn-sm:hover{border-color:var(--border2);color:var(--text2)}
+
+/* TOOLBAR */
+.toolbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 20px;flex-shrink:0;flex-wrap:wrap}
+.flbl{font-size:11px;color:var(--text3);font-family:var(--mono);white-space:nowrap}
+.fsel,.fdate{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--text2);outline:none;height:32px;cursor:pointer}
+.fsel:focus,.fdate:focus{border-color:var(--accent)}
+.btn-g{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;height:32px}
+.btn-g:hover{border-color:var(--border2);color:var(--text)}
+
+/* CONTENT */
+.content{overflow-y:auto;height:calc(100vh - 108px);padding:20px 24px}
+
+.mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.met{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.mv{font-size:26px;font-weight:500;font-family:var(--mono);line-height:1;margin-bottom:4px}
+.mv.accent{color:var(--accent)}.mv.ok{color:var(--ok)}.mv.warn{color:var(--warn)}.mv.text{color:var(--text)}
+.ml2{font-size:11px;color:var(--text3)}
+
+/* TENDÊNCIA */
+.tend-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.tend-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.tend-title{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--mono)}
+.tgl-row{display:flex;gap:4px}
+.tgl-btn{font-size:10px;padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.tgl-btn:hover{border-color:var(--border2);color:var(--text)}
+.tgl-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.tend-chart{display:flex;align-items:flex-end;gap:6px;height:150px;padding-bottom:24px;position:relative;border-bottom:1px solid var(--border);overflow-x:auto}
+.tend-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:22px}
+.tend-bars{display:flex;gap:2px;align-items:flex-end;height:120px}
+.tend-bar{width:10px;border-radius:2px 2px 0 0;transition:height 0.5s;cursor:pointer;position:relative}
+.tend-bar:hover::after{content:attr(data-tip);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:10px;font-family:var(--mono);color:var(--text);white-space:nowrap;z-index:10}
+.tend-lbl{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:6px;white-space:nowrap}
+.tend-legend{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap}
+.tend-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.tend-leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* GRÁFICO POR INSPETOR */
+.chart{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px}
+.chart-title{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.07em;font-family:var(--mono)}
+.br{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.br:last-child{margin-bottom:0}
+.br-lbl{font-size:11px;color:var(--text2);width:170px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.br-track{flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden}
+.br-fill{height:100%;border-radius:4px;background:var(--accent)}
+.br-cnt{font-size:11px;font-family:var(--mono);color:var(--text2);width:28px;text-align:right}
+
+/* TABELA */
+.tw{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.thead{display:grid;grid-template-columns:1fr 110px 110px 130px 130px;border-bottom:1px solid var(--border);padding:0 16px}
+.th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);padding:9px 6px}
+.tbody{display:flex;flex-direction:column;max-height:420px;overflow-y:auto}
+.tr{display:grid;grid-template-columns:1fr 110px 110px 130px 130px;padding:0 16px;border-bottom:1px solid var(--border)}
+.tr:last-child{border-bottom:none}.tr:hover{background:var(--bg3)}
+.td{font-size:12px;color:var(--text2);padding:9px 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;color:var(--text3)}
+.empty-ico{font-size:36px;margin-bottom:10px}.empty p{font-size:13px;text-align:center;line-height:1.6}
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-overlay{position:fixed;inset:0;background:rgba(15,17,23,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;z-index:9999}
+.loading-overlay.show{display:flex}
+.loading-overlay .spinner-big{width:38px;height:38px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+.loading-overlay .loading-txt{color:var(--text2);font-family:var(--mono);font-size:13px}
+</style>
+</head>
+<body>
+<div class="loading-overlay" id="loadingOverlay"><div class="spinner-big"></div><div class="loading-txt">carregando...</div></div>
+<div style="display:grid;grid-template-rows:56px 52px 1fr;height:100vh">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand"><div class="bm">BM</div><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="nav">
+    <button class="nb" onclick="navTo('index.html')">Buscar Peça</button>
+    <div class="nav-group">
+      <button class="nb nb-group">Cliente ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" onclick="navTo('demanda.html')">Demanda Cliente</button>
+        <button class="nb" onclick="navTo('cliente.html')">Consulta Cliente</button>
+        <button class="nb" onclick="navTo('expedicao.html')">Expedição</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nb nb-group">Produção ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
+        <button class="nb" onclick="navTo('op-kanban.html')">Painel</button>
+        <button class="nb" onclick="navTo('apontamentos.html')">Apontamentos</button>
+        <button class="nb" onclick="navTo('paradas.html')">Peças paradas</button>
+      </div>
+    </div>
+    <div class="nav-group group-active">
+      <button class="nb nb-group active">Indicadores ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" onclick="navTo('prazos.html')">Prazos</button>
+        <button class="nb" onclick="navTo('otd.html')">OTD</button>
+        <button class="nb" onclick="navTo('ordens.html')">Ordens em Aberto</button>
+        <button class="nb" onclick="navTo('operadores.html')">Performance</button>
+        <button class="nb active">Qualidade</button>
+      </div>
+    </div>
+  </div>
+  <div class="tr-right">
+    <button class="btn-sm" onclick="init()">↻ atualizar</button>
+    <div class="sync-dot"></div>
+    <span class="sync-lbl" id="slbl">carregando...</span>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <span class="flbl">De</span>
+  <input type="date" class="fdate" id="di">
+  <span class="flbl">até</span>
+  <input type="date" class="fdate" id="df">
+  <select class="fsel" id="ftipo">
+    <option value="">Toda inspeção</option>
+    <option value="processo">Inspeção de processo (10.1)</option>
+    <option value="final">Inspeção final (10.2)</option>
+  </select>
+  <select class="fsel" id="fop"><option value="">Todos os inspetores</option></select>
+  <button class="btn-g" onclick="init()">Aplicar</button>
+  <button class="btn-g" onclick="limpar()">Limpar</button>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+  <div class="mrow">
+    <div class="met"><div class="mv accent" id="m1">—</div><div class="ml2">lotes inspecionados</div></div>
+    <div class="met"><div class="mv text" id="m2">—</div><div class="ml2">peças inspecionadas</div></div>
+    <div class="met"><div class="mv ok" id="m3">—</div><div class="ml2">lotes · insp. de processo (10.1)</div></div>
+    <div class="met"><div class="mv warn" id="m4">—</div><div class="ml2">lotes · insp. final (10.2)</div></div>
+  </div>
+
+  <div class="tend-section">
+    <div class="tend-hdr">
+      <div class="tend-title">tendência de inspeções</div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap">
+        <div class="tgl-row" id="tgl-periodo">
+          <button class="tgl-btn active" data-p="dia" onclick="setPeriodo('dia')">Dia</button>
+          <button class="tgl-btn" data-p="semana" onclick="setPeriodo('semana')">Semana</button>
+          <button class="tgl-btn" data-p="mes" onclick="setPeriodo('mes')">Mês</button>
+        </div>
+        <div class="tgl-row" id="tgl-metrica">
+          <button class="tgl-btn active" data-m="lotes" onclick="setMetrica('lotes')">Lotes</button>
+          <button class="tgl-btn" data-m="pecas" onclick="setMetrica('pecas')">Peças</button>
+        </div>
+      </div>
+    </div>
+    <div class="tend-chart" id="tend-chart"></div>
+    <div class="tend-legend">
+      <div class="tend-leg-item"><div class="tend-leg-dot" style="background:var(--accent)"></div>Inspeção de processo (10.1)</div>
+      <div class="tend-leg-item"><div class="tend-leg-dot" style="background:var(--ok)"></div>Inspeção final (10.2)</div>
+    </div>
+  </div>
+
+  <div class="chart">
+    <div class="chart-title">lotes inspecionados por inspetor</div>
+    <div id="chart-insp"></div>
+  </div>
+
+  <div class="tw">
+    <div class="thead">
+      <div class="th">Inspetor</div>
+      <div class="th">Lotes total</div>
+      <div class="th">Peças total</div>
+      <div class="th">Lotes processo</div>
+      <div class="th">Lotes final</div>
+    </div>
+    <div class="tbody" id="tbody-insp"><div class="loading"><div class="spinner"></div>carregando...</div></div>
+  </div>
+</div>
+
+</div>
+
+<script src="status.js"></script>
+<script>
+let TODOS = [];
+let periodoTend = "dia";
+let metricaTend = "lotes";
+
+// Datas padrão: mês atual
+const hoje = new Date();
+const iniMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+function fmtD(d){ return d.toISOString().slice(0,10); }
+document.getElementById("di").value = fmtD(iniMes);
+document.getElementById("df").value = fmtD(hoje);
+
+function nomeOperador(raw){
+  return String(raw||"").replace(/^\d+_/,"").trim()||"—";
+}
+function isSaida(r){
+  const e = String(r.evento||"").trim().toUpperCase();
+  return e==="SAÍDA"||e==="SAIDA";
+}
+function tipoInsp(r){
+  const s = String(r.operacao_qualidade||"").trim();
+  if(s.includes(SUBOP_INSP_PROC)) return "processo";
+  if(s.includes(SUBOP_INSP)) return "final";
+  return "outro";
+}
+
+async function init(){
+  const overlay = document.getElementById("loadingOverlay");
+  overlay.classList.add("show");
+  document.getElementById("slbl").textContent = "carregando...";
+  try{
+    // Busca só eventos de QUALIDADE no período selecionado (padrão: mês corrente)
+    const di = document.getElementById("di").value;
+    const df = document.getElementById("df").value;
+    const diUTC = di + "T03:00:00.000Z";
+    const dfUTC = df + "T23:59:59-03:00";
+    let todos=[], offset=0;
+    while(true){
+      const chunk = await supaFetch(
+        `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,cliente,operador,evento,data_evento,operacao_qualidade,quantidade_produzida&processo=ilike.*qualidade*&data_evento=gte.${diUTC}&data_evento=lte.${dfUTC}&order=id.asc&limit=1000&offset=${offset}`
+      );
+      if(!Array.isArray(chunk)||chunk.length===0) break;
+      todos = todos.concat(chunk);
+      if(chunk.length<1000) break;
+      offset += 1000;
+    }
+    TODOS = todos;
+    popularInspetores();
+    render();
+    document.getElementById("slbl").textContent = `${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
+  } finally {
+    overlay.classList.remove("show");
+  }
+}
+
+function popularInspetores(){
+  const sel = document.getElementById("fop");
+  const atual = sel.value;
+  const nomes = [...new Set(TODOS.filter(isSaida).map(r=>nomeOperador(r.operador)).filter(n=>n&&n!=="—"))].sort();
+  sel.innerHTML = '<option value="">Todos os inspetores</option>' + nomes.map(n=>`<option value="${n}">${n}</option>`).join("");
+  sel.value = atual;
+}
+
+function dadosFiltrados(){
+  const tipo = document.getElementById("ftipo").value;
+  const op = document.getElementById("fop").value;
+  return TODOS.filter(r=>{
+    if(!isSaida(r)) return false;
+    if(tipo && tipoInsp(r)!==tipo) return false;
+    if(op && nomeOperador(r.operador)!==op) return false;
+    return true;
+  });
+}
+
+function setPeriodo(p){
+  periodoTend = p;
+  document.querySelectorAll("#tgl-periodo .tgl-btn").forEach(b=>b.classList.toggle("active", b.dataset.p===p));
+  renderTendencia(dadosFiltrados());
+}
+function setMetrica(m){
+  metricaTend = m;
+  document.querySelectorAll("#tgl-metrica .tgl-btn").forEach(b=>b.classList.toggle("active", b.dataset.m===m));
+  renderTendencia(dadosFiltrados());
+}
+
+function render(){
+  const reg = dadosFiltrados();
+
+  // MÉTRICAS
+  const lotes = reg.length;
+  const pecas = reg.reduce((s,r)=>s+(parseFloat(r.quantidade_produzida)||0),0);
+  const lotesProc = reg.filter(r=>tipoInsp(r)==="processo").length;
+  const lotesFinal = reg.filter(r=>tipoInsp(r)==="final").length;
+  document.getElementById("m1").textContent = lotes;
+  document.getElementById("m2").textContent = pecas;
+  document.getElementById("m3").textContent = lotesProc;
+  document.getElementById("m4").textContent = lotesFinal;
+
+  renderTendencia(reg);
+  renderPorInspetor(reg);
+}
+
+function bucketKey(dt, period){
+  if(period==="dia") return dt.toISOString().slice(0,10);
+  if(period==="semana"){
+    const d = new Date(dt);
+    const dia = (d.getDay()+6)%7; // segunda=0
+    d.setDate(d.getDate()-dia);
+    return d.toISOString().slice(0,10);
+  }
+  return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0");
+}
+function bucketLabel(key, period){
+  if(period==="mes"){
+    const [ano,mes] = key.split("-");
+    return new Date(parseInt(ano),parseInt(mes)-1,1).toLocaleDateString("pt-BR",{month:"short",year:"2-digit"});
+  }
+  const d = new Date(key+"T00:00:00");
+  const dstr = d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"});
+  return period==="semana" ? "sem "+dstr : dstr;
+}
+
+function renderTendencia(reg){
+  if(!reg.length){
+    document.getElementById("tend-chart").innerHTML = `<div style="padding:20px;color:var(--text3);font-size:12px">Nenhum dado no período/filtros selecionados.</div>`;
+    return;
+  }
+  const buckets = {};
+  reg.forEach(r=>{
+    if(!r.data_evento) return;
+    const k = bucketKey(new Date(r.data_evento), periodoTend);
+    if(!buckets[k]) buckets[k] = {processo:0, final:0};
+    const t = tipoInsp(r);
+    if(t!=="processo" && t!=="final") return;
+    buckets[k][t] += metricaTend==="pecas" ? (parseFloat(r.quantidade_produzida)||0) : 1;
+  });
+
+  const keys = Object.keys(buckets).sort().slice(-60);
+  const maxVal = Math.max(1, ...keys.map(k=>Math.max(buckets[k].processo, buckets[k].final)));
+
+  const colunas = keys.map(k=>{
+    const b = buckets[k];
+    const hP = Math.round(b.processo/maxVal*120);
+    const hF = Math.round(b.final/maxVal*120);
+    const unid = metricaTend==="pecas" ? "pç" : "lote(s)";
+    return `<div class="tend-col">
+      <div class="tend-bars">
+        <div class="tend-bar" style="height:${hP}px;background:var(--accent)" data-tip="Processo: ${b.processo} ${unid}"></div>
+        <div class="tend-bar" style="height:${hF}px;background:var(--ok)" data-tip="Final: ${b.final} ${unid}"></div>
+      </div>
+      <div class="tend-lbl">${bucketLabel(k,periodoTend)}</div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("tend-chart").innerHTML = colunas;
+}
+
+function renderPorInspetor(reg){
+  const m = {};
+  reg.forEach(r=>{
+    const nome = nomeOperador(r.operador);
+    if(!m[nome]) m[nome] = {nome, lotes:0, pecas:0, lotesProc:0, lotesFinal:0};
+    m[nome].lotes++;
+    m[nome].pecas += parseFloat(r.quantidade_produzida)||0;
+    const t = tipoInsp(r);
+    if(t==="processo") m[nome].lotesProc++;
+    else if(t==="final") m[nome].lotesFinal++;
+  });
+  const lista = Object.values(m).sort((a,b)=>b.lotes-a.lotes);
+
+  if(!lista.length){
+    document.getElementById("chart-insp").innerHTML = `<p style="font-size:12px;color:var(--text3)">Nenhum dado.</p>`;
+    document.getElementById("tbody-insp").innerHTML = `<div class="empty"><div class="empty-ico">🔍</div><p>Nenhuma inspeção no período/filtros selecionados.</p></div>`;
+    return;
+  }
+
+  const maxLotes = lista[0].lotes;
+  document.getElementById("chart-insp").innerHTML = lista.map(i=>
+    `<div class="br"><span class="br-lbl" title="${i.nome}">${i.nome}</span><div class="br-track"><div class="br-fill" style="width:${Math.round(i.lotes/maxLotes*100)}%"></div></div><span class="br-cnt">${i.lotes}</span></div>`
+  ).join("");
+
+  document.getElementById("tbody-insp").innerHTML = lista.map(i=>
+    `<div class="tr">
+      <div class="td" style="color:var(--text)">${i.nome}</div>
+      <div class="td" style="font-family:var(--mono)">${i.lotes}</div>
+      <div class="td" style="font-family:var(--mono)">${i.pecas}</div>
+      <div class="td" style="font-family:var(--mono)">${i.lotesProc}</div>
+      <div class="td" style="font-family:var(--mono)">${i.lotesFinal}</div>
+    </div>`
+  ).join("");
+}
+
+function limpar(){
+  document.getElementById("di").value = fmtD(iniMes);
+  document.getElementById("df").value = fmtD(hoje);
+  document.getElementById("ftipo").value = "";
+  document.getElementById("fop").value = "";
+  init();
+}
+
+function navTo(p){ window.location.href=p; }
+init();
+</script>
+</body>
+</html>

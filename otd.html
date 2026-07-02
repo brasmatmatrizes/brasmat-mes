@@ -287,10 +287,15 @@ document.getElementById("df").value = fmtD(hoje);
 
 async function init(){
   document.getElementById("slbl").textContent = "carregando...";
+  // Busca só o período selecionado (padrão: mês corrente) — evita baixar o histórico inteiro
+  const di = document.getElementById("di").value;
+  const df = document.getElementById("df").value;
+  const diUTC = di + "T03:00:00.000Z";
+  const dfUTC = df + "T23:59:59-03:00";
   let todos=[], offset=0;
   while(true){
     const chunk = await supaFetch(
-      `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,prazo_entrega,operacao_qualidade,operacao_administrativo&order=id.asc&limit=1000&offset=${offset}`
+      `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,prazo_entrega,operacao_qualidade,operacao_administrativo&data_evento=gte.${diUTC}&data_evento=lte.${dfUTC}&order=id.asc&limit=1000&offset=${offset}`
     );
     if(!Array.isArray(chunk)||chunk.length===0) break;
     todos=todos.concat(chunk);
@@ -641,7 +646,7 @@ function limpar(){
   document.getElementById("di").value=fmtD(iniMes);
   document.getElementById("df").value=fmtD(hoje);
   document.querySelectorAll(".otd-card").forEach(c=>c.classList.remove("active-filter"));
-  render();
+  init();
 }
 
 async function abrirDet(pedido,codigo){
@@ -651,7 +656,8 @@ async function abrirDet(pedido,codigo){
 function fechar(){ document.getElementById("dp").classList.remove("open"); }
 function navTo(p){ window.location.href=p; }
 
-["di","df","fcli"].forEach(id=>document.getElementById(id).addEventListener("change",render));
+["di","df"].forEach(id=>document.getElementById(id).addEventListener("change",init));
+document.getElementById("fcli").addEventListener("change",render);
 init();
 </script>
 </body>

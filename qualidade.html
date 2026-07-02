@@ -51,15 +51,23 @@
 .tgl-btn{font-size:10px;padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
 .tgl-btn:hover{border-color:var(--border2);color:var(--text)}
 .tgl-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
-.tend-chart{display:flex;align-items:flex-end;gap:6px;height:150px;padding-bottom:24px;position:relative;border-bottom:1px solid var(--border);overflow-x:auto}
 .tend-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:22px}
 .tend-bars{display:flex;gap:2px;align-items:flex-end;height:120px}
 .tend-bar{width:10px;border-radius:2px 2px 0 0;transition:height 0.5s;cursor:pointer;position:relative}
 .tend-bar:hover::after{content:attr(data-tip);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:10px;font-family:var(--mono);color:var(--text);white-space:nowrap;z-index:10}
 .tend-lbl{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:6px;white-space:nowrap}
-.tend-legend{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap}
-.tend-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
-.tend-leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* GRADE 2×2 — Lotes/Peças × Processo/Final, sem precisar filtrar pra comparar */
+.tend-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
+.tend-rowlbl{grid-column:1/-1;font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);display:flex;align-items:center;gap:8px;margin-top:14px}
+.tend-rowlbl:first-child{margin-top:0}
+.tend-rowlbl::after{content:"";flex:1;height:1px;background:var(--border)}
+.tend-mini-title{font-size:11px;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.tend-mini-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.tend-mini-chart{display:flex;align-items:flex-end;gap:3px;height:96px;padding-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto}
+.tend-mini-chart .tend-col{min-width:14px}
+.tend-mini-chart .tend-bars{height:66px}
+.tend-mini-chart .tend-bar{width:7px}
 
 /* GRÁFICO POR INSPETOR */
 .chart{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px}
@@ -183,22 +191,31 @@
         <div class="tend-title">tendência de inspeções</div>
         <div class="tend-sub" id="tend-sub"></div>
       </div>
-      <div style="display:flex;gap:14px;flex-wrap:wrap">
-        <div class="tgl-row" id="tgl-periodo">
-          <button class="tgl-btn active" data-p="dia" onclick="setPeriodo('dia')">Dia</button>
-          <button class="tgl-btn" data-p="semana" onclick="setPeriodo('semana')">Semana</button>
-          <button class="tgl-btn" data-p="mes" onclick="setPeriodo('mes')">Mês</button>
-        </div>
-        <div class="tgl-row" id="tgl-metrica">
-          <button class="tgl-btn active" data-m="lotes" onclick="setMetrica('lotes')">Lotes</button>
-          <button class="tgl-btn" data-m="pecas" onclick="setMetrica('pecas')">Peças</button>
-        </div>
+      <div class="tgl-row" id="tgl-periodo">
+        <button class="tgl-btn active" data-p="dia" onclick="setPeriodo('dia')">Dia</button>
+        <button class="tgl-btn" data-p="semana" onclick="setPeriodo('semana')">Semana</button>
+        <button class="tgl-btn" data-p="mes" onclick="setPeriodo('mes')">Mês</button>
       </div>
     </div>
-    <div class="tend-chart" id="tend-chart"></div>
-    <div class="tend-legend">
-      <div class="tend-leg-item"><div class="tend-leg-dot" style="background:var(--accent)"></div>Inspeção de processo (10.1)</div>
-      <div class="tend-leg-item"><div class="tend-leg-dot" style="background:var(--ok)"></div>Inspeção final (10.2)</div>
+    <div class="tend-grid">
+      <div class="tend-rowlbl">Lotes</div>
+      <div>
+        <div class="tend-mini-title"><span class="tend-mini-dot" style="background:var(--accent)"></span>Inspeção de processo (10.1)</div>
+        <div class="tend-mini-chart" id="tc-lotes-proc"></div>
+      </div>
+      <div>
+        <div class="tend-mini-title"><span class="tend-mini-dot" style="background:var(--ok)"></span>Inspeção final (10.2)</div>
+        <div class="tend-mini-chart" id="tc-lotes-final"></div>
+      </div>
+      <div class="tend-rowlbl">Peças</div>
+      <div>
+        <div class="tend-mini-title"><span class="tend-mini-dot" style="background:var(--accent)"></span>Inspeção de processo (10.1)</div>
+        <div class="tend-mini-chart" id="tc-pecas-proc"></div>
+      </div>
+      <div>
+        <div class="tend-mini-title"><span class="tend-mini-dot" style="background:var(--ok)"></span>Inspeção final (10.2)</div>
+        <div class="tend-mini-chart" id="tc-pecas-final"></div>
+      </div>
     </div>
   </div>
 
@@ -226,7 +243,6 @@
 let TODOS = [];
 let TODOS_ANT = [];
 let periodoTend = "dia";
-let metricaTend = "lotes";
 let sortInsp = {campo:"lotes", dir:"desc"};
 
 // Datas padrão: mês atual
@@ -316,6 +332,16 @@ function filtrarLista(lista){
 }
 function dadosFiltrados(){ return filtrarLista(TODOS); }
 
+// Tendência sempre mostra as 4 combinações (processo/final × lotes/peças) — não aplica o filtro de tipo
+function dadosParaTendencia(){
+  const op = document.getElementById("fop").value;
+  return TODOS.filter(r=>{
+    if(!isSaida(r)) return false;
+    if(op && nomeOperador(r.operador)!==op) return false;
+    return true;
+  });
+}
+
 function diasComEvento(lista){
   return new Set(lista.filter(r=>r.data_evento).map(r=>new Date(r.data_evento).toISOString().slice(0,10))).size;
 }
@@ -332,12 +358,7 @@ function calcDelta(atual, anterior){
 function setPeriodo(p){
   periodoTend = p;
   document.querySelectorAll("#tgl-periodo .tgl-btn").forEach(b=>b.classList.toggle("active", b.dataset.p===p));
-  renderTendencia(dadosFiltrados());
-}
-function setMetrica(m){
-  metricaTend = m;
-  document.querySelectorAll("#tgl-metrica .tgl-btn").forEach(b=>b.classList.toggle("active", b.dataset.m===m));
-  renderTendencia(dadosFiltrados());
+  renderTendencia(dadosParaTendencia());
 }
 
 function render(){
@@ -371,7 +392,7 @@ function render(){
     el.className = "mv-delta "+d.cls;
   });
 
-  renderTendencia(reg);
+  renderTendencia(dadosParaTendencia());
   renderPorInspetor(reg);
 }
 
@@ -417,6 +438,22 @@ function todosOsBuckets(di, df, period){
   return keys;
 }
 
+// Desenha um dos 4 mini-gráficos (lotes/peças × processo/final) num container
+function renderMiniChart(elId, keys, buckets, campo, cor, unid){
+  const maxVal = Math.max(1, ...keys.map(k=>buckets[k] ? buckets[k][campo] : 0));
+  const step = Math.max(1, Math.ceil(keys.length/10)); // evita rótulo colado quando tem muita coluna
+  const colunas = keys.map((k,i)=>{
+    const v = buckets[k] ? buckets[k][campo] : 0;
+    const h = Math.round(v/maxVal*66);
+    const mostraLbl = i%step===0 || i===keys.length-1;
+    return `<div class="tend-col">
+      <div class="tend-bars"><div class="tend-bar" style="height:${h}px;background:${cor}" data-tip="${bucketLabel(k,periodoTend)}: ${v} ${unid}"></div></div>
+      <div class="tend-lbl">${mostraLbl?bucketLabel(k,periodoTend):""}</div>
+    </div>`;
+  }).join("");
+  document.getElementById(elId).innerHTML = colunas;
+}
+
 function renderTendencia(reg){
   const di = document.getElementById("di").value;
   const df = document.getElementById("df").value;
@@ -425,37 +462,28 @@ function renderTendencia(reg){
   const buckets = {};
   reg.forEach(r=>{
     if(!r.data_evento) return;
-    const k = bucketKey(new Date(r.data_evento), periodoTend);
-    if(!buckets[k]) buckets[k] = {processo:0, final:0};
     const t = tipoInsp(r);
     if(t!=="processo" && t!=="final") return;
-    buckets[k][t] += metricaTend==="pecas" ? (parseFloat(r.quantidade_produzida)||0) : 1;
+    const k = bucketKey(new Date(r.data_evento), periodoTend);
+    if(!buckets[k]) buckets[k] = {lotesProc:0, lotesFinal:0, pecasProc:0, pecasFinal:0};
+    const qtd = parseFloat(r.quantidade_produzida)||0;
+    if(t==="processo"){ buckets[k].lotesProc++; buckets[k].pecasProc += qtd; }
+    else { buckets[k].lotesFinal++; buckets[k].pecasFinal += qtd; }
   });
 
   let keys = todosOsBuckets(di, df, periodoTend);
   if(!keys.length){
-    document.getElementById("tend-chart").innerHTML = `<div style="padding:20px;color:var(--text3);font-size:12px">Período inválido.</div>`;
+    ["tc-lotes-proc","tc-lotes-final","tc-pecas-proc","tc-pecas-final"].forEach(id=>{
+      document.getElementById(id).innerHTML = `<div style="padding:10px 0;color:var(--text3);font-size:12px">Período inválido.</div>`;
+    });
     return;
   }
   if(keys.length>62) keys = keys.slice(-62); // evita gráfico pesado em intervalos muito longos no modo Dia
 
-  const maxVal = Math.max(1, ...keys.map(k=>{ const b=buckets[k]; return b ? Math.max(b.processo,b.final) : 0; }));
-
-  const colunas = keys.map(k=>{
-    const b = buckets[k] || {processo:0, final:0};
-    const hP = Math.round(b.processo/maxVal*120);
-    const hF = Math.round(b.final/maxVal*120);
-    const unid = metricaTend==="pecas" ? "pç" : "lote(s)";
-    return `<div class="tend-col">
-      <div class="tend-bars">
-        <div class="tend-bar" style="height:${hP}px;background:var(--accent)" data-tip="Processo: ${b.processo} ${unid}"></div>
-        <div class="tend-bar" style="height:${hF}px;background:var(--ok)" data-tip="Final: ${b.final} ${unid}"></div>
-      </div>
-      <div class="tend-lbl">${bucketLabel(k,periodoTend)}</div>
-    </div>`;
-  }).join("");
-
-  document.getElementById("tend-chart").innerHTML = colunas;
+  renderMiniChart("tc-lotes-proc",  keys, buckets, "lotesProc",  "var(--accent)", "lote(s)");
+  renderMiniChart("tc-lotes-final", keys, buckets, "lotesFinal", "var(--ok)",     "lote(s)");
+  renderMiniChart("tc-pecas-proc",  keys, buckets, "pecasProc",  "var(--accent)", "pç");
+  renderMiniChart("tc-pecas-final", keys, buckets, "pecasFinal", "var(--ok)",     "pç");
 }
 
 function setSortInsp(campo){

@@ -144,7 +144,8 @@
   </div>
   <div class="tr-right">
     <button class="btn-sm" onclick="init()">↻ atualizar</button>
-    <div class="sync-dot"></div>
+    <div class="spinner" id="spin" style="display:none"></div>
+    <div class="sync-dot" id="syncdot"></div>
     <span class="sync-lbl" id="slbl">carregando...</span>
   </div>
 </div>
@@ -286,26 +287,39 @@ document.getElementById("di").value = fmtD(iniMes);
 document.getElementById("df").value = fmtD(hoje);
 
 async function init(){
+  const spin = document.getElementById("spin");
+  const syncdot = document.getElementById("syncdot");
+  const inDi = document.getElementById("di");
+  const inDf = document.getElementById("df");
+  spin.style.display = "inline-block";
+  syncdot.style.display = "none";
+  inDi.disabled = true; inDf.disabled = true;
   document.getElementById("slbl").textContent = "carregando...";
-  // Busca só o período selecionado (padrão: mês corrente) — evita baixar o histórico inteiro
-  const di = document.getElementById("di").value;
-  const df = document.getElementById("df").value;
-  const diUTC = di + "T03:00:00.000Z";
-  const dfUTC = df + "T23:59:59-03:00";
-  let todos=[], offset=0;
-  while(true){
-    const chunk = await supaFetch(
-      `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,prazo_entrega,operacao_qualidade,operacao_administrativo&data_evento=gte.${diUTC}&data_evento=lte.${dfUTC}&order=id.asc&limit=1000&offset=${offset}`
-    );
-    if(!Array.isArray(chunk)||chunk.length===0) break;
-    todos=todos.concat(chunk);
-    if(chunk.length<1000) break;
-    offset+=1000;
+  try{
+    // Busca só o período selecionado (padrão: mês corrente) — evita baixar o histórico inteiro
+    const di = inDi.value;
+    const df = inDf.value;
+    const diUTC = di + "T03:00:00.000Z";
+    const dfUTC = df + "T23:59:59-03:00";
+    let todos=[], offset=0;
+    while(true){
+      const chunk = await supaFetch(
+        `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,prazo_entrega,operacao_qualidade,operacao_administrativo&data_evento=gte.${diUTC}&data_evento=lte.${dfUTC}&order=id.asc&limit=1000&offset=${offset}`
+      );
+      if(!Array.isArray(chunk)||chunk.length===0) break;
+      todos=todos.concat(chunk);
+      if(chunk.length<1000) break;
+      offset+=1000;
+    }
+    TODOS=todos;
+    popularFiltros();
+    render();
+    document.getElementById("slbl").textContent=`${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
+  } finally {
+    spin.style.display = "none";
+    syncdot.style.display = "";
+    inDi.disabled = false; inDf.disabled = false;
   }
-  TODOS=todos;
-  popularFiltros();
-  render();
-  document.getElementById("slbl").textContent=`${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
 }
 
 function popularFiltros(){

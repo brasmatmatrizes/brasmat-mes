@@ -149,7 +149,8 @@
   </div>
   <div class="tr-right">
     <button class="btn-sm" onclick="init()">↻ atualizar</button>
-    <div class="sync-dot"></div>
+    <div class="spinner" id="spin" style="display:none"></div>
+    <div class="sync-dot" id="syncdot"></div>
     <span class="sync-lbl" id="slbl">carregando...</span>
   </div>
 </div>
@@ -161,8 +162,8 @@
   <span class="flbl">até</span>
   <input type="date" class="fdate" id="df">
   <select class="fsel" id="fproc"><option value="">Todos os processos</option></select>
-  <button class="btn-g" onclick="init()">Aplicar</button>
-  <button class="btn-g" onclick="limpar()">Limpar</button>
+  <button class="btn-g" id="btn-aplicar" onclick="init()">Aplicar</button>
+  <button class="btn-g" id="btn-limpar" onclick="limpar()">Limpar</button>
   <div class="sep" style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
   <span class="flbl">Filtros:</span>
   <button class="flag-btn on" id="tog-dia" onclick="toggleFiltro('dia')" title="Desconsiderar operações com duração acima de 24h">🔴 Ignorar &gt;1 dia</button>
@@ -229,26 +230,39 @@ function toggleFiltro(tipo){
 }
 
 async function init(){
+  const spin = document.getElementById("spin");
+  const syncdot = document.getElementById("syncdot");
+  const btnA = document.getElementById("btn-aplicar");
+  const btnL = document.getElementById("btn-limpar");
+  spin.style.display = "inline-block";
+  syncdot.style.display = "none";
+  btnA.disabled = true; btnL.disabled = true;
   document.getElementById("slbl").textContent = "carregando...";
-  // Busca só o período selecionado (padrão: mês corrente) — evita baixar o histórico inteiro
-  const di = document.getElementById("di").value;
-  const df = document.getElementById("df").value;
-  const diUTC = di + "T03:00:00.000Z";
-  const dfUTC = df + "T23:59:59-03:00";
-  let todos=[], offset=0;
-  while(true){
-    const chunk = await supaFetch(
-      `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,processo,operador,evento,data_evento,quantidade_produzida,retrabalho,operacao_retifica_plana,operacao_retifica_cilindrica_interna,operacao_retifica_cilindrica_externa,operacao_erosao_fio,operacao_forma,operacao_polimento,operacao_brunidora,operacao_prensa,operacao_torno,operacao_qualidade,operacao_administrativo,operacao_servico_externo,operacao_erosao_penetracao&data_evento=gte.${diUTC}&data_evento=lte.${dfUTC}&order=id.asc&limit=1000&offset=${offset}`
-    );
-    if(!Array.isArray(chunk)||chunk.length===0) break;
-    todos = todos.concat(chunk);
-    if(chunk.length<1000) break;
-    offset+=1000;
+  try{
+    // Busca só o período selecionado (padrão: mês corrente) — evita baixar o histórico inteiro
+    const di = document.getElementById("di").value;
+    const df = document.getElementById("df").value;
+    const diUTC = di + "T03:00:00.000Z";
+    const dfUTC = df + "T23:59:59-03:00";
+    let todos=[], offset=0;
+    while(true){
+      const chunk = await supaFetch(
+        `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,processo,operador,evento,data_evento,quantidade_produzida,retrabalho,operacao_retifica_plana,operacao_retifica_cilindrica_interna,operacao_retifica_cilindrica_externa,operacao_erosao_fio,operacao_forma,operacao_polimento,operacao_brunidora,operacao_prensa,operacao_torno,operacao_qualidade,operacao_administrativo,operacao_servico_externo,operacao_erosao_penetracao&data_evento=gte.${diUTC}&data_evento=lte.${dfUTC}&order=id.asc&limit=1000&offset=${offset}`
+      );
+      if(!Array.isArray(chunk)||chunk.length===0) break;
+      todos = todos.concat(chunk);
+      if(chunk.length<1000) break;
+      offset+=1000;
+    }
+    TODOS = todos;
+    popularProcessos();
+    aplicarFiltro();
+    document.getElementById("slbl").textContent = `${todos.length} eventos carregados · ${new Date().toLocaleTimeString("pt-BR")}`;
+  } finally {
+    spin.style.display = "none";
+    syncdot.style.display = "";
+    btnA.disabled = false; btnL.disabled = false;
   }
-  TODOS = todos;
-  popularProcessos();
-  aplicarFiltro();
-  document.getElementById("slbl").textContent = `${todos.length} eventos carregados · ${new Date().toLocaleTimeString("pt-BR")}`;
 }
 
 function dadosFiltrados(){

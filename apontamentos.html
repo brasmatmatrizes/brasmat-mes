@@ -466,18 +466,19 @@ async function refreshRealtime(){
   }
 }
 let _rtTimer = null;
-function refreshDebounced(){ clearTimeout(_rtTimer); _rtTimer = setTimeout(refreshRealtime, 1200); }
+let _rtConectado = false;
+function refreshDebounced(){ clearTimeout(_rtTimer); _rtTimer = setTimeout(refreshRealtime, 3000); }
 function iniciarRealtime(){
   try{
     if(!window.supabase) return;
     const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
     sb.channel("apontamentos-producao")
       .on("postgres_changes", { event:"*", schema:"public", table:"producao_eventos" }, refreshDebounced)
-      .subscribe();
+      .subscribe((status)=>{ _rtConectado = (status==="SUBSCRIBED"); });
   }catch(e){}
 }
 iniciarRealtime();
-setInterval(refreshRealtime, 60000);   // rede de segurança caso o websocket caia
+setInterval(()=>{ if(!_rtConectado) refreshRealtime(); }, 60000);   // só recarrega no polling se o realtime não estiver conectado
 
 init();
 </script>

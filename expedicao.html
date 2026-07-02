@@ -518,7 +518,8 @@ function imprimir(){
 
 // Realtime: atualiza quando a produção concluir peça ou a demanda mudar
 let _rtTimer=null;
-function refreshDebounced(){ clearTimeout(_rtTimer); _rtTimer=setTimeout(init,1200); }
+let _rtConectado=false;
+function refreshDebounced(){ clearTimeout(_rtTimer); _rtTimer=setTimeout(init,3000); }
 function iniciarRealtime(){
   try{
     if(!window.supabase) return;
@@ -526,11 +527,11 @@ function iniciarRealtime(){
     sb.channel("exp-rt")
       .on("postgres_changes",{event:"*",schema:"public",table:"producao_eventos"},refreshDebounced)
       .on("postgres_changes",{event:"*",schema:"public",table:"demanda_itens"},refreshDebounced)
-      .subscribe();
+      .subscribe((status)=>{ _rtConectado = (status==="SUBSCRIBED"); });
   }catch(e){}
 }
 iniciarRealtime();
-setInterval(init,60000);
+setInterval(()=>{ if(!_rtConectado) init(); }, 60000);   // só recarrega no polling se o realtime não estiver conectado
 init();
 </script>
 </body>

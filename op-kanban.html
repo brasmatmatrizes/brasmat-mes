@@ -372,18 +372,19 @@ async function atualizarAuto(){
   }catch(e){}
 }
 let _rtTimer=null;
-function refreshDebounced(){ clearTimeout(_rtTimer); _rtTimer=setTimeout(atualizarAuto,1200); }
+let _rtConectado=false;
+function refreshDebounced(){ clearTimeout(_rtTimer); _rtTimer=setTimeout(atualizarAuto,3000); }
 function iniciarRealtime(){
   try{
     if(!window.supabase) return;
     const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
     sb.channel("opkanban-producao")
       .on("postgres_changes",{event:"*",schema:"public",table:"producao_eventos"},refreshDebounced)
-      .subscribe();
+      .subscribe((status)=>{ _rtConectado = (status==="SUBSCRIBED"); });
   }catch(e){}
 }
 iniciarRealtime();
-setInterval(atualizarAuto,60000);
+setInterval(()=>{ if(!_rtConectado) atualizarAuto(); }, 60000);   // só recarrega no polling se o realtime não estiver conectado
 init();
 </script>
 </body>

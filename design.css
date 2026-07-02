@@ -5,3 +5,7 @@
 .nav-group.open .nav-dropdown{display:flex}
 .nav-dropdown .nb{width:100%;text-align:left}
 .nav-dropdown .mnb{width:100%;text-align:left;border-radius:6px;border-color:transparent}
+
+/* Ícone do seletor de data (calendário) — inverte pra ficar visível no fundo escuro */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator{filter:invert(1);cursor:pointer}

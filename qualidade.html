@@ -29,6 +29,7 @@
 .fsel:focus,.fdate:focus{border-color:var(--accent)}
 .btn-g{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;height:32px}
 .btn-g:hover{border-color:var(--border2);color:var(--text)}
+.sep{width:1px;height:20px;background:var(--border)}
 
 /* CONTENT */
 .content{overflow-y:auto;height:calc(100vh - 108px);padding:20px 24px}
@@ -155,6 +156,10 @@
   <input type="date" class="fdate" id="di">
   <span class="flbl">até</span>
   <input type="date" class="fdate" id="df">
+  <div class="sep"></div>
+  <span class="flbl">mês inteiro</span>
+  <input type="month" class="fdate" id="fmes" onchange="aplicarMes()">
+  <div class="sep"></div>
   <select class="fsel" id="ftipo">
     <option value="">Toda inspeção</option>
     <option value="processo">Inspeção de processo (10.1)</option>
@@ -201,21 +206,6 @@
       </div>
     </div>
     <div class="tend-grid">
-      <div class="tend-rowlbl">Lotes</div>
-      <div class="tend-mini">
-        <div class="tend-mini-title">
-          <span class="tend-mini-title-lbl"><span class="tend-mini-dot" style="background:var(--accent)"></span>Inspeção de processo (10.1)</span>
-          <span class="tend-mini-total" id="tot-lotes-proc">—</span>
-        </div>
-        <div class="tend-mini-chart" id="tc-lotes-proc"></div>
-      </div>
-      <div class="tend-mini">
-        <div class="tend-mini-title">
-          <span class="tend-mini-title-lbl"><span class="tend-mini-dot" style="background:var(--ok)"></span>Inspeção final (10.2)</span>
-          <span class="tend-mini-total" id="tot-lotes-final">—</span>
-        </div>
-        <div class="tend-mini-chart" id="tc-lotes-final"></div>
-      </div>
       <div class="tend-rowlbl">Peças</div>
       <div class="tend-mini">
         <div class="tend-mini-title">
@@ -230,6 +220,21 @@
           <span class="tend-mini-total" id="tot-pecas-final">—</span>
         </div>
         <div class="tend-mini-chart" id="tc-pecas-final"></div>
+      </div>
+      <div class="tend-rowlbl">Lotes</div>
+      <div class="tend-mini">
+        <div class="tend-mini-title">
+          <span class="tend-mini-title-lbl"><span class="tend-mini-dot" style="background:var(--accent)"></span>Inspeção de processo (10.1)</span>
+          <span class="tend-mini-total" id="tot-lotes-proc">—</span>
+        </div>
+        <div class="tend-mini-chart" id="tc-lotes-proc"></div>
+      </div>
+      <div class="tend-mini">
+        <div class="tend-mini-title">
+          <span class="tend-mini-title-lbl"><span class="tend-mini-dot" style="background:var(--ok)"></span>Inspeção final (10.2)</span>
+          <span class="tend-mini-total" id="tot-lotes-final">—</span>
+        </div>
+        <div class="tend-mini-chart" id="tc-lotes-final"></div>
       </div>
     </div>
   </div>
@@ -266,6 +271,18 @@ const iniMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 function fmtD(d){ return d.toISOString().slice(0,10); }
 document.getElementById("di").value = fmtD(iniMes);
 document.getElementById("df").value = fmtD(hoje);
+
+// Atalho: escolher um mês inteiro já preenche De/até com o 1º e o último dia dele
+function aplicarMes(){
+  const v = document.getElementById("fmes").value; // "YYYY-MM"
+  if(!v) return;
+  const [ano, mes] = v.split("-").map(Number);
+  const ini = new Date(ano, mes-1, 1);
+  const fim = new Date(ano, mes, 0); // dia 0 do mês seguinte = último dia deste mês
+  document.getElementById("di").value = fmtD(ini);
+  document.getElementById("df").value = fmtD(fim);
+  init();
+}
 
 function nomeOperador(raw){
   return String(raw||"").replace(/^\d+_/,"").trim()||"—";
@@ -503,10 +520,10 @@ function renderTendencia(reg){
   document.getElementById("tot-pecas-proc").textContent  = `${porProc.reduce((s,r)=>s+(parseFloat(r.quantidade_produzida)||0),0)} pç`;
   document.getElementById("tot-pecas-final").textContent = `${porFinal.reduce((s,r)=>s+(parseFloat(r.quantidade_produzida)||0),0)} pç`;
 
-  renderMiniChart("tc-lotes-proc",  keys, buckets, "lotesProc",  "var(--accent)", "lote(s)");
-  renderMiniChart("tc-lotes-final", keys, buckets, "lotesFinal", "var(--ok)",     "lote(s)");
   renderMiniChart("tc-pecas-proc",  keys, buckets, "pecasProc",  "var(--accent)", "pç");
   renderMiniChart("tc-pecas-final", keys, buckets, "pecasFinal", "var(--ok)",     "pç");
+  renderMiniChart("tc-lotes-proc",  keys, buckets, "lotesProc",  "var(--accent)", "lote(s)");
+  renderMiniChart("tc-lotes-final", keys, buckets, "lotesFinal", "var(--ok)",     "lote(s)");
 }
 
 function setSortInsp(campo){
@@ -565,6 +582,7 @@ function renderPorInspetor(reg){
 function limpar(){
   document.getElementById("di").value = fmtD(iniMes);
   document.getElementById("df").value = fmtD(hoje);
+  document.getElementById("fmes").value = "";
   document.getElementById("ftipo").value = "";
   document.getElementById("fop").value = "";
   init();

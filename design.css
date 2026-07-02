@@ -1,1 +1,6 @@
 :root{--bg:#0F1117;--bg2:#181C27;--bg3:#1F2433;--bg4:#252A3A;--border:#2A3045;--border2:#3A4560;--text:#E8ECF5;--text2:#C4CBDA;--text3:#8E9AB0;--accent:#3B7FFF;--ok:#2DBF7E;--warn:#F5A623;--danger:#F04545;--orange:#F97316;--roxo:#7C3AED;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;}
+
+.nav-group{position:relative}
+.nav-dropdown{position:absolute;top:100%;left:0;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;display:none;flex-direction:column;min-width:170px;z-index:60;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+.nav-group.open .nav-dropdown{display:flex}
+.nav-dropdown .nb{width:100%;text-align:left}

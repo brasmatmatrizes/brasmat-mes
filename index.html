@@ -15,7 +15,7 @@
 .brand{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:#fff;flex-shrink:0}
 .bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:9px;color:var(--text3);font-family:var(--mono)}
-.nav{display:flex;gap:4px;overflow-x:auto;flex:1;justify-content:center}
+.nav{display:flex;gap:4px;flex:1;justify-content:center}
 .nav::-webkit-scrollbar{height:0}
 .nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
 .nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
@@ -114,17 +114,32 @@
   </div>
   <div class="nav">
     <button class="nb active">Buscar Peça</button>
-    <button class="nb" onclick="navTo('demanda.html')">Demanda Cliente</button>
-    <button class="nb" onclick="navTo('expedicao.html')">Expedição</button>
-    <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
-    <button class="nb" onclick="navTo('op-kanban.html')">Painel</button>
-    <button class="nb" onclick="navTo('cliente.html')">Consulta Cliente</button>
-    <button class="nb" onclick="navTo('apontamentos.html')">Apontamentos</button>
-    <button class="nb" onclick="navTo('prazos.html')">Prazos</button>
-    <button class="nb" onclick="navTo('otd.html')">OTD</button>
-    <button class="nb" onclick="navTo('ordens.html')">Ordens em Aberto</button>
-    <button class="nb" onclick="navTo('paradas.html')">Peças paradas</button>
-    <button class="nb" onclick="navTo('operadores.html')">Performance</button>
+    <div class="nav-group">
+      <button class="nb nb-group">Cliente ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" onclick="navTo('demanda.html')">Demanda Cliente</button>
+        <button class="nb" onclick="navTo('cliente.html')">Consulta Cliente</button>
+        <button class="nb" onclick="navTo('expedicao.html')">Expedição</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nb nb-group">Produção ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
+        <button class="nb" onclick="navTo('op-kanban.html')">Painel</button>
+        <button class="nb" onclick="navTo('apontamentos.html')">Apontamentos</button>
+        <button class="nb" onclick="navTo('paradas.html')">Peças paradas</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nb nb-group">Indicadores ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" onclick="navTo('prazos.html')">Prazos</button>
+        <button class="nb" onclick="navTo('otd.html')">OTD</button>
+        <button class="nb" onclick="navTo('ordens.html')">Ordens em Aberto</button>
+        <button class="nb" onclick="navTo('operadores.html')">Performance</button>
+      </div>
+    </div>
   </div>
   <div class="tr-right">
     <div class="sync-dot"></div>

@@ -809,8 +809,8 @@ function renderSeqPanel(){
          ondragover="dragOver(event,${i})" ondrop="dragDrop(event,${i})" ondragleave="dragLeave(event)"
          title="Arraste para reordenar">
       <span class="seq-num">${i+1}ª</span>
-      <span class="seq-cod" title="${esc(it.codigo_peca||"")}">${esc(it.codigo_peca||"(sem código)")}</span>
-      ${it.pedido?`<span class="seq-ped">#${esc(it.pedido)}</span>`:""}
+      <span class="seq-cod" title="${escHtml(it.codigo_peca)}">${escHtml(it.codigo_peca||"(sem código)")}</span>
+      ${it.pedido?`<span class="seq-ped">#${escHtml(it.pedido)}</span>`:""}
     </div>`).join("");
   panel.innerHTML = `<div class="divider"></div><div class="lbl" style="margin-bottom:6px">sequência (${ITENS.length})</div><div class="seq-list">${rows}</div>`;
 }
@@ -847,7 +847,7 @@ function render(){
         <div class="drag-handle" draggable="true" ondragstart="dragStart(event,${i})" ondragend="dragEnd(event)" title="Arraste para reordenar">⠿</div>
         <div class="seq-num-badge" title="Sequência">${i+1}ª</div>
         <div ${clickAttr}>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="item-cod">${it.codigo_peca}${novo}</div>${renderTipoBadge(it)}${concBadge}${expBadge}${criticoBadge}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="item-cod">${escHtml(it.codigo_peca)}${novo}</div>${renderTipoBadge(it)}${concBadge}${expBadge}${criticoBadge}</div>
           ${subLine}${tlHint}
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">

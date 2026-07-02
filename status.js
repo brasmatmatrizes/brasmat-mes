@@ -101,6 +101,11 @@ function status(row){
 
 function esc(s){ return String(s||"").replace(/'/g,"\\'"); }
 
+// Escape para conteúdo/atributo HTML (diferente de esc(), que só serve para strings dentro de onclick='...')
+function escHtml(s){
+  return String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
 function getTipo(row){
   const cf = String(row.classificacao_fiscal||"").trim().toLowerCase();
   if(cf.includes("vend"))   return {label:"V", full:"Vendas",          cor:"#3B7FFF", bg:"rgba(59,127,255,0.15)"};

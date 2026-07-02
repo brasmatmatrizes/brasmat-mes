@@ -466,10 +466,10 @@ async function enriquecerItem(it){
   const c = encodeURIComponent(it.codigo_peca||"");
   const ped = it.pedido ? `&pedido=eq.${encodeURIComponent(it.pedido)}` : "";
   try{
-    // Progresso idêntico ao da linha do tempo: histórico completo + calcProgresso
-    const eventos = await buscarHistorico(it.pedido||"", it.codigo_peca||"");
-    it._prog = (Array.isArray(eventos)&&eventos.length) ? calcProgresso(eventos) : null;
-    const ult = (Array.isArray(eventos)&&eventos.length) ? eventos[eventos.length-1] : null;
+    // Progresso: só o último evento é necessário (mesmo critério de calcProgressoRow)
+    const ultArr = await supaFetch(`/rest/v1/producao_eventos?select=*&codigo_peca=eq.${c}${ped}&order=id.desc&limit=1`);
+    const ult = (Array.isArray(ultArr)&&ultArr[0]) ? ultArr[0] : null;
+    it._prog = ult ? calcProgressoRow(ult) : null;
     it._sit = ult ? status(ult).s : null;
     it._ultimaOp = ult ? { processo:String(ult.processo||"").trim(), subop:getSubop(ult), evento:String(ult.evento||"").trim().toUpperCase(), data:ult.data_evento } : null;
     const tipo = await supaFetch(`/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${c}${ped}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`);

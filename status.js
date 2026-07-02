@@ -278,3 +278,18 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
     <div class="tl-lbl">linha do tempo</div>
     <ul class="timeline">${tl}</ul>`;
 }
+
+document.querySelectorAll(".nav-group > .nb-group").forEach(function(btn){
+  btn.addEventListener("click", function(e){
+    e.stopPropagation();
+    var g = btn.parentElement;
+    var wasOpen = g.classList.contains("open");
+    document.querySelectorAll(".nav-group.open").forEach(function(o){ o.classList.remove("open"); });
+    if(!wasOpen) g.classList.add("open");
+  });
+});
+document.addEventListener("click", function(e){
+  document.querySelectorAll(".nav-group.open").forEach(function(g){
+    if(!g.contains(e.target)) g.classList.remove("open");
+  });
+});

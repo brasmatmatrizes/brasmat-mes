@@ -200,8 +200,9 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
   const prazoFmtBR = prazoD ? prazoD.toLocaleDateString("pt-BR") : "—";
   const prazoOk= prazoD?(prazoD>new Date()?`<span style="color:var(--ok)">✓</span>`:`<span style="color:var(--danger)">⚠</span>`):"";
   const prazoCor = prazoD&&prazoD<new Date() ? "var(--danger)" : "var(--text2)";
+  const qtdSol = ultimo.quantidade_solicitada&&String(ultimo.quantidade_solicitada).trim() ? String(ultimo.quantidade_solicitada).trim()+" pç" : "—";
 
-  // Atualiza o título para incluir prazo no cabeçalho fixo
+  // Atualiza o título para incluir prazo e quantidade solicitada no cabeçalho fixo
   title.innerHTML = `
     <div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
@@ -211,9 +212,15 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
       <div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px">Pedido: ${pedido}${ultimo.os&&String(ultimo.os).trim()?' · OS: '+String(ultimo.os).trim():''}</div>
       ${renderAnexosIcons(anexos)}
     </div>
-    <div style="text-align:center;padding:0 12px">
-      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Prazo</div>
-      <div style="font-size:13px;font-weight:500;color:${prazoCor};font-family:var(--mono)">${prazoFmtBR} ${prazoOk}</div>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <div style="text-align:center;padding:0 12px">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Qtd. solicitada</div>
+        <div style="font-size:13px;font-weight:500;color:var(--text);font-family:var(--mono)">${qtdSol}</div>
+      </div>
+      <div style="text-align:center;padding:0 12px">
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:2px">Prazo</div>
+        <div style="font-size:13px;font-weight:500;color:${prazoCor};font-family:var(--mono)">${prazoFmtBR} ${prazoOk}</div>
+      </div>
     </div>`;
 
   const tl = eventos.map((ev,i)=>{

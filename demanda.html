@@ -513,6 +513,7 @@ async function enriquecerItem(it){
     it._prog = ult ? calcProgressoRow(ult) : null;
     it._sit = ult ? status(ult).s : null;
     it._ultimaOp = ult ? { processo:String(ult.processo||"").trim(), subop:getSubop(ult), evento:String(ult.evento||"").trim().toUpperCase(), data:ult.data_evento } : null;
+    it.quantidade_solicitada = ult ? ult.quantidade_solicitada : null;
     const tipo = await supaFetch(`/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${c}${ped}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`);
     if(Array.isArray(tipo)&&tipo[0]){ it.razao_social=tipo[0].razao_social; it.classificacao_fiscal=tipo[0].classificacao_fiscal; }
   }catch(e){}
@@ -882,7 +883,8 @@ function render(){
     if(FILTRO_NPRONTO && itemPronto(it)) return "";   // filtro: só não-prontos (índice i mantém-se absoluto)
     if(FILTRO_SEMPRAZO && !itemSemPrazo(it)) return ""; // filtro: só sem prazo confirmado
     const novo = it._novo ? `<span class="item-badge-new">NOVO</span>` : "";
-    const sub  = [it.pedido?("Pedido: "+it.pedido):"", it.os?("OS: "+it.os):""].filter(Boolean).join(" · ");
+    const qtdInfo = it.quantidade_solicitada&&String(it.quantidade_solicitada).trim() ? ("Qtd: "+String(it.quantidade_solicitada).trim()+" pç") : "";
+    const sub  = [it.pedido?("Pedido: "+it.pedido):"", it.os?("OS: "+it.os):"", qtdInfo].filter(Boolean).join(" · ");
     const subLine = sub ? `<div class="item-desc">${sub}</div>` : (it._novo?`<div class="item-desc">item novo — sem registro no sistema</div>`:"");
     // Itens existentes (com pedido) abrem a linha do tempo ao clicar
     const podeTimeline = !it._novo;

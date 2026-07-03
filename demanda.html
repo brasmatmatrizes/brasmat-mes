@@ -885,7 +885,7 @@ function render(){
     const novo = it._novo ? `<span class="item-badge-new">NOVO</span>` : "";
     const qtdInfo = it.quantidade_solicitada&&String(it.quantidade_solicitada).trim() ? (`<span style="color:var(--text);font-weight:600">Qtd: ${String(it.quantidade_solicitada).trim()} pç</span>`) : "";
     const sub  = [it.pedido?("Pedido: "+it.pedido):"", it.os?("OS: "+it.os):"", qtdInfo].filter(Boolean).join(" · ");
-    const subLine = sub ? `<div class="item-desc">${sub}</div>` : (it._novo?`<div class="item-desc">item novo — sem registro no sistema</div>`:"");
+    const subLine = sub ? `<div class="item-desc" style="color:var(--text)">${sub}</div>` : (it._novo?`<div class="item-desc">item novo — sem registro no sistema</div>`:"");
     // Itens existentes (com pedido) abrem a linha do tempo ao clicar
     const podeTimeline = !it._novo;
     const clickAttr = podeTimeline ? `style="cursor:pointer;flex:1;min-width:0" onclick="abrirDetalhe('${esc(it.pedido||"")}','${esc(it.codigo_peca||"")}')"` : `style="flex:1;min-width:0"`;

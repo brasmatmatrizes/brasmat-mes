@@ -362,16 +362,19 @@ function renderResultados(resultados){
 
 let _DEMANDA = new Set(), _DEMANDA_COD = new Set(), _CRITICO = new Set(), _CRITICO_COD = new Set();
 let _DEMANDA_POS = new Map(), _DEMANDA_POS_COD = new Map();
+let _DEMANDA_PRAZO = new Map(), _DEMANDA_PRAZO_COD = new Map();
 async function carregarDemandaSet(){
   _DEMANDA = new Set(); _DEMANDA_COD = new Set(); _CRITICO = new Set(); _CRITICO_COD = new Set();
   _DEMANDA_POS = new Map(); _DEMANDA_POS_COD = new Map();
+  _DEMANDA_PRAZO = new Map(); _DEMANDA_PRAZO_COD = new Map();
   try{
-    const rows = await supaFetch("/rest/v1/demanda_itens?select=codigo_peca,pedido,critico,cliente,ordem,id&limit=10000");
+    const rows = await supaFetch("/rest/v1/demanda_itens?select=codigo_peca,pedido,critico,cliente,ordem,id,prazo_confirmado&limit=10000");
     const arr = Array.isArray(rows) ? rows : [];
     arr.forEach(r=>{
       const c=String(r.codigo_peca||"").trim().toUpperCase(); const p=String(r.pedido||"").trim();
       if(!c) return; if(p) _DEMANDA.add(c+"|"+p); else _DEMANDA_COD.add(c);
       if(r.critico){ if(p) _CRITICO.add(c+"|"+p); else _CRITICO_COD.add(c); }
+      if(r.prazo_confirmado){ if(p) _DEMANDA_PRAZO.set(c+"|"+p, r.prazo_confirmado); else _DEMANDA_PRAZO_COD.set(c, r.prazo_confirmado); }
     });
     // Posição sequencial — mesma ordenação da Demanda Cliente (ordem.asc.nullslast, id.asc), por cliente
     const porCliente = new Map();
@@ -400,6 +403,11 @@ function posicaoDemanda(cod, ped){
   const c=String(cod||"").toUpperCase(), p=String(ped||"").trim();
   if(p && _DEMANDA_POS.has(c+"|"+p)) return _DEMANDA_POS.get(c+"|"+p);
   return _DEMANDA_POS_COD.get(c) || null;
+}
+function prazoConfirmadoDemanda(cod, ped){
+  const c=String(cod||"").toUpperCase(), p=String(ped||"").trim();
+  if(p && _DEMANDA_PRAZO.has(c+"|"+p)) return _DEMANDA_PRAZO.get(c+"|"+p);
+  return _DEMANDA_PRAZO_COD.get(c) || null;
 }
 function eCriticoCliente(cod, ped){
   const c=String(cod||"").toUpperCase(), p=String(ped||"").trim();
@@ -565,37 +573,45 @@ function renderCard(r){
   </div>`;
 }
 
+function linhaTextoCliente(r){
+  let l = `▸ ${r.codigoOriginal}`;
+  if(r.descricaoCliente) l += ` — ${r.descricaoCliente}`;
+  l += "\n";
+  if(!r.dados){
+    l += `  Não localizada no sistema\n`;
+    return l;
+  }
+  const cod = String(r.dados.codigo_peca||r.codigoOriginal||"").trim();
+  const ped = String(r.dados.pedido||"").trim();
+  if(r.status!=="expedida"){
+    l += `  Status: ${status(r.dados).label}\n`;
+  }
+  const prazoConf = prazoConfirmadoDemanda(cod, ped);
+  l += prazoConf ? `  Prazo confirmado: ${new Date(prazoConf+"T00:00:00").toLocaleDateString("pt-BR")}\n` : `  Prazo confirmado: ainda não definido\n`;
+  return l;
+}
+
 function gerarTextoCliente(resultados){
   const data = new Date().toLocaleDateString("pt-BR");
+  const expedidas     = resultados.filter(r=>r.status==="expedida");
+  const naoExpedidas  = resultados.filter(r=>r.status==="encontrada"||r.status==="finalizada");
+  const naoEncontradas= resultados.filter(r=>r.status==="nao_encontrada"||r.status==="erro");
+
   let texto = `BRASMAT — Atualização de status em ${data}\n`;
   texto += "─".repeat(50)+"\n\n";
-  resultados.forEach(r=>{
-    texto += `▸ ${r.codigoOriginal}`;
-    if(r.descricaoCliente) texto += ` — ${r.descricaoCliente}`;
-    texto += "\n";
-    if(r.status==="encontrada"){
-      const d=r.dados;
-      const st=status(d);
-      const dias=diasDesde(d);
-      const proc=String(d.processo||"").trim();
-      const sub=getSubop(d);
-      texto += `  Status: ${st.label}\n`;
-      texto += `  Processo: ${proc}${sub&&sub!=="—"?" → "+sub:""}\n`;
-      texto += `  Há ${diasStr(dias)} neste setor\n`;
-      if(d.prazo_entrega) texto += `  Prazo: ${new Date(d.prazo_entrega).toLocaleDateString("pt-BR")}\n`;
-    } else if(r.status==="finalizada"){
-      const d=r.dados;
-      const st=status(d);
-      texto += `  Status: ${st.label}\n`;
-      texto += `  Processo: ${String(d.processo||"").trim()}\n`;
-      if(d.prazo_entrega) texto += `  Prazo: ${new Date(d.prazo_entrega).toLocaleDateString("pt-BR")}\n`;
-    } else if(r.status==="expedida"){
-      texto += `  Status: Expedida\n`;
-    } else {
-      texto += `  Status: Não localizada no sistema\n`;
-    }
-    texto += "\n";
-  });
+
+  if(expedidas.length){
+    texto += `✅ EXPEDIDAS (${expedidas.length})\n\n`;
+    expedidas.forEach(r=>{ texto += linhaTextoCliente(r) + "\n"; });
+  }
+  if(naoExpedidas.length){
+    texto += `⏳ NÃO EXPEDIDAS (${naoExpedidas.length})\n\n`;
+    naoExpedidas.forEach(r=>{ texto += linhaTextoCliente(r) + "\n"; });
+  }
+  if(naoEncontradas.length){
+    texto += `⚠ NÃO ENCONTRADAS (${naoEncontradas.length})\n\n`;
+    naoEncontradas.forEach(r=>{ texto += linhaTextoCliente(r) + "\n"; });
+  }
   return texto.trim();
 }
 

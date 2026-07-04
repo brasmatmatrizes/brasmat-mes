@@ -581,11 +581,13 @@ function linhaTextoCliente(r){
     l += `  Não localizada no sistema\n`;
     return l;
   }
+  if(r.status==="expedida"){
+    l += `  Status: Expedida\n`;
+    return l;
+  }
+  l += `  Status: ${status(r.dados).label}\n`;
   const cod = String(r.dados.codigo_peca||r.codigoOriginal||"").trim();
   const ped = String(r.dados.pedido||"").trim();
-  if(r.status!=="expedida"){
-    l += `  Status: ${status(r.dados).label}\n`;
-  }
   const prazoConf = prazoConfirmadoDemanda(cod, ped);
   l += prazoConf ? `  Prazo confirmado: ${new Date(prazoConf+"T00:00:00").toLocaleDateString("pt-BR")}\n` : `  Prazo confirmado: ainda não definido\n`;
   return l;
@@ -593,25 +595,9 @@ function linhaTextoCliente(r){
 
 function gerarTextoCliente(resultados){
   const data = new Date().toLocaleDateString("pt-BR");
-  const expedidas     = resultados.filter(r=>r.status==="expedida");
-  const naoExpedidas  = resultados.filter(r=>r.status==="encontrada"||r.status==="finalizada");
-  const naoEncontradas= resultados.filter(r=>r.status==="nao_encontrada"||r.status==="erro");
-
   let texto = `BRASMAT — Atualização de status em ${data}\n`;
   texto += "─".repeat(50)+"\n\n";
-
-  if(expedidas.length){
-    texto += `✅ EXPEDIDAS (${expedidas.length})\n\n`;
-    expedidas.forEach(r=>{ texto += linhaTextoCliente(r) + "\n"; });
-  }
-  if(naoExpedidas.length){
-    texto += `⏳ NÃO EXPEDIDAS (${naoExpedidas.length})\n\n`;
-    naoExpedidas.forEach(r=>{ texto += linhaTextoCliente(r) + "\n"; });
-  }
-  if(naoEncontradas.length){
-    texto += `⚠ NÃO ENCONTRADAS (${naoEncontradas.length})\n\n`;
-    naoEncontradas.forEach(r=>{ texto += linhaTextoCliente(r) + "\n"; });
-  }
+  resultados.forEach(r=>{ texto += linhaTextoCliente(r) + "\n"; });
   return texto.trim();
 }
 

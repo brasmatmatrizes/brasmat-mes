@@ -44,7 +44,7 @@
 .chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
 /* CARDS DE MÉTRICA */
-.mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.mrow{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
 .met{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px 12px;position:relative;overflow:hidden}
 .met::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--met-cor,var(--border2))}
 .met-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
@@ -97,14 +97,14 @@
 
 /* TABELA */
 .tw{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.thead{display:grid;grid-template-columns:1fr 100px 110px 120px 120px 90px;border-bottom:1px solid var(--border);padding:0 16px;background:var(--bg3)}
+.thead{display:grid;grid-template-columns:1fr 90px 100px 105px 105px 105px 105px 80px;border-bottom:1px solid var(--border);padding:0 16px;background:var(--bg3)}
 .th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);padding:10px 6px}
 .th.sortable{cursor:pointer;user-select:none}
 .th.sortable:hover{color:var(--text)}
 .th.num,.td.num{justify-content:flex-end;text-align:right}
 .th-arrow{margin-left:4px;font-size:8px}
 .tbody{display:flex;flex-direction:column;max-height:420px;overflow-y:auto}
-.tr{display:grid;grid-template-columns:1fr 100px 110px 120px 120px 90px;padding:0 16px;border-bottom:1px solid var(--border)}
+.tr{display:grid;grid-template-columns:1fr 90px 100px 105px 105px 105px 105px 80px;padding:0 16px;border-bottom:1px solid var(--border)}
 .tr:nth-child(even){background:rgba(255,255,255,0.015)}
 .tr:last-child{border-bottom:none}.tr:hover{background:var(--bg3)}
 .tr.total{background:var(--bg3);border-top:1px solid var(--border2);font-weight:600}
@@ -215,12 +215,6 @@
       <div class="met-spark" id="m1-spark"></div>
       <div class="met-foot" id="m1-media"></div>
     </div>
-    <div class="met" style="--met-cor:var(--text3)">
-      <div class="met-top"><span class="met-lbl">Peças inspecionadas</span><span class="met-delta" id="m2-delta"></span></div>
-      <div class="met-val" id="m2">—</div>
-      <div class="met-spark" id="m2-spark"></div>
-      <div class="met-foot" id="m2-media"></div>
-    </div>
     <div class="met" style="--met-cor:var(--accent)">
       <div class="met-top"><span class="met-lbl">Lotes · processo (10.1)</span><span class="met-delta" id="m3-delta"></span></div>
       <div class="met-val" id="m3" style="color:var(--accent)">—</div>
@@ -232,6 +226,24 @@
       <div class="met-val" id="m4" style="color:var(--ok)">—</div>
       <div class="met-spark" id="m4-spark"></div>
       <div class="met-foot" id="m4-media"></div>
+    </div>
+    <div class="met" style="--met-cor:var(--text3)">
+      <div class="met-top"><span class="met-lbl">Peças inspecionadas</span><span class="met-delta" id="m2-delta"></span></div>
+      <div class="met-val" id="m2">—</div>
+      <div class="met-spark" id="m2-spark"></div>
+      <div class="met-foot" id="m2-media"></div>
+    </div>
+    <div class="met" style="--met-cor:var(--accent)">
+      <div class="met-top"><span class="met-lbl">Peças · processo (10.1)</span><span class="met-delta" id="m5-delta"></span></div>
+      <div class="met-val" id="m5" style="color:var(--accent)">—</div>
+      <div class="met-spark" id="m5-spark"></div>
+      <div class="met-foot" id="m5-media"></div>
+    </div>
+    <div class="met" style="--met-cor:var(--ok)">
+      <div class="met-top"><span class="met-lbl">Peças · final (10.2)</span><span class="met-delta" id="m6-delta"></span></div>
+      <div class="met-val" id="m6" style="color:var(--ok)">—</div>
+      <div class="met-spark" id="m6-spark"></div>
+      <div class="met-foot" id="m6-media"></div>
     </div>
   </div>
 
@@ -286,6 +298,8 @@
       <div class="th sortable num" onclick="setSortInsp('pecas')">Peças<span class="th-arrow" id="arr-pecas"></span></div>
       <div class="th sortable num" onclick="setSortInsp('lotesProc')">Lotes proc.<span class="th-arrow" id="arr-lotesProc"></span></div>
       <div class="th sortable num" onclick="setSortInsp('lotesFinal')">Lotes final<span class="th-arrow" id="arr-lotesFinal"></span></div>
+      <div class="th sortable num" onclick="setSortInsp('pecasProc')">Peças proc.<span class="th-arrow" id="arr-pecasProc"></span></div>
+      <div class="th sortable num" onclick="setSortInsp('pecasFinal')">Peças final<span class="th-arrow" id="arr-pecasFinal"></span></div>
       <div class="th num">% lotes</div>
     </div>
     <div class="tbody" id="tbody-insp"><div class="loading"><div class="spinner"></div>carregando...</div></div>
@@ -561,14 +575,19 @@ function render(){
     `${fmtBR(di)} a ${fmtBR(df)} · comparado com o período anterior de mesmo tamanho${filtros?" · "+filtros:""}`;
 
   // MÉTRICAS
+  const somaPecas = lista=>lista.reduce((s,r)=>s+(parseFloat(r.quantidade_produzida)||0),0);
   const lotes = reg.length;
-  const pecas = reg.reduce((s,r)=>s+(parseFloat(r.quantidade_produzida)||0),0);
+  const pecas = somaPecas(reg);
   const proc = reg.filter(r=>tipoInsp(r)==="processo");
   const fin  = reg.filter(r=>tipoInsp(r)==="final");
+  const pecasProc = somaPecas(proc);
+  const pecasFinal = somaPecas(fin);
   document.getElementById("m1").textContent = fmtNum(lotes);
   document.getElementById("m2").textContent = fmtNum(pecas);
   document.getElementById("m3").textContent = fmtNum(proc.length);
   document.getElementById("m4").textContent = fmtNum(fin.length);
+  document.getElementById("m5").textContent = fmtNum(pecasProc);
+  document.getElementById("m6").textContent = fmtNum(pecasFinal);
 
   // MÉDIA POR DIA COM ATIVIDADE
   const dias = diasComEvento(reg);
@@ -576,6 +595,8 @@ function render(){
   document.getElementById("m2-media").textContent = dias>0 ? `média ${(pecas/dias).toFixed(1)}/dia com atividade` : "";
   document.getElementById("m3-media").textContent = lotes>0 ? `${Math.round(proc.length/lotes*100)}% dos lotes` : "";
   document.getElementById("m4-media").textContent = lotes>0 ? `${Math.round(fin.length/lotes*100)}% dos lotes` : "";
+  document.getElementById("m5-media").textContent = pecas>0 ? `${Math.round(pecasProc/pecas*100)}% das peças` : "";
+  document.getElementById("m6-media").textContent = pecas>0 ? `${Math.round(pecasFinal/pecas*100)}% das peças` : "";
 
   // SPARKLINES (evolução diária de cada métrica dentro do período)
   const diasKeys = todosOsBuckets(di, df, "dia").slice(-62);
@@ -583,23 +604,30 @@ function render(){
   reg.forEach(r=>{
     if(!r.data_evento) return;
     const k = new Date(r.data_evento).toISOString().slice(0,10);
-    if(!porDia[k]) porDia[k] = {lotes:0, pecas:0, proc:0, fin:0};
+    if(!porDia[k]) porDia[k] = {lotes:0, pecas:0, proc:0, fin:0, pecasProc:0, pecasFin:0};
     porDia[k].lotes++;
-    porDia[k].pecas += parseFloat(r.quantidade_produzida)||0;
+    const qtdDia = parseFloat(r.quantidade_produzida)||0;
+    porDia[k].pecas += qtdDia;
     const t = tipoInsp(r);
-    if(t==="processo") porDia[k].proc++; else if(t==="final") porDia[k].fin++;
+    if(t==="processo"){ porDia[k].proc++; porDia[k].pecasProc += qtdDia; }
+    else if(t==="final"){ porDia[k].fin++; porDia[k].pecasFin += qtdDia; }
   });
   const serie = campo=>diasKeys.map(k=>porDia[k]?porDia[k][campo]:0);
   document.getElementById("m1-spark").innerHTML = sparkline(serie("lotes"), "var(--text3)");
   document.getElementById("m2-spark").innerHTML = sparkline(serie("pecas"), "var(--text3)");
   document.getElementById("m3-spark").innerHTML = sparkline(serie("proc"),  "var(--accent)");
   document.getElementById("m4-spark").innerHTML = sparkline(serie("fin"),   "var(--ok)");
+  document.getElementById("m5-spark").innerHTML = sparkline(serie("pecasProc"), "var(--accent)");
+  document.getElementById("m6-spark").innerHTML = sparkline(serie("pecasFin"),  "var(--ok)");
 
   // COMPARAÇÃO COM PERÍODO ANTERIOR (mesmo tamanho de intervalo)
-  const pecasAnt = regAnt.reduce((s,r)=>s+(parseFloat(r.quantidade_produzida)||0),0);
-  [["m1",lotes,regAnt.length],["m2",pecas,pecasAnt],
-   ["m3",proc.length,regAnt.filter(r=>tipoInsp(r)==="processo").length],
-   ["m4",fin.length,regAnt.filter(r=>tipoInsp(r)==="final").length]].forEach(([id,atual,anterior])=>{
+  const procAnt = regAnt.filter(r=>tipoInsp(r)==="processo");
+  const finAnt  = regAnt.filter(r=>tipoInsp(r)==="final");
+  [["m1",lotes,regAnt.length],["m2",pecas,somaPecas(regAnt)],
+   ["m3",proc.length,procAnt.length],
+   ["m4",fin.length,finAnt.length],
+   ["m5",pecasProc,somaPecas(procAnt)],
+   ["m6",pecasFinal,somaPecas(finAnt)]].forEach(([id,atual,anterior])=>{
     const d = calcDelta(atual,anterior);
     const el = document.getElementById(id+"-delta");
     el.textContent = d.txt;
@@ -709,15 +737,16 @@ function renderPorInspetor(reg){
   const m = {};
   reg.forEach(r=>{
     const nome = nomeOperador(r.operador);
-    if(!m[nome]) m[nome] = {nome, lotes:0, pecas:0, lotesProc:0, lotesFinal:0};
+    if(!m[nome]) m[nome] = {nome, lotes:0, pecas:0, lotesProc:0, lotesFinal:0, pecasProc:0, pecasFinal:0};
     m[nome].lotes++;
-    m[nome].pecas += parseFloat(r.quantidade_produzida)||0;
+    const qtd = parseFloat(r.quantidade_produzida)||0;
+    m[nome].pecas += qtd;
     const t = tipoInsp(r);
-    if(t==="processo") m[nome].lotesProc++;
-    else if(t==="final") m[nome].lotesFinal++;
+    if(t==="processo"){ m[nome].lotesProc++; m[nome].pecasProc += qtd; }
+    else if(t==="final"){ m[nome].lotesFinal++; m[nome].pecasFinal += qtd; }
   });
 
-  ["nome","lotes","pecas","lotesProc","lotesFinal"].forEach(c=>{
+  ["nome","lotes","pecas","lotesProc","lotesFinal","pecasProc","pecasFinal"].forEach(c=>{
     document.getElementById("arr-"+c).textContent = sortInsp.campo===c ? (sortInsp.dir==="desc"?"▼":"▲") : "";
   });
 
@@ -738,6 +767,8 @@ function renderPorInspetor(reg){
   const totPecas = lista.reduce((s,i)=>s+i.pecas,0);
   const totProc  = lista.reduce((s,i)=>s+i.lotesProc,0);
   const totFinal = lista.reduce((s,i)=>s+i.lotesFinal,0);
+  const totPecasProc  = lista.reduce((s,i)=>s+i.pecasProc,0);
+  const totPecasFinal = lista.reduce((s,i)=>s+i.pecasFinal,0);
 
   // gráfico "por inspetor" sempre por volume de lotes, com barra dividida processo/final
   const porLotes = [...lista].sort((a,b)=>b.lotes-a.lotes);
@@ -761,9 +792,9 @@ function renderPorInspetor(reg){
   document.querySelectorAll("#chart-insp .insp-row").forEach(row=>{
     const i = porLotes[parseInt(row.dataset.idx)];
     const html = `<div class="tip-title">${i.nome}</div>
-      <div><span class="tip-dot" style="background:var(--accent)"></span>Processo: <b>${fmtNum(i.lotesProc)}</b> lote(s)</div>
-      <div><span class="tip-dot" style="background:var(--ok)"></span>Final: <b>${fmtNum(i.lotesFinal)}</b> lote(s)</div>
-      <div>Peças: <b>${fmtNum(i.pecas)}</b></div>`;
+      <div><span class="tip-dot" style="background:var(--accent)"></span>Processo: <b>${fmtNum(i.lotesProc)}</b> lote(s) · <b>${fmtNum(i.pecasProc)}</b> pç</div>
+      <div><span class="tip-dot" style="background:var(--ok)"></span>Final: <b>${fmtNum(i.lotesFinal)}</b> lote(s) · <b>${fmtNum(i.pecasFinal)}</b> pç</div>
+      <div>Total: <b>${fmtNum(i.lotes)}</b> lote(s) · <b>${fmtNum(i.pecas)}</b> pç</div>`;
     row.addEventListener("mouseenter", ev=>tipShow(html, ev));
     row.addEventListener("mousemove", tipMove);
     row.addEventListener("mouseleave", tipHide);
@@ -776,6 +807,8 @@ function renderPorInspetor(reg){
       <div class="td num" style="font-family:var(--mono)">${fmtNum(i.pecas)}</div>
       <div class="td num" style="font-family:var(--mono)">${fmtNum(i.lotesProc)}</div>
       <div class="td num" style="font-family:var(--mono)">${fmtNum(i.lotesFinal)}</div>
+      <div class="td num" style="font-family:var(--mono)">${fmtNum(i.pecasProc)}</div>
+      <div class="td num" style="font-family:var(--mono)">${fmtNum(i.pecasFinal)}</div>
       <div class="td num" style="font-family:var(--mono)">${totLotes?Math.round(i.lotes/totLotes*100):0}%</div>
     </div>`
   ).join("") +
@@ -785,6 +818,8 @@ function renderPorInspetor(reg){
       <div class="td num" style="font-family:var(--mono)">${fmtNum(totPecas)}</div>
       <div class="td num" style="font-family:var(--mono)">${fmtNum(totProc)}</div>
       <div class="td num" style="font-family:var(--mono)">${fmtNum(totFinal)}</div>
+      <div class="td num" style="font-family:var(--mono)">${fmtNum(totPecasProc)}</div>
+      <div class="td num" style="font-family:var(--mono)">${fmtNum(totPecasFinal)}</div>
       <div class="td num" style="font-family:var(--mono)">100%</div>
     </div>`;
 }

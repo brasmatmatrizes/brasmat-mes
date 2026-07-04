@@ -351,6 +351,20 @@ function tipoInsp(r){
   return "outro";
 }
 
+// Remove duplicatas exatas de reenvio (mesmo pedido, peça, evento, operador, timestamp,
+// qtd e subop). O timestamp ao milissegundo garante que só as cópias idênticas do
+// sincronizador caem — reinspeções reais (data diferente) são preservadas.
+function dedupExatas(lista){
+  const vistos = new Set();
+  return lista.filter(r=>{
+    const k = [r.pedido, r.codigo_peca, r.evento, r.operador, r.data_evento,
+               r.quantidade_produzida, r.operacao_qualidade].join("|");
+    if(vistos.has(k)) return false;
+    vistos.add(k);
+    return true;
+  });
+}
+
 async function fetchQualidade(di, df){
   const diUTC = di + "T03:00:00.000Z";
   const dfUTC = df + "T23:59:59-03:00";
@@ -364,7 +378,7 @@ async function fetchQualidade(di, df){
     if(chunk.length<1000) break;
     offset += 1000;
   }
-  return todos;
+  return dedupExatas(todos);
 }
 
 // Período anterior de mesmo tamanho, usado só pra comparação nos cards

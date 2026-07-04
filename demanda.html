@@ -74,14 +74,19 @@
 .seq-num-badge{font-size:10px;font-weight:700;color:var(--accent);background:rgba(59,127,255,0.12);border:1px solid rgba(59,127,255,0.3);border-radius:6px;padding:3px 7px;flex-shrink:0;align-self:flex-start;font-family:var(--mono)}
 
 /* SEQ PANEL (sidebar) */
+@keyframes seq-flash{0%,100%{box-shadow:none}50%{box-shadow:0 0 0 2px var(--accent)}}
 .seq-list{display:flex;flex-direction:column;gap:4px;max-height:340px;overflow-y:auto;padding-right:2px}
-.seq-row{display:flex;align-items:center;gap:6px;padding:5px 7px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);font-size:11px;font-family:var(--mono);cursor:grab;transition:background .15s,border-color .15s}
-.seq-row:active{cursor:grabbing}
+.seq-row{display:flex;align-items:center;gap:6px;padding:5px 7px;border:1px solid var(--border);border-radius:6px;background:var(--bg3);font-size:11px;font-family:var(--mono);cursor:pointer;transition:background .15s,border-color .15s}
+.seq-row:hover{border-color:var(--accent)}
 .seq-row.dragging{opacity:0.4}
 .seq-row.drag-over{border-color:var(--accent);box-shadow:0 -2px 0 var(--accent) inset}
+.seq-handle{cursor:grab;color:var(--text3);flex-shrink:0;user-select:none;padding:0 2px}
+.seq-handle:active{cursor:grabbing}
 .seq-row .seq-num{color:var(--accent);font-weight:700;flex-shrink:0;width:20px}
+.seq-row .seq-status{flex-shrink:0;font-size:11px}
 .seq-row .seq-cod{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
 .seq-row .seq-ped{color:var(--text3);flex-shrink:0;font-size:10px}
+.item-card.seq-target{animation:seq-flash 0.6s ease-in-out 2}
 .item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
 .item-cod{font-size:15px;font-weight:500;color:var(--text);font-family:var(--mono)}
 .item-desc{font-size:12px;color:var(--text3);margin-top:2px}
@@ -860,19 +865,34 @@ async function salvar(){
 }
 
 // ---------- Painel de sequência (sidebar) ----------
+function scrollToItemCard(i){
+  const card = document.querySelector(`.item-card[data-idx="${i}"]`);
+  if(!card) return;
+  card.scrollIntoView({behavior:"smooth", block:"center"});
+  card.classList.add("seq-target");
+  setTimeout(()=>card.classList.remove("seq-target"), 1200);
+}
+
 function renderSeqPanel(){
   const panel = document.getElementById("seqPanel");
   if(!panel) return;
   if(!CLIENTE || !ITENS.length){ panel.innerHTML=""; return; }
-  const rows = ITENS.map((it,i)=>`
-    <div class="seq-row" data-idx="${i}" draggable="true"
-         ondragstart="dragStart(event,${i})" ondragend="dragEnd(event)"
-         ondragover="dragOver(event,${i})" ondrop="dragDrop(event,${i})" ondragleave="dragLeave(event)"
-         title="Arraste para reordenar">
+  const rows = ITENS.map((it,i)=>{
+    const expedida = it._sit==="expedida";
+    const stIco = expedida ? "🚚" : "⚙️";
+    const stTitle = expedida ? "Expedida" : "Em processo";
+    return `
+    <div class="seq-row" data-idx="${i}" onclick="scrollToItemCard(${i})"
+         ondragover="dragOver(event,${i})" ondrop="dragDrop(event,${i})" ondragleave="dragLeave(event)">
+      <span class="seq-handle" draggable="true" title="Arraste para reordenar"
+            onclick="event.stopPropagation()"
+            ondragstart="dragStart(event,${i})" ondragend="dragEnd(event)">⠿</span>
       <span class="seq-num">${i+1}ª</span>
+      <span class="seq-status" title="${stTitle}">${stIco}</span>
       <span class="seq-cod" title="${escHtml(it.codigo_peca)}">${escHtml(it.codigo_peca||"(sem código)")}</span>
       ${it.pedido?`<span class="seq-ped">#${escHtml(it.pedido)}</span>`:""}
-    </div>`).join("");
+    </div>`;
+  }).join("");
   panel.innerHTML = `<div class="divider"></div><div class="lbl" style="margin-bottom:6px">sequência (${ITENS.length})</div><div class="seq-list">${rows}</div>`;
 }
 

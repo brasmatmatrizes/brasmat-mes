@@ -476,10 +476,15 @@ function renderUltimaOp(it){
   const isEnt = u.evento==="ENTRADA";
   const quando = u.data ? new Date(u.data).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) : "";
   const proc = [u.processo, (u.subop&&u.subop!=="—")?u.subop:""].filter(Boolean).join(" · ") || "—";
+  // Status especial (ex.: Expedida) tem prioridade sobre o rótulo genérico de entrada/saída — mesmo critério da linha do tempo
+  const stEspecial = u.st && !["em_producao","liberada"].includes(u.st.s) ? u.st : null;
+  const evtTag = stEspecial
+    ? `<span style="color:${stEspecial.cor};font-weight:600">${stEspecial.ico} ${stEspecial.label}</span>`
+    : `<span style="color:${isEnt?'var(--accent)':'var(--ok)'};font-weight:600">${isEnt?'⬆ entrada':'⬇ saída'}</span>`;
   return `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;font-family:var(--mono);margin:2px 0 4px">
     <span style="color:var(--text3);text-transform:uppercase;letter-spacing:0.06em">última op.</span>
     <span style="color:var(--text);font-weight:500">${proc}</span>
-    <span style="color:${isEnt?'var(--accent)':'var(--ok)'};font-weight:600">${isEnt?'⬆ entrada':'⬇ saída'}</span>
+    ${evtTag}
     ${quando?`<span style="color:var(--text3)">${quando}</span>`:""}
   </div>`;
 }
@@ -511,8 +516,9 @@ async function enriquecerItem(it){
     const ultArr = await supaFetch(`/rest/v1/producao_eventos?select=*&codigo_peca=eq.${c}${ped}&order=id.desc&limit=1`);
     const ult = (Array.isArray(ultArr)&&ultArr[0]) ? ultArr[0] : null;
     it._prog = ult ? calcProgressoRow(ult) : null;
-    it._sit = ult ? status(ult).s : null;
-    it._ultimaOp = ult ? { processo:String(ult.processo||"").trim(), subop:getSubop(ult), evento:String(ult.evento||"").trim().toUpperCase(), data:ult.data_evento } : null;
+    const stObj = ult ? status(ult) : null;
+    it._sit = stObj ? stObj.s : null;
+    it._ultimaOp = ult ? { processo:String(ult.processo||"").trim(), subop:getSubop(ult), evento:String(ult.evento||"").trim().toUpperCase(), data:ult.data_evento, st:stObj } : null;
     it.quantidade_solicitada = ult ? ult.quantidade_solicitada : null;
     const tipo = await supaFetch(`/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${c}${ped}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`);
     if(Array.isArray(tipo)&&tipo[0]){ it.razao_social=tipo[0].razao_social; it.classificacao_fiscal=tipo[0].classificacao_fiscal; }

@@ -197,13 +197,28 @@ let _resultadosGlobais = [];
 let _filtroAtivo = null; // null | 'total' | 'encontradas' | 'expedidas' | 'nao'
 
 // Extrai códigos de peça da lista colada
-// Padrão: começa com CF, CFA, H, G, MA seguido de números
+// Padrão mais comum: CODIGO_PRODUTO / DESCRICAO / NUMERO_OF (código com prefixo de letra: CF, CFA, H, G, MA, F)
+// Padrão alternativo (ex.: METALAC): Pedido / Linha / Código / Descrição, colado com tabs — Pedido+Linha
+// viram um pedido só, no formato PEDIDO-LINHA já usado no sistema (ex.: 4500598851 + 10 → 4500598851-10)
 function extrairCodigos(texto){
   const linhas = texto.split('\n').filter(l=>l.trim());
   const resultado = [];
   linhas.forEach(linha=>{
+    const linhaTrim = linha.trim();
+    const camposTab = linhaTrim.split('\t').map(t=>t.trim()).filter(t=>t!=="");
+
+    if(camposTab.length>=4 && /^\d+$/.test(camposTab[0]) && /^\d{1,3}$/.test(camposTab[1]) && /^\d+$/.test(camposTab[2])){
+      resultado.push({
+        codigoOriginal: camposTab[2],
+        codigoBusca: camposTab[2],
+        pedidoCliente: camposTab[0]+"-"+camposTab[1],
+        descricaoCliente: camposTab.slice(3).join(" ").trim() || null
+      });
+      return;
+    }
+
     // Extrai código — primeiro token que parece código de peça
-    const tokens = linha.trim().split(/[\s\t]+/);
+    const tokens = linhaTrim.split(/[\s\t]+/);
     const codigo = tokens.find(t=>/^(CF|CFA|H|G|MA|F)\d/i.test(t.trim()));
     if(!codigo) return;
     // Extrai pedido — número no formato OF... ou 4500... ou similar

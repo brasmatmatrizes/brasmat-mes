@@ -414,6 +414,7 @@ function demandaFooter(d){
     return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);font-weight:600;padding:4px 11px;border-radius:6px;background:rgba(240,69,69,0.13);color:var(--danger);border:1px solid rgba(240,69,69,0.35)">📋 Já está na demanda do cliente${pos?` · ${pos}ª`:""}</span>${critBadge}</div>`;
   }
   return `<div class="demanda-incluir-wrap" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap" onclick="event.stopPropagation()">
+    <button onclick="incluirNaDemanda('${esc(cod)}','${esc(ped)}','${esc(d.os||"")}','${esc(cli)}',this)" style="font-size:11px;font-family:var(--sans);font-weight:500;padding:6px 13px;border-radius:6px;background:var(--accent);color:#fff;border:none;cursor:pointer">➕ Incluir na demanda</button>
     <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);font-family:var(--mono)">
       Data desejada
       <input type="date" class="inc-data" style="font-size:11px;font-family:var(--mono);background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 6px">
@@ -422,7 +423,6 @@ function demandaFooter(d){
       <input type="checkbox" class="inc-crit" style="width:14px;height:14px;cursor:pointer;accent-color:#DC2626">
       🔴 Crítico
     </label>
-    <button onclick="incluirNaDemanda('${esc(cod)}','${esc(ped)}','${esc(d.os||"")}','${esc(cli)}',this)" style="font-size:11px;font-family:var(--sans);font-weight:500;padding:6px 13px;border-radius:6px;background:var(--accent);color:#fff;border:none;cursor:pointer">➕ Incluir na demanda</button>
   </div>`;
 }
 async function incluirNaDemanda(cod, ped, os, cli, btn){

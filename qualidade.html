@@ -34,66 +34,89 @@
 /* CONTENT */
 .content{overflow-y:auto;height:calc(100vh - 108px);padding:20px 24px}
 
-.mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.met{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
-.mv{font-size:26px;font-weight:500;font-family:var(--mono);line-height:1;margin-bottom:4px}
-.mv.accent{color:var(--accent)}.mv.ok{color:var(--ok)}.mv.warn{color:var(--warn)}.mv.text{color:var(--text)}
-.ml2{font-size:11px;color:var(--text3)}
-.mv-extra{font-size:10px;color:var(--text3);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
-.mv-delta{font-size:11px;font-family:var(--mono);margin-top:4px}
-.mv-delta.up{color:var(--ok)}.mv-delta.down{color:var(--danger)}.mv-delta.flat{color:var(--text3)}
+/* CABEÇALHO DA PÁGINA */
+.page-hdr{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.page-title{font-size:19px;font-weight:500;color:var(--text);letter-spacing:0.01em}
+.page-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+.preset-row{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:11px;padding:5px 12px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.chip:hover{border-color:var(--border2);color:var(--text)}
+.chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
 
-/* TENDÊNCIA */
-.tend-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:16px}
-.tend-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-.tend-title{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--mono)}
-.tend-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px}
+/* CARDS DE MÉTRICA */
+.mrow{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.met{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px 12px;position:relative;overflow:hidden}
+.met::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--met-cor,var(--border2))}
+.met-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.met-lbl{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);font-family:var(--mono)}
+.met-delta{font-size:10px;font-family:var(--mono);font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.met-delta.up{color:var(--ok);background:rgba(45,191,126,0.12)}
+.met-delta.down{color:var(--danger);background:rgba(240,69,69,0.12)}
+.met-delta.flat{color:var(--text3);background:var(--bg3)}
+.met-val{font-size:30px;font-weight:500;font-family:var(--mono);line-height:1;color:var(--text)}
+.met-spark{margin-top:10px;height:34px}
+.met-spark svg{display:block}
+.met-foot{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:6px}
+
+/* PAINÉIS / GRÁFICOS */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+.panel-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.panel-title{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--mono)}
+.panel-sub{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:3px}
+.panel-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .tgl-row{display:flex;gap:4px}
 .tgl-btn{font-size:10px;padding:4px 10px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
 .tgl-btn:hover{border-color:var(--border2);color:var(--text)}
 .tgl-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
-.tend-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;min-width:22px}
-.tend-bars{display:flex;gap:2px;align-items:flex-end;height:120px}
-.tend-bar{width:10px;border-radius:2px 2px 0 0;transition:height 0.5s;cursor:pointer;position:relative}
-.tend-bar:hover::after{content:attr(data-tip);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:10px;font-family:var(--mono);color:var(--text);white-space:nowrap;z-index:10}
-.tend-lbl{font-size:9px;color:var(--text3);font-family:var(--mono);margin-top:6px;white-space:nowrap}
+.legend{display:flex;gap:12px;align-items:center}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2)}
+.legend-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.chart-box{min-width:0}
+.chart-box-title{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin:6px 0 4px}
+.chart-box-lbl{font-size:11px;color:var(--text2);font-weight:500}
+.chart-box-tot{font-size:12px;font-family:var(--mono);color:var(--text)}
+.chart-svg-wrap{width:100%}
+.chart-svg-wrap svg{display:block;width:100%;height:auto}
+.bar-hit{cursor:pointer}
 
-/* 4 gráficos empilhados — Lotes/Peças × Processo/Final, sem precisar filtrar pra comparar */
-.tend-grid{display:flex;flex-direction:column;gap:0}
-.tend-rowlbl{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);display:flex;align-items:center;gap:8px;margin-top:16px}
-.tend-rowlbl:first-child{margin-top:0}
-.tend-rowlbl::after{content:"";flex:1;height:1px;background:var(--border)}
-.tend-mini{margin-top:14px}
-.tend-mini-title{font-size:11px;color:var(--text2);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:6px}
-.tend-mini-title-lbl{display:flex;align-items:center;gap:6px}
-.tend-mini-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
-.tend-mini-total{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text)}
-.tend-mini-chart{display:flex;align-items:flex-end;gap:4px;height:96px;padding-bottom:20px;border-bottom:1px solid var(--border);overflow-x:auto}
-.tend-mini-chart .tend-col{min-width:14px}
-.tend-mini-chart .tend-bars{height:66px}
-.tend-mini-chart .tend-bar{width:8px}
+/* TOOLTIP compartilhado dos gráficos */
+.tipbox{position:fixed;z-index:9998;pointer-events:none;background:var(--bg4);border:1px solid var(--border2);border-radius:7px;padding:7px 10px;font-size:11px;font-family:var(--mono);color:var(--text);box-shadow:0 6px 18px rgba(0,0,0,0.45);display:none;line-height:1.7;white-space:nowrap}
+.tipbox .tip-title{color:var(--text3);font-size:10px;margin-bottom:2px}
+.tipbox .tip-dot{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:5px}
 
-/* GRÁFICO POR INSPETOR */
-.chart{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px}
-.chart-title{font-size:11px;font-weight:500;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.07em;font-family:var(--mono)}
-.br{display:flex;align-items:center;gap:10px;margin-bottom:6px}
-.br:last-child{margin-bottom:0}
-.br-lbl{font-size:11px;color:var(--text2);width:170px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.br-track{flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden}
-.br-fill{height:100%;border-radius:4px;background:var(--accent)}
-.br-cnt{font-size:11px;font-family:var(--mono);color:var(--text2);width:28px;text-align:right}
+/* POR INSPETOR */
+.insp-stack{margin:8px 0 4px}
+.insp-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.insp-row:last-child{margin-bottom:0}
+.insp-lbl{font-size:12px;color:var(--text);width:180px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:7px}
+.insp-pos{font-size:9px;font-family:var(--mono);color:var(--text3);width:16px;text-align:right;flex-shrink:0}
+.insp-track{flex:1;height:16px;background:var(--bg3);border-radius:5px;overflow:hidden;display:flex}
+.insp-seg{height:100%;transition:width 0.4s}
+.insp-cnt{font-size:11px;font-family:var(--mono);color:var(--text2);width:110px;text-align:right;flex-shrink:0}
 
 /* TABELA */
-.tw{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.thead{display:grid;grid-template-columns:1fr 110px 110px 130px 130px;border-bottom:1px solid var(--border);padding:0 16px}
-.th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);padding:9px 6px}
+.tw{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.thead{display:grid;grid-template-columns:1fr 100px 110px 120px 120px 90px;border-bottom:1px solid var(--border);padding:0 16px;background:var(--bg3)}
+.th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);padding:10px 6px}
 .th.sortable{cursor:pointer;user-select:none}
 .th.sortable:hover{color:var(--text)}
+.th.num,.td.num{justify-content:flex-end;text-align:right}
 .th-arrow{margin-left:4px;font-size:8px}
 .tbody{display:flex;flex-direction:column;max-height:420px;overflow-y:auto}
-.tr{display:grid;grid-template-columns:1fr 110px 110px 130px 130px;padding:0 16px;border-bottom:1px solid var(--border)}
+.tr{display:grid;grid-template-columns:1fr 100px 110px 120px 120px 90px;padding:0 16px;border-bottom:1px solid var(--border)}
+.tr:nth-child(even){background:rgba(255,255,255,0.015)}
 .tr:last-child{border-bottom:none}.tr:hover{background:var(--bg3)}
+.tr.total{background:var(--bg3);border-top:1px solid var(--border2);font-weight:600}
+.tr.total .td{color:var(--text)}
 .td{font-size:12px;color:var(--text2);padding:9px 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+
+@media (max-width:980px){
+  .mrow{grid-template-columns:1fr 1fr}
+  .charts-grid{grid-template-columns:1fr}
+  .insp-lbl{width:120px}
+  .insp-cnt{width:80px}
+}
 
 .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px;color:var(--text3)}
 .empty-ico{font-size:36px;margin-bottom:10px}.empty p{font-size:13px;text-align:center;line-height:1.6}
@@ -153,9 +176,9 @@
 <!-- TOOLBAR -->
 <div class="toolbar">
   <span class="flbl">De</span>
-  <input type="date" class="fdate" id="di">
+  <input type="date" class="fdate" id="di" onchange="limparPresetAtivo()">
   <span class="flbl">até</span>
-  <input type="date" class="fdate" id="df">
+  <input type="date" class="fdate" id="df" onchange="limparPresetAtivo()">
   <div class="sep"></div>
   <span class="flbl">mês inteiro</span>
   <input type="month" class="fdate" id="fmes" onchange="aplicarMes()">
@@ -172,89 +195,104 @@
 
 <!-- CONTENT -->
 <div class="content">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Produtividade da Inspeção</div>
+      <div class="page-sub" id="hdr-sub">—</div>
+    </div>
+    <div class="preset-row" id="preset-row">
+      <button class="chip" data-pr="hoje" onclick="preset('hoje')">Hoje</button>
+      <button class="chip" data-pr="7d" onclick="preset('7d')">Últimos 7 dias</button>
+      <button class="chip active" data-pr="mes" onclick="preset('mes')">Este mês</button>
+      <button class="chip" data-pr="mespassado" onclick="preset('mespassado')">Mês passado</button>
+    </div>
+  </div>
+
   <div class="mrow">
-    <div class="met">
-      <div class="mv text" id="m1">—</div><div class="ml2">lotes inspecionados</div>
-      <div class="mv-extra" id="m1-media"></div>
-      <div class="mv-delta" id="m1-delta"></div>
+    <div class="met" style="--met-cor:var(--text3)">
+      <div class="met-top"><span class="met-lbl">Lotes inspecionados</span><span class="met-delta" id="m1-delta"></span></div>
+      <div class="met-val" id="m1">—</div>
+      <div class="met-spark" id="m1-spark"></div>
+      <div class="met-foot" id="m1-media"></div>
     </div>
-    <div class="met">
-      <div class="mv text" id="m2">—</div><div class="ml2">peças inspecionadas</div>
-      <div class="mv-extra" id="m2-media"></div>
-      <div class="mv-delta" id="m2-delta"></div>
+    <div class="met" style="--met-cor:var(--text3)">
+      <div class="met-top"><span class="met-lbl">Peças inspecionadas</span><span class="met-delta" id="m2-delta"></span></div>
+      <div class="met-val" id="m2">—</div>
+      <div class="met-spark" id="m2-spark"></div>
+      <div class="met-foot" id="m2-media"></div>
     </div>
-    <div class="met">
-      <div class="mv accent" id="m3">—</div><div class="ml2">lotes · insp. de processo (10.1)</div>
-      <div class="mv-delta" id="m3-delta"></div>
+    <div class="met" style="--met-cor:var(--accent)">
+      <div class="met-top"><span class="met-lbl">Lotes · processo (10.1)</span><span class="met-delta" id="m3-delta"></span></div>
+      <div class="met-val" id="m3" style="color:var(--accent)">—</div>
+      <div class="met-spark" id="m3-spark"></div>
+      <div class="met-foot" id="m3-media"></div>
     </div>
-    <div class="met">
-      <div class="mv ok" id="m4">—</div><div class="ml2">lotes · insp. final (10.2)</div>
-      <div class="mv-delta" id="m4-delta"></div>
+    <div class="met" style="--met-cor:var(--ok)">
+      <div class="met-top"><span class="met-lbl">Lotes · final (10.2)</span><span class="met-delta" id="m4-delta"></span></div>
+      <div class="met-val" id="m4" style="color:var(--ok)">—</div>
+      <div class="met-spark" id="m4-spark"></div>
+      <div class="met-foot" id="m4-media"></div>
     </div>
   </div>
 
-  <div class="tend-section">
-    <div class="tend-hdr">
+  <div class="panel">
+    <div class="panel-hdr">
       <div>
-        <div class="tend-title">tendência de inspeções</div>
-        <div class="tend-sub" id="tend-sub"></div>
+        <div class="panel-title">Tendência de inspeções</div>
+        <div class="panel-sub" id="tend-sub"></div>
       </div>
-      <div class="tgl-row" id="tgl-periodo">
-        <button class="tgl-btn active" data-p="dia" onclick="setPeriodo('dia')">Dia</button>
-        <button class="tgl-btn" data-p="semana" onclick="setPeriodo('semana')">Semana</button>
-        <button class="tgl-btn" data-p="mes" onclick="setPeriodo('mes')">Mês</button>
+      <div class="panel-actions">
+        <div class="legend">
+          <span class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span>Processo (10.1)</span>
+          <span class="legend-item"><span class="legend-dot" style="background:var(--ok)"></span>Final (10.2)</span>
+        </div>
+        <div class="tgl-row" id="tgl-periodo">
+          <button class="tgl-btn active" data-p="dia" onclick="setPeriodo('dia')">Dia</button>
+          <button class="tgl-btn" data-p="semana" onclick="setPeriodo('semana')">Semana</button>
+          <button class="tgl-btn" data-p="mes" onclick="setPeriodo('mes')">Mês</button>
+        </div>
       </div>
     </div>
-    <div class="tend-grid">
-      <div class="tend-rowlbl">Peças</div>
-      <div class="tend-mini">
-        <div class="tend-mini-title">
-          <span class="tend-mini-title-lbl"><span class="tend-mini-dot" style="background:var(--accent)"></span>Inspeção de processo (10.1)</span>
-          <span class="tend-mini-total" id="tot-pecas-proc">—</span>
-        </div>
-        <div class="tend-mini-chart" id="tc-pecas-proc"></div>
+    <div class="charts-grid">
+      <div class="chart-box">
+        <div class="chart-box-title"><span class="chart-box-lbl">Lotes</span><span class="chart-box-tot" id="tot-lotes">—</span></div>
+        <div class="chart-svg-wrap" id="ch-lotes"></div>
       </div>
-      <div class="tend-mini">
-        <div class="tend-mini-title">
-          <span class="tend-mini-title-lbl"><span class="tend-mini-dot" style="background:var(--ok)"></span>Inspeção final (10.2)</span>
-          <span class="tend-mini-total" id="tot-pecas-final">—</span>
-        </div>
-        <div class="tend-mini-chart" id="tc-pecas-final"></div>
-      </div>
-      <div class="tend-rowlbl">Lotes</div>
-      <div class="tend-mini">
-        <div class="tend-mini-title">
-          <span class="tend-mini-title-lbl"><span class="tend-mini-dot" style="background:var(--accent)"></span>Inspeção de processo (10.1)</span>
-          <span class="tend-mini-total" id="tot-lotes-proc">—</span>
-        </div>
-        <div class="tend-mini-chart" id="tc-lotes-proc"></div>
-      </div>
-      <div class="tend-mini">
-        <div class="tend-mini-title">
-          <span class="tend-mini-title-lbl"><span class="tend-mini-dot" style="background:var(--ok)"></span>Inspeção final (10.2)</span>
-          <span class="tend-mini-total" id="tot-lotes-final">—</span>
-        </div>
-        <div class="tend-mini-chart" id="tc-lotes-final"></div>
+      <div class="chart-box">
+        <div class="chart-box-title"><span class="chart-box-lbl">Peças</span><span class="chart-box-tot" id="tot-pecas">—</span></div>
+        <div class="chart-svg-wrap" id="ch-pecas"></div>
       </div>
     </div>
   </div>
 
-  <div class="chart">
-    <div class="chart-title">lotes inspecionados por inspetor</div>
-    <div id="chart-insp"></div>
+  <div class="panel">
+    <div class="panel-hdr">
+      <div>
+        <div class="panel-title">Lotes por inspetor</div>
+        <div class="panel-sub">barra dividida por tipo de inspeção — passe o mouse para detalhe</div>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span>Processo (10.1)</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--ok)"></span>Final (10.2)</span>
+      </div>
+    </div>
+    <div class="insp-stack" id="chart-insp"></div>
   </div>
 
   <div class="tw">
     <div class="thead">
       <div class="th sortable" onclick="setSortInsp('nome')">Inspetor<span class="th-arrow" id="arr-nome"></span></div>
-      <div class="th sortable" onclick="setSortInsp('lotes')">Lotes total<span class="th-arrow" id="arr-lotes"></span></div>
-      <div class="th sortable" onclick="setSortInsp('pecas')">Peças total<span class="th-arrow" id="arr-pecas"></span></div>
-      <div class="th sortable" onclick="setSortInsp('lotesProc')">Lotes processo<span class="th-arrow" id="arr-lotesProc"></span></div>
-      <div class="th sortable" onclick="setSortInsp('lotesFinal')">Lotes final<span class="th-arrow" id="arr-lotesFinal"></span></div>
+      <div class="th sortable num" onclick="setSortInsp('lotes')">Lotes<span class="th-arrow" id="arr-lotes"></span></div>
+      <div class="th sortable num" onclick="setSortInsp('pecas')">Peças<span class="th-arrow" id="arr-pecas"></span></div>
+      <div class="th sortable num" onclick="setSortInsp('lotesProc')">Lotes proc.<span class="th-arrow" id="arr-lotesProc"></span></div>
+      <div class="th sortable num" onclick="setSortInsp('lotesFinal')">Lotes final<span class="th-arrow" id="arr-lotesFinal"></span></div>
+      <div class="th num">% lotes</div>
     </div>
     <div class="tbody" id="tbody-insp"><div class="loading"><div class="spinner"></div>carregando...</div></div>
   </div>
 </div>
+
+<div class="tipbox" id="tipbox"></div>
 
 </div>
 
@@ -281,6 +319,7 @@ function aplicarMes(){
   const fim = new Date(ano, mes, 0); // dia 0 do mês seguinte = último dia deste mês
   document.getElementById("di").value = fmtD(ini);
   document.getElementById("df").value = fmtD(fim);
+  limparPresetAtivo();
   init();
 }
 
@@ -378,13 +417,127 @@ function diasComEvento(lista){
   return new Set(lista.filter(r=>r.data_evento).map(r=>new Date(r.data_evento).toISOString().slice(0,10))).size;
 }
 
-// Variação % vs. período anterior — usado nos cards
+// Variação % vs. período anterior — usado nos cards (pill compacta)
 function calcDelta(atual, anterior){
-  if(anterior===0) return atual>0 ? {txt:"novo no período", cls:"up"} : {txt:"sem dado no período anterior", cls:"flat"};
+  if(anterior===0) return atual>0 ? {txt:"novo", cls:"up"} : {txt:"—", cls:"flat"};
   const pct = Math.round((atual-anterior)/anterior*100);
-  if(pct>0) return {txt:`↑ ${pct}% vs. período anterior`, cls:"up"};
-  if(pct<0) return {txt:`↓ ${Math.abs(pct)}% vs. período anterior`, cls:"down"};
-  return {txt:"= período anterior", cls:"flat"};
+  if(pct>0) return {txt:`↑ ${pct}%`, cls:"up"};
+  if(pct<0) return {txt:`↓ ${Math.abs(pct)}%`, cls:"down"};
+  return {txt:"=", cls:"flat"};
+}
+
+function fmtNum(v){ return Math.round(v).toLocaleString("pt-BR"); }
+
+// Presets rápidos de período
+function preset(p){
+  const h = new Date();
+  let di, df;
+  if(p==="hoje"){ di = df = h; }
+  else if(p==="7d"){ df = h; di = new Date(h); di.setDate(di.getDate()-6); }
+  else if(p==="mes"){ di = new Date(h.getFullYear(), h.getMonth(), 1); df = h; }
+  else { di = new Date(h.getFullYear(), h.getMonth()-1, 1); df = new Date(h.getFullYear(), h.getMonth(), 0); }
+  document.getElementById("di").value = fmtD(di);
+  document.getElementById("df").value = fmtD(df);
+  document.getElementById("fmes").value = "";
+  document.querySelectorAll("#preset-row .chip").forEach(b=>b.classList.toggle("active", b.dataset.pr===p));
+  init();
+}
+function limparPresetAtivo(){
+  document.querySelectorAll("#preset-row .chip").forEach(b=>b.classList.remove("active"));
+}
+
+// ---- Tooltip compartilhado dos gráficos ----
+function tipShow(html, ev){
+  const t = document.getElementById("tipbox");
+  t.innerHTML = html;
+  t.style.display = "block";
+  tipMove(ev);
+}
+function tipMove(ev){
+  const t = document.getElementById("tipbox");
+  const pad = 14;
+  let x = ev.clientX + pad, y = ev.clientY + pad;
+  const r = t.getBoundingClientRect();
+  if(x + r.width > window.innerWidth - 8)  x = ev.clientX - r.width - pad;
+  if(y + r.height > window.innerHeight - 8) y = ev.clientY - r.height - pad;
+  t.style.left = x + "px"; t.style.top = y + "px";
+}
+function tipHide(){ document.getElementById("tipbox").style.display = "none"; }
+
+// ---- Sparkline dos cards (área + linha, SVG) ----
+function sparkline(valores, cor){
+  const W = 260, H = 34, n = valores.length;
+  if(n < 2 || valores.every(v=>v===0)) return "";
+  const max = Math.max(...valores, 1);
+  const pts = valores.map((v,i)=>[ (i/(n-1))*(W-2)+1, H-2-(v/max)*(H-6) ]);
+  const linha = pts.map(p=>p[0].toFixed(1)+","+p[1].toFixed(1)).join(" ");
+  const area = `1,${H-1} ${linha} ${W-1},${H-1}`;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:34px">
+    <polygon points="${area}" fill="${cor}" opacity="0.12"/>
+    <polyline points="${linha}" fill="none" stroke="${cor}" stroke-width="1.5" stroke-linejoin="round"/>
+    <circle cx="${pts[n-1][0].toFixed(1)}" cy="${pts[n-1][1].toFixed(1)}" r="2.2" fill="${cor}"/>
+  </svg>`;
+}
+
+// ---- Escala "bonita" p/ eixo Y ----
+function niceMax(v){
+  if(v<=5) return 5;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  for(const m of [1,2,2.5,5,10]){ if(v <= m*mag) return m*mag; }
+  return 10*mag;
+}
+
+// ---- Gráfico de barras agrupadas (SVG): 2 séries (processo/final) com grade, eixo e tooltip ----
+function svgGroupedBars(elId, keys, series, unid){
+  const el = document.getElementById(elId);
+  const W = Math.max(el.clientWidth || 560, 320), H = 200;
+  const padL = 42, padR = 6, padT = 10, padB = 26;
+  const iw = W-padL-padR, ih = H-padT-padB;
+  const maxRaw = Math.max(1, ...series.flatMap(s=>s.valores));
+  const maxV = niceMax(maxRaw);
+  const nTicks = Number.isInteger(maxV/4) ? 4 : 5; // divisões inteiras no eixo Y
+  const n = keys.length;
+  const grpW = iw/n;
+  const barW = Math.max(2, Math.min(16, (grpW*0.66)/series.length));
+  const step = Math.max(1, Math.ceil(n/9)); // rótulos do eixo X sem colar
+
+  let g = "";
+  // grade + eixo Y
+  for(let t=0; t<=nTicks; t++){
+    const v = maxV*t/nTicks;
+    const y = padT + ih - (v/maxV)*ih;
+    g += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1" ${t===0?'':'stroke-dasharray="3,4"'} opacity="${t===0?1:0.6}"/>`;
+    g += `<text x="${padL-7}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--text3)" font-family="var(--mono)">${fmtNum(v)}</text>`;
+  }
+  // barras + rótulos X
+  keys.forEach((k,i)=>{
+    const cx = padL + grpW*i + grpW/2;
+    const x0 = cx - (barW*series.length)/2;
+    series.forEach((s,si)=>{
+      const v = s.valores[i];
+      const h = (v/maxV)*ih;
+      const x = x0 + si*barW;
+      const y = padT + ih - h;
+      g += `<rect class="bar-hit" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(barW-1).toFixed(1)}" height="${Math.max(h,v>0?1.5:0).toFixed(1)}" rx="1.5" fill="${s.cor}" data-i="${i}"/>`;
+    });
+    // área invisível p/ hover do grupo inteiro (pega tooltip mesmo com barra pequena)
+    g += `<rect class="bar-hit" x="${(padL+grpW*i).toFixed(1)}" y="${padT}" width="${grpW.toFixed(1)}" height="${ih}" fill="transparent" data-i="${i}"/>`;
+    if(i%step===0 || i===n-1){
+      g += `<text x="${cx.toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="9" fill="var(--text3)" font-family="var(--mono)">${bucketLabel(k,periodoTend)}</text>`;
+    }
+  });
+
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">${g}</svg>`;
+
+  // tooltip por grupo (mostra as duas séries)
+  el.querySelectorAll(".bar-hit").forEach(r=>{
+    const i = parseInt(r.dataset.i);
+    const html = `<div class="tip-title">${bucketLabel(keys[i],periodoTend)}</div>` +
+      series.map(s=>`<div><span class="tip-dot" style="background:${s.cor}"></span>${s.nome}: <b>${fmtNum(s.valores[i])}</b> ${unid}</div>`).join("");
+    r.addEventListener("mouseenter", ev=>tipShow(html, ev));
+    r.addEventListener("mousemove", tipMove);
+    r.addEventListener("mouseleave", tipHide);
+  });
 }
 
 function setPeriodo(p){
@@ -396,32 +549,62 @@ function setPeriodo(p){
 function render(){
   const reg = dadosFiltrados();
   const regAnt = filtrarLista(TODOS_ANT);
+  const di = document.getElementById("di").value;
+  const df = document.getElementById("df").value;
+
+  // Subtítulo do cabeçalho: período + filtros ativos
+  const fmtBR = s=>new Date(s+"T00:00:00").toLocaleDateString("pt-BR");
+  const tipo = document.getElementById("ftipo").value;
+  const op = document.getElementById("fop").value;
+  const filtros = [tipo?`só ${tipo==="processo"?"insp. de processo":"insp. final"}`:"", op?`inspetor: ${op}`:""].filter(Boolean).join(" · ");
+  document.getElementById("hdr-sub").textContent =
+    `${fmtBR(di)} a ${fmtBR(df)} · comparado com o período anterior de mesmo tamanho${filtros?" · "+filtros:""}`;
 
   // MÉTRICAS
   const lotes = reg.length;
   const pecas = reg.reduce((s,r)=>s+(parseFloat(r.quantidade_produzida)||0),0);
-  const lotesProc = reg.filter(r=>tipoInsp(r)==="processo").length;
-  const lotesFinal = reg.filter(r=>tipoInsp(r)==="final").length;
-  document.getElementById("m1").textContent = lotes;
-  document.getElementById("m2").textContent = pecas;
-  document.getElementById("m3").textContent = lotesProc;
-  document.getElementById("m4").textContent = lotesFinal;
+  const proc = reg.filter(r=>tipoInsp(r)==="processo");
+  const fin  = reg.filter(r=>tipoInsp(r)==="final");
+  document.getElementById("m1").textContent = fmtNum(lotes);
+  document.getElementById("m2").textContent = fmtNum(pecas);
+  document.getElementById("m3").textContent = fmtNum(proc.length);
+  document.getElementById("m4").textContent = fmtNum(fin.length);
 
   // MÉDIA POR DIA COM ATIVIDADE
   const dias = diasComEvento(reg);
-  document.getElementById("m1-media").textContent = dias>0 ? `média de ${(lotes/dias).toFixed(1)} lote(s)/dia útil` : "";
-  document.getElementById("m2-media").textContent = dias>0 ? `média de ${(pecas/dias).toFixed(1)} peça(s)/dia útil` : "";
+  document.getElementById("m1-media").textContent = dias>0 ? `média ${(lotes/dias).toFixed(1)}/dia com atividade` : "sem atividade no período";
+  document.getElementById("m2-media").textContent = dias>0 ? `média ${(pecas/dias).toFixed(1)}/dia com atividade` : "";
+  document.getElementById("m3-media").textContent = lotes>0 ? `${Math.round(proc.length/lotes*100)}% dos lotes` : "";
+  document.getElementById("m4-media").textContent = lotes>0 ? `${Math.round(fin.length/lotes*100)}% dos lotes` : "";
+
+  // SPARKLINES (evolução diária de cada métrica dentro do período)
+  const diasKeys = todosOsBuckets(di, df, "dia").slice(-62);
+  const porDia = {};
+  reg.forEach(r=>{
+    if(!r.data_evento) return;
+    const k = new Date(r.data_evento).toISOString().slice(0,10);
+    if(!porDia[k]) porDia[k] = {lotes:0, pecas:0, proc:0, fin:0};
+    porDia[k].lotes++;
+    porDia[k].pecas += parseFloat(r.quantidade_produzida)||0;
+    const t = tipoInsp(r);
+    if(t==="processo") porDia[k].proc++; else if(t==="final") porDia[k].fin++;
+  });
+  const serie = campo=>diasKeys.map(k=>porDia[k]?porDia[k][campo]:0);
+  document.getElementById("m1-spark").innerHTML = sparkline(serie("lotes"), "var(--text3)");
+  document.getElementById("m2-spark").innerHTML = sparkline(serie("pecas"), "var(--text3)");
+  document.getElementById("m3-spark").innerHTML = sparkline(serie("proc"),  "var(--accent)");
+  document.getElementById("m4-spark").innerHTML = sparkline(serie("fin"),   "var(--ok)");
 
   // COMPARAÇÃO COM PERÍODO ANTERIOR (mesmo tamanho de intervalo)
-  const lotesAnt = regAnt.length;
   const pecasAnt = regAnt.reduce((s,r)=>s+(parseFloat(r.quantidade_produzida)||0),0);
-  const lotesProcAnt = regAnt.filter(r=>tipoInsp(r)==="processo").length;
-  const lotesFinalAnt = regAnt.filter(r=>tipoInsp(r)==="final").length;
-  [["m1",lotes,lotesAnt],["m2",pecas,pecasAnt],["m3",lotesProc,lotesProcAnt],["m4",lotesFinal,lotesFinalAnt]].forEach(([id,atual,anterior])=>{
+  [["m1",lotes,regAnt.length],["m2",pecas,pecasAnt],
+   ["m3",proc.length,regAnt.filter(r=>tipoInsp(r)==="processo").length],
+   ["m4",fin.length,regAnt.filter(r=>tipoInsp(r)==="final").length]].forEach(([id,atual,anterior])=>{
     const d = calcDelta(atual,anterior);
     const el = document.getElementById(id+"-delta");
     el.textContent = d.txt;
-    el.className = "mv-delta "+d.cls;
+    el.title = `vs. período anterior (${fmtNum(anterior)})`;
+    el.className = "met-delta "+d.cls;
   });
 
   renderTendencia(dadosParaTendencia());
@@ -470,26 +653,11 @@ function todosOsBuckets(di, df, period){
   return keys;
 }
 
-// Desenha um dos 4 mini-gráficos (lotes/peças × processo/final) num container
-function renderMiniChart(elId, keys, buckets, campo, cor, unid){
-  const maxVal = Math.max(1, ...keys.map(k=>buckets[k] ? buckets[k][campo] : 0));
-  const step = Math.max(1, Math.ceil(keys.length/10)); // evita rótulo colado quando tem muita coluna
-  const colunas = keys.map((k,i)=>{
-    const v = buckets[k] ? buckets[k][campo] : 0;
-    const h = Math.round(v/maxVal*66);
-    const mostraLbl = i%step===0 || i===keys.length-1;
-    return `<div class="tend-col">
-      <div class="tend-bars"><div class="tend-bar" style="height:${h}px;background:${cor}" data-tip="${bucketLabel(k,periodoTend)}: ${v} ${unid}"></div></div>
-      <div class="tend-lbl">${mostraLbl?bucketLabel(k,periodoTend):""}</div>
-    </div>`;
-  }).join("");
-  document.getElementById(elId).innerHTML = colunas;
-}
-
 function renderTendencia(reg){
   const di = document.getElementById("di").value;
   const df = document.getElementById("df").value;
-  document.getElementById("tend-sub").textContent = `agrupando ${di} a ${df}`;
+  const fmtBR = s=>new Date(s+"T00:00:00").toLocaleDateString("pt-BR");
+  document.getElementById("tend-sub").textContent = `${fmtBR(di)} a ${fmtBR(df)} · agrupado por ${periodoTend==="dia"?"dia":periodoTend==="semana"?"semana":"mês"}`;
 
   const buckets = {};
   reg.forEach(r=>{
@@ -505,7 +673,7 @@ function renderTendencia(reg){
 
   let keys = todosOsBuckets(di, df, periodoTend);
   if(!keys.length){
-    ["tc-lotes-proc","tc-lotes-final","tc-pecas-proc","tc-pecas-final"].forEach(id=>{
+    ["ch-lotes","ch-pecas"].forEach(id=>{
       document.getElementById(id).innerHTML = `<div style="padding:10px 0;color:var(--text3);font-size:12px">Período inválido.</div>`;
     });
     return;
@@ -515,15 +683,20 @@ function renderTendencia(reg){
   // Totais do período inteiro (independente do corte de colunas exibidas)
   const porProc = reg.filter(r=>tipoInsp(r)==="processo");
   const porFinal = reg.filter(r=>tipoInsp(r)==="final");
-  document.getElementById("tot-lotes-proc").textContent  = `${porProc.length} lote(s)`;
-  document.getElementById("tot-lotes-final").textContent = `${porFinal.length} lote(s)`;
-  document.getElementById("tot-pecas-proc").textContent  = `${porProc.reduce((s,r)=>s+(parseFloat(r.quantidade_produzida)||0),0)} pç`;
-  document.getElementById("tot-pecas-final").textContent = `${porFinal.reduce((s,r)=>s+(parseFloat(r.quantidade_produzida)||0),0)} pç`;
+  const pecasProcTot = porProc.reduce((s,r)=>s+(parseFloat(r.quantidade_produzida)||0),0);
+  const pecasFinalTot = porFinal.reduce((s,r)=>s+(parseFloat(r.quantidade_produzida)||0),0);
+  document.getElementById("tot-lotes").textContent = `${fmtNum(porProc.length+porFinal.length)} no período`;
+  document.getElementById("tot-pecas").textContent = `${fmtNum(pecasProcTot+pecasFinalTot)} no período`;
 
-  renderMiniChart("tc-pecas-proc",  keys, buckets, "pecasProc",  "var(--accent)", "pç");
-  renderMiniChart("tc-pecas-final", keys, buckets, "pecasFinal", "var(--ok)",     "pç");
-  renderMiniChart("tc-lotes-proc",  keys, buckets, "lotesProc",  "var(--accent)", "lote(s)");
-  renderMiniChart("tc-lotes-final", keys, buckets, "lotesFinal", "var(--ok)",     "lote(s)");
+  const val = campo=>keys.map(k=>buckets[k]?buckets[k][campo]:0);
+  svgGroupedBars("ch-lotes", keys, [
+    {nome:"Processo", cor:"var(--accent)", valores:val("lotesProc")},
+    {nome:"Final",    cor:"var(--ok)",     valores:val("lotesFinal")}
+  ], "lote(s)");
+  svgGroupedBars("ch-pecas", keys, [
+    {nome:"Processo", cor:"var(--accent)", valores:val("pecasProc")},
+    {nome:"Final",    cor:"var(--ok)",     valores:val("pecasFinal")}
+  ], "pç");
 }
 
 function setSortInsp(campo){
@@ -561,23 +734,67 @@ function renderPorInspetor(reg){
     return;
   }
 
-  // gráfico "por inspetor" sempre por volume de lotes, independente da ordenação da tabela
+  const totLotes = lista.reduce((s,i)=>s+i.lotes,0);
+  const totPecas = lista.reduce((s,i)=>s+i.pecas,0);
+  const totProc  = lista.reduce((s,i)=>s+i.lotesProc,0);
+  const totFinal = lista.reduce((s,i)=>s+i.lotesFinal,0);
+
+  // gráfico "por inspetor" sempre por volume de lotes, com barra dividida processo/final
   const porLotes = [...lista].sort((a,b)=>b.lotes-a.lotes);
   const maxLotes = porLotes[0].lotes;
-  document.getElementById("chart-insp").innerHTML = porLotes.map(i=>
-    `<div class="br"><span class="br-lbl" title="${i.nome}">${i.nome}</span><div class="br-track"><div class="br-fill" style="width:${Math.round(i.lotes/maxLotes*100)}%"></div></div><span class="br-cnt">${i.lotes}</span></div>`
-  ).join("");
+  document.getElementById("chart-insp").innerHTML = porLotes.map((i,idx)=>{
+    const wProc  = Math.round(i.lotesProc/maxLotes*100);
+    const wFinal = Math.round(i.lotesFinal/maxLotes*100);
+    const wOutro = Math.max(0, Math.round(i.lotes/maxLotes*100) - wProc - wFinal);
+    return `<div class="insp-row" data-idx="${idx}">
+      <span class="insp-pos">${idx+1}º</span>
+      <span class="insp-lbl" title="${i.nome}">${i.nome}</span>
+      <div class="insp-track">
+        <div class="insp-seg" style="width:${wProc}%;background:var(--accent)"></div>
+        <div class="insp-seg" style="width:${wFinal}%;background:var(--ok)"></div>
+        <div class="insp-seg" style="width:${wOutro}%;background:var(--border2)"></div>
+      </div>
+      <span class="insp-cnt">${fmtNum(i.lotes)} · ${totLotes?Math.round(i.lotes/totLotes*100):0}%</span>
+    </div>`;
+  }).join("");
+  // tooltip com o detalhe de cada inspetor
+  document.querySelectorAll("#chart-insp .insp-row").forEach(row=>{
+    const i = porLotes[parseInt(row.dataset.idx)];
+    const html = `<div class="tip-title">${i.nome}</div>
+      <div><span class="tip-dot" style="background:var(--accent)"></span>Processo: <b>${fmtNum(i.lotesProc)}</b> lote(s)</div>
+      <div><span class="tip-dot" style="background:var(--ok)"></span>Final: <b>${fmtNum(i.lotesFinal)}</b> lote(s)</div>
+      <div>Peças: <b>${fmtNum(i.pecas)}</b></div>`;
+    row.addEventListener("mouseenter", ev=>tipShow(html, ev));
+    row.addEventListener("mousemove", tipMove);
+    row.addEventListener("mouseleave", tipHide);
+  });
 
   document.getElementById("tbody-insp").innerHTML = lista.map(i=>
     `<div class="tr">
       <div class="td" style="color:var(--text)">${i.nome}</div>
-      <div class="td" style="font-family:var(--mono)">${i.lotes}</div>
-      <div class="td" style="font-family:var(--mono)">${i.pecas}</div>
-      <div class="td" style="font-family:var(--mono)">${i.lotesProc}</div>
-      <div class="td" style="font-family:var(--mono)">${i.lotesFinal}</div>
+      <div class="td num" style="font-family:var(--mono)">${fmtNum(i.lotes)}</div>
+      <div class="td num" style="font-family:var(--mono)">${fmtNum(i.pecas)}</div>
+      <div class="td num" style="font-family:var(--mono)">${fmtNum(i.lotesProc)}</div>
+      <div class="td num" style="font-family:var(--mono)">${fmtNum(i.lotesFinal)}</div>
+      <div class="td num" style="font-family:var(--mono)">${totLotes?Math.round(i.lotes/totLotes*100):0}%</div>
     </div>`
-  ).join("");
+  ).join("") +
+  `<div class="tr total">
+      <div class="td">Total (${lista.length} inspetor${lista.length>1?"es":""})</div>
+      <div class="td num" style="font-family:var(--mono)">${fmtNum(totLotes)}</div>
+      <div class="td num" style="font-family:var(--mono)">${fmtNum(totPecas)}</div>
+      <div class="td num" style="font-family:var(--mono)">${fmtNum(totProc)}</div>
+      <div class="td num" style="font-family:var(--mono)">${fmtNum(totFinal)}</div>
+      <div class="td num" style="font-family:var(--mono)">100%</div>
+    </div>`;
 }
+
+// Redesenha os gráficos SVG quando a janela muda de tamanho (largura é medida do container)
+let _rsTimer = null;
+window.addEventListener("resize", ()=>{
+  clearTimeout(_rsTimer);
+  _rsTimer = setTimeout(()=>{ if(TODOS.length) renderTendencia(dadosParaTendencia()); }, 250);
+});
 
 function limpar(){
   document.getElementById("di").value = fmtD(iniMes);
@@ -585,6 +802,7 @@ function limpar(){
   document.getElementById("fmes").value = "";
   document.getElementById("ftipo").value = "";
   document.getElementById("fop").value = "";
+  document.querySelectorAll("#preset-row .chip").forEach(b=>b.classList.toggle("active", b.dataset.pr==="mes"));
   init();
 }
 

@@ -413,19 +413,33 @@ function demandaFooter(d){
     const pos = posicaoDemanda(cod, ped);
     return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);font-weight:600;padding:4px 11px;border-radius:6px;background:rgba(240,69,69,0.13);color:var(--danger);border:1px solid rgba(240,69,69,0.35)">📋 Já está na demanda do cliente${pos?` · ${pos}ª`:""}</span>${critBadge}</div>`;
   }
-  return `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><button onclick="event.stopPropagation();incluirNaDemanda('${esc(cod)}','${esc(ped)}','${esc(d.os||"")}','${esc(cli)}',this)" style="font-size:11px;font-family:var(--sans);font-weight:500;padding:6px 13px;border-radius:6px;background:var(--accent);color:#fff;border:none;cursor:pointer">➕ Incluir na demanda</button></div>`;
+  return `<div class="demanda-incluir-wrap" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap" onclick="event.stopPropagation()">
+    <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);font-family:var(--mono)">
+      Data desejada
+      <input type="date" class="inc-data" style="font-size:11px;font-family:var(--mono);background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 6px">
+    </label>
+    <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);cursor:pointer">
+      <input type="checkbox" class="inc-crit" style="width:14px;height:14px;cursor:pointer;accent-color:#DC2626">
+      🔴 Crítico
+    </label>
+    <button onclick="incluirNaDemanda('${esc(cod)}','${esc(ped)}','${esc(d.os||"")}','${esc(cli)}',this)" style="font-size:11px;font-family:var(--sans);font-weight:500;padding:6px 13px;border-radius:6px;background:var(--accent);color:#fff;border:none;cursor:pointer">➕ Incluir na demanda</button>
+  </div>`;
 }
 async function incluirNaDemanda(cod, ped, os, cli, btn){
   if(!cli){ flash("Peça sem cliente definido"); return; }
+  const wrap = btn.closest(".demanda-incluir-wrap") || btn.parentElement;
+  const dataDesejada = wrap.querySelector(".inc-data")?.value || null;
+  const critico = !!wrap.querySelector(".inc-crit")?.checked;
   btn.disabled=true; btn.textContent="incluindo…";
   try{
     const r = await fetch(`${SUPA_URL}/rest/v1/demanda_itens`, {
       method:"POST", headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer:"return=minimal" },
-      body:JSON.stringify({ cliente:cli, codigo_peca:cod, pedido:ped||null, os:os||null })
+      body:JSON.stringify({ cliente:cli, codigo_peca:cod, pedido:ped||null, os:os||null, data_desejada:dataDesejada, critico })
     });
     if(!r.ok) throw new Error();
     const c=cod.toUpperCase(); if(ped) _DEMANDA.add(c+"|"+ped); else _DEMANDA_COD.add(c);
-    btn.outerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);font-weight:600;padding:4px 11px;border-radius:6px;background:rgba(45,191,126,0.15);color:var(--ok);border:1px solid rgba(45,191,126,0.4)">✓ Incluído na demanda</span>`;
+    if(critico){ if(ped) _CRITICO.add(c+"|"+ped); else _CRITICO_COD.add(c); }
+    wrap.outerHTML = `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;font-family:var(--mono);font-weight:600;padding:4px 11px;border-radius:6px;background:rgba(45,191,126,0.15);color:var(--ok);border:1px solid rgba(45,191,126,0.4)">✓ Incluído na demanda</span></div>`;
   }catch(e){ btn.disabled=false; btn.textContent="➕ Incluir na demanda"; flash("Erro ao incluir"); }
 }
 function flash(txt){

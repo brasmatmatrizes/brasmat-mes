@@ -31,8 +31,15 @@ não só servir de documento impresso.
 
 ## 3. Fluxo proposto
 
-- Tela nova (ex. `roteiros.html`) para cadastrar o roteiro de uma peça+pedido:
-  - Cabeçalho: busca por pedido+código (igual às outras telas), Qtd, OS já vêm do sistema.
+- Tela nova (`engenharia.html`) para cadastrar o roteiro de uma peça+pedido, com **dois
+  jeitos de cadastro**:
+  - **Peça existente**: busca por pedido/código/OS (igual às outras telas) — Qtd e OS já
+    vêm do sistema (posição atual).
+  - **Peça nova**: quando a busca não encontra nada, oferece cadastrar o roteiro mesmo
+    assim, digitando código, pedido, OS e quantidade na mão — para o gestor de produção
+    poder desenhar o roteiro **antes** da peça passar pelo Forms (planejamento adiantado).
+    Fica marcada como "peça nova" na lista até que o Forms alimente o sistema de verdade.
+  - Cabeçalho da peça existente já vem preenchido do sistema.
   - Paleta de operações do catálogo, visível ao lado, com clique (equivalente ao duplo-clique
     do Excel) adicionando a operação na próxima linha da sequência — sem digitar.
   - Cada linha: sequência (automática), subcomponente (escolhido de uma lista), código +

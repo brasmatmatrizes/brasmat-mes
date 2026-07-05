@@ -406,12 +406,14 @@ function renderRoteiros(){
   }
   el.innerHTML = '<div class="rot-grid">' + ROTS.map(r=>{
     const n = (r.roteiro_itens && r.roteiro_itens[0] && r.roteiro_itens[0].count) || 0;
+    const existeNoSistema = POS.some(p=>String(p.codigo_peca||"").trim()===r.codigo_peca && String(p.pedido||"").trim()===r.pedido);
     return `<div class="rot-card" onclick="abrirRoteiro(${r.id})">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
         <div class="rot-cod">${escHtml(r.codigo_peca)}</div>
         <span class="rot-cnt">${n} op.</span>
       </div>
-      <div class="rot-meta">Pedido: ${escHtml(r.pedido)}${r.os?" · OS: "+escHtml(r.os):""}</div>
+      <div class="rot-meta">Pedido: ${r.pedido?escHtml(r.pedido):"—"}${r.os?" · OS: "+escHtml(r.os):""}</div>
+      ${!existeNoSistema?'<div class="rot-meta" style="color:var(--warn)">⚠ peça nova — ainda não passou pelo Forms</div>':''}
       <div class="rot-meta">atualizado ${fmtDt(r.updated_at)}</div>
     </div>`;
   }).join("") + '</div>';
@@ -440,7 +442,18 @@ function buscarSugg(q){
   });
   const box = document.getElementById("sugg");
   if(!lista.length){
-    box.innerHTML = '<div class="sugg-item" style="cursor:default;color:var(--text3)">Nenhuma peça encontrada no sistema.</div>';
+    const codSugerido = q.toUpperCase();
+    box.innerHTML = `<div class="sugg-item" style="cursor:default">
+      <div style="color:var(--text3);font-size:12px;margin-bottom:8px">Nenhuma peça encontrada com "${escHtml(q)}" no sistema.</div>
+      <div style="font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px">Cadastrar roteiro de peça nova (ainda não passou pelo Forms)</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <input id="novoCod" class="ed-inp" placeholder="código*" value="${escHtml(codSugerido)}" style="width:120px" onclick="event.stopPropagation()">
+        <input id="novoPed" class="ed-inp" placeholder="pedido" style="width:100px" onclick="event.stopPropagation()">
+        <input id="novoOs" class="ed-inp" placeholder="OS" style="width:80px" onclick="event.stopPropagation()">
+        <input id="novoQtd" class="ed-inp" placeholder="qtd" style="width:56px" onclick="event.stopPropagation()">
+        <button class="btn-g btn-acc" onclick="event.stopPropagation();criarItemNovo()">+ Criar roteiro</button>
+      </div>
+    </div>`;
   }else{
     box.innerHTML = lista.slice(0,12).map(r=>{
       const cod = String(r.codigo_peca||"").trim(), ped = String(r.pedido||"").trim();
@@ -482,6 +495,27 @@ async function selPeca(codigo, pedido){
   }catch(e){ toast("Erro ao criar: "+e.message); }
 }
 
+// Cadastro de roteiro para peça NOVA — ainda não passou pelo Forms, não existe em posicao_atual
+async function criarItemNovo(){
+  const codigo = document.getElementById("novoCod").value.trim().toUpperCase();
+  const pedido = document.getElementById("novoPed").value.trim();
+  const os = document.getElementById("novoOs").value.trim();
+  const qtd = document.getElementById("novoQtd").value.trim();
+  if(!codigo){ toast("Informe o código da peça"); return; }
+  const existente = ROTS.find(x=>x.codigo_peca===codigo && x.pedido===pedido);
+  if(existente){ abrirRoteiro(existente.id); return; }
+  try{
+    const novo = await supaWrite("/rest/v1/roteiros","POST",{pedido, codigo_peca:codigo, os, quantidade:qtd});
+    const rot = Array.isArray(novo)?novo[0]:novo;
+    rot.roteiro_itens = [{count:0}];
+    ROTS.unshift(rot);
+    document.getElementById("sugg").style.display="none";
+    document.getElementById("buscaInput").value="";
+    abrirRoteiro(rot.id);
+    toast("Roteiro criado (peça nova)");
+  }catch(e){ toast(e.message.includes("duplicate")?"Já existe roteiro para esse pedido+código":"Erro ao criar: "+e.message); }
+}
+
 // ---- EDITOR ----
 async function abrirRoteiro(id){
   R = ROTS.find(x=>x.id===id);
@@ -489,17 +523,19 @@ async function abrirRoteiro(id){
   document.getElementById("viewHome").style.display="none";
   document.getElementById("viewEditor").style.display="block";
   document.getElementById("edCod").textContent = R.codigo_peca;
-  document.getElementById("edPedido").textContent = R.pedido;
+  document.getElementById("edPedido").textContent = R.pedido||"—";
   document.getElementById("edOs").value = R.os||"";
   document.getElementById("edQtd").value = R.quantidade||"";
   document.getElementById("edFormsLink").value = R.forms_link||"";
   document.getElementById("edObs").value = R.observacao||"";
   const posRow = POS.find(r=>String(r.codigo_peca||"").trim()===R.codigo_peca && String(r.pedido||"").trim()===R.pedido);
-  document.getElementById("edSub").textContent = posRow&&posRow.cliente ? String(posRow.cliente).replace(/^\d+_/,"") : "—";
-  // tipo V/I por pedido+código
+  document.getElementById("edSub").textContent = posRow&&posRow.cliente ? String(posRow.cliente).replace(/^\d+_/,"") : (posRow?"—":"peça nova — ainda não passou pelo Forms");
+  // tipo V/I por pedido+código (só existe se a peça já tem apontamento)
   document.getElementById("edTipo").innerHTML = "";
-  supaFetch(`/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(R.codigo_peca)}&pedido=eq.${encodeURIComponent(R.pedido)}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`)
-    .then(t=>{ if(Array.isArray(t)&&t[0]) document.getElementById("edTipo").innerHTML = renderTipoBadge(t[0]); }).catch(()=>{});
+  if(posRow){
+    supaFetch(`/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(R.codigo_peca)}&pedido=eq.${encodeURIComponent(R.pedido)}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`)
+      .then(t=>{ if(Array.isArray(t)&&t[0]) document.getElementById("edTipo").innerHTML = renderTipoBadge(t[0]); }).catch(()=>{});
+  }
 
   SUB_ATUAL = "";
   renderSubChips();

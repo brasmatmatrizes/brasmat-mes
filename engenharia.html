@@ -259,6 +259,7 @@
       <div class="ed-f"><span class="ed-l">Pedido</span><span class="ed-v" id="edPedido">—</span></div>
       <div class="ed-f"><span class="ed-l">OS</span><input class="ed-inp" id="edOs" oninput="salvarHdrDeb()"></div>
       <div class="ed-f"><span class="ed-l">Qtd</span><input class="ed-inp" id="edQtd" style="width:60px" oninput="salvarHdrDeb()"></div>
+      <div class="ed-f" style="flex:1;min-width:220px"><span class="ed-l">Link do Forms (pré-preenchido) — QR Code do impresso</span><input class="ed-inp" id="edFormsLink" style="width:100%" placeholder="cole aqui o link gerado no Forms" oninput="salvarHdrDeb()"></div>
       <div class="ed-f" style="flex:1;min-width:200px"><span class="ed-l">Orientações e observações (sai no impresso)</span><input class="ed-inp" id="edObs" style="width:100%" oninput="salvarHdrDeb()"></div>
     </div>
 
@@ -491,6 +492,7 @@ async function abrirRoteiro(id){
   document.getElementById("edPedido").textContent = R.pedido;
   document.getElementById("edOs").value = R.os||"";
   document.getElementById("edQtd").value = R.quantidade||"";
+  document.getElementById("edFormsLink").value = R.forms_link||"";
   document.getElementById("edObs").value = R.observacao||"";
   const posRow = POS.find(r=>String(r.codigo_peca||"").trim()===R.codigo_peca && String(r.pedido||"").trim()===R.pedido);
   document.getElementById("edSub").textContent = posRow&&posRow.cliente ? String(posRow.cliente).replace(/^\d+_/,"") : "—";
@@ -672,10 +674,11 @@ async function salvarHdr(){
   if(!R) return;
   R.os = document.getElementById("edOs").value.trim();
   R.quantidade = document.getElementById("edQtd").value.trim();
+  R.forms_link = document.getElementById("edFormsLink").value.trim();
   R.observacao = document.getElementById("edObs").value;
   try{
     await supaWrite(`/rest/v1/roteiros?id=eq.${R.id}`,"PATCH",
-      {os:R.os, quantidade:R.quantidade, observacao:R.observacao, updated_at:new Date().toISOString()},"return=minimal");
+      {os:R.os, quantidade:R.quantidade, forms_link:R.forms_link, observacao:R.observacao, updated_at:new Date().toISOString()},"return=minimal");
     setSync("salvo "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));
   }catch(e){ toast("Erro ao salvar: "+e.message); }
 }
@@ -700,8 +703,11 @@ async function excluirRoteiro(){
 // ---- IMPRESSÃO ----
 function imprimir(){
   if(!R) return;
-  const link = `https://brasmat-mes.vercel.app/engenharia.html?pedido=${encodeURIComponent(R.pedido)}&codigo=${encodeURIComponent(R.codigo_peca)}`;
-  const qrSrc = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data="+encodeURIComponent(link);
+  const formsLink = String(R.forms_link||"").trim();
+  if(!formsLink){
+    if(!confirm("Nenhum link do Forms foi colado ainda — o impresso vai sair sem QR Code. Continuar mesmo assim?")) return;
+  }
+  const qrSrc = formsLink ? "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data="+encodeURIComponent(formsLink) : "";
   const temSub = ITENS.some(it=>String(it.subcomponente||"").trim());
   let linhas = "";
   if(temSub){
@@ -734,9 +740,11 @@ function imprimir(){
     </table>
     <div class="p-foot">
       <div class="p-obs"><div class="p-obs-t">Orientações e observações</div><div class="p-obs-x">${escHtml(R.observacao||"")}</div></div>
-      <div class="p-qr"><img src="${qrSrc}" alt="QR"><span>escaneie para ver o roteiro e a posição da peça no sistema</span></div>
+      ${qrSrc
+        ? `<div class="p-qr"><img src="${qrSrc}" alt="QR"><span>escaneie para abrir o formulário de apontamento</span></div>`
+        : `<div class="p-qr" style="justify-content:center"><span>sem link do Forms cadastrado</span></div>`}
     </div>`;
-  // espera o QR carregar antes de abrir a impressão
+  // espera o QR carregar antes de abrir a impressão (se não houver QR, imprime direto)
   const img = document.querySelector("#printArea img");
   if(img && !img.complete){ img.onload = ()=>window.print(); img.onerror = ()=>window.print(); }
   else window.print();

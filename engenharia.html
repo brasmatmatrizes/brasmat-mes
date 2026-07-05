@@ -57,7 +57,7 @@
 .ed-v{font-size:14px;font-family:var(--mono);color:var(--text);font-weight:500}
 .ed-inp{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;color:var(--text);outline:none;font-family:var(--mono);width:90px}
 .ed-inp:focus{border-color:var(--accent)}
-.ed-grid{display:grid;grid-template-columns:1fr 340px;gap:14px;align-items:start}
+.ed-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(560px,46%);gap:14px;align-items:start}
 
 /* TABELA DE SEQUÊNCIA */
 .seq-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
@@ -79,21 +79,36 @@
 .ib.del:hover{color:var(--danger)}
 .seq-empty{padding:34px;text-align:center;color:var(--text3);font-size:12px;font-family:var(--mono)}
 
-/* PALETA */
-.pal-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;position:sticky;top:0;max-height:calc(100vh - 96px);overflow-y:auto}
-.pal-title{font-size:10px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--mono);margin-bottom:8px}
-.pal-filter{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text);outline:none;margin-bottom:8px;font-family:var(--mono)}
+/* PALETA — todas as operações visíveis, sem rolagem */
+.pal-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;position:sticky;top:0}
+.pal-title{font-size:10px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--mono);margin-bottom:6px}
+.pal-top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
+.pal-filter{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--text);outline:none;font-family:var(--mono);width:170px}
 .pal-filter:focus{border-color:var(--accent)}
-.sub-chips{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.sub-chips{display:flex;gap:4px;flex-wrap:wrap}
 .sub-chip{font-size:10px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--mono);white-space:nowrap}
 .sub-chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
-.pal-fam{margin-bottom:10px}
-.pal-fam-t{font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.pal-body{column-count:3;column-gap:10px}
+.pal-fam{margin-bottom:8px;break-inside:avoid}
+.pal-fam-t{font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:3px;display:flex;align-items:center;gap:5px}
 .pal-fam-dot{width:8px;height:8px;border-radius:3px;flex-shrink:0}
-.pal-ops{display:flex;flex-wrap:wrap;gap:4px}
-.pal-op{font-size:11px;padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-family:var(--mono);transition:all 0.1s;white-space:nowrap}
-.pal-op:hover{border-color:var(--op-cor,var(--accent));color:var(--text);transform:translateY(-1px)}
-.pal-op b{color:var(--op-cor,var(--accent));font-weight:500}
+.pal-fam-nome{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fam-mv{background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:10px;padding:0 2px;border-radius:3px;line-height:1;opacity:0.35}
+.pal-fam-t:hover .fam-mv{opacity:1}
+.fam-mv:hover{color:var(--text);background:var(--bg4)}
+.pal-op{display:flex;align-items:center;gap:5px;width:100%;text-align:left;font-size:10.5px;padding:2px 6px;border-radius:5px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-family:var(--mono);transition:all 0.1s;margin-bottom:2px;overflow:hidden}
+.pal-op:hover{border-color:var(--op-cor,var(--accent));color:var(--text)}
+.pal-op b{color:var(--op-cor,var(--accent));font-weight:500;flex-shrink:0;min-width:26px}
+.pal-op span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-height:820px){
+  .pal-op{padding:1px 5px;font-size:10px;margin-bottom:1px}
+  .pal-fam{margin-bottom:5px}
+  .pal-panel{padding:8px}
+  .pal-top{margin-bottom:5px}
+  .content{padding:12px 18px}
+  .page-hdr{margin-bottom:10px}
+  .ed-hdr{padding:8px 14px;margin-bottom:10px}
+}
 
 /* MODAL CATÁLOGO */
 .modal-bg{position:fixed;inset:0;background:rgba(15,17,23,0.7);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:200}
@@ -127,7 +142,8 @@
 
 @media (max-width:900px){
   .ed-grid{grid-template-columns:1fr}
-  .pal-panel{position:static;max-height:none}
+  .pal-panel{position:static}
+  .pal-body{column-count:2}
   .seq-hd,.seq-row{grid-template-columns:30px 44px 1fr 90px 90px 66px}
 }
 
@@ -252,11 +268,12 @@
         <div id="seqBody"><div class="seq-empty">Clique nas operações da paleta ao lado para montar a sequência →</div></div>
       </div>
       <div class="pal-panel">
-        <div class="pal-title">Paleta de operações — clique para adicionar</div>
-        <input class="pal-filter" id="palFilter" placeholder="filtrar operação..." oninput="renderPaleta()">
-        <div class="pal-title" style="margin-top:4px">Subcomponente das novas linhas</div>
-        <div class="sub-chips" id="subChips"></div>
-        <div id="palBody"></div>
+        <div class="pal-title">Paleta de operações — clique para adicionar · ◂ ▸ reordenam os grupos</div>
+        <div class="pal-top">
+          <input class="pal-filter" id="palFilter" placeholder="filtrar operação..." oninput="renderPaleta()">
+          <div class="sub-chips" id="subChips"></div>
+        </div>
+        <div class="pal-body" id="palBody"></div>
       </div>
     </div>
   </div>
@@ -309,6 +326,7 @@ function navTo(p){ location.href = p; }
 // ---- estado ----
 let POS = [];        // posicao_atual (busca de peça)
 let OPS = [];        // roteiro_operacoes (catálogo completo)
+let FAMS = [];       // roteiro_familias (ordem dos grupos da paleta)
 let SUBS = [];       // roteiro_subcomponentes
 let ROTS = [];       // lista de roteiros
 let R = null;        // roteiro aberto (cabeçalho)
@@ -353,13 +371,15 @@ function cmpCod(a,b){
 // ---- init ----
 async function init(){
   setSync("carregando...");
-  const [ops, subs, rots, pos] = await Promise.all([
+  const [ops, fams, subs, rots, pos] = await Promise.all([
     supaFetch("/rest/v1/roteiro_operacoes?select=id,codigo,descricao,familia,ativo&order=codigo&limit=1000"),
+    supaFetch("/rest/v1/roteiro_familias?select=id,nome,ordem&order=ordem&limit=100"),
     supaFetch("/rest/v1/roteiro_subcomponentes?select=id,nome,ordem&order=ordem&limit=100"),
     supaFetch("/rest/v1/roteiros?select=*,roteiro_itens(count)&order=updated_at.desc&limit=300"),
     supaFetch("/rest/v1/posicao_atual?select=codigo_peca,pedido,os,quantidade_solicitada,cliente&limit=10000")
   ]);
   OPS  = Array.isArray(ops)  ? ops.sort((a,b)=>cmpCod(a.codigo,b.codigo)) : [];
+  FAMS = Array.isArray(fams) ? fams : [];
   SUBS = Array.isArray(subs) ? subs : [];
   ROTS = Array.isArray(rots) ? rots : [];
   POS  = Array.isArray(pos)  ? pos  : [];
@@ -505,21 +525,60 @@ function renderSubChips(){
 }
 function setSubAtual(v){ SUB_ATUAL = v; renderSubChips(); }
 
+// famílias na ordem salva (roteiro_familias); as que não estão lá vão pro fim
+function famOrdem(nome){
+  const f = FAMS.find(x=>x.nome===nome);
+  return f ? f.ordem : 9999;
+}
 function renderPaleta(){
   const f = (document.getElementById("palFilter").value||"").trim().toLowerCase();
   const ativos = OPS.filter(o=>o.ativo && (!f || o.descricao.toLowerCase().includes(f) || o.codigo.includes(f)));
   const fams = [];
   ativos.forEach(o=>{ if(!fams.includes(o.familia)) fams.push(o.familia); });
-  document.getElementById("palBody").innerHTML = fams.map(fam=>{
+  fams.sort((a,b)=>famOrdem(a)-famOrdem(b));
+  document.getElementById("palBody").innerHTML = fams.map((fam,fi)=>{
     const cor = FAM_COR[fam]||"#6E7A92";
     const ops = ativos.filter(o=>o.familia===fam);
     return `<div class="pal-fam">
-      <div class="pal-fam-t"><span class="pal-fam-dot" style="background:${cor}"></span>${escHtml(fam)||"—"}</div>
-      <div class="pal-ops">${ops.map(o=>
-        `<button class="pal-op" style="--op-cor:${cor}" onclick="addOp(${o.id})" title="${escHtml(o.descricao)}"><b>${escHtml(o.codigo)}</b> ${escHtml(o.descricao)}</button>`
-      ).join("")}</div>
+      <div class="pal-fam-t">
+        <span class="pal-fam-dot" style="background:${cor}"></span>
+        <span class="pal-fam-nome" title="${escHtml(fam)}">${escHtml(fam)||"—"}</span>
+        <button class="fam-mv" title="mover grupo para cima" onclick="moverFam('${esc(fam)}',-1)" ${fi===0?"disabled style='visibility:hidden'":""}>◂</button>
+        <button class="fam-mv" title="mover grupo para baixo" onclick="moverFam('${esc(fam)}',1)" ${fi===fams.length-1?"disabled style='visibility:hidden'":""}>▸</button>
+      </div>
+      ${ops.map(o=>
+        `<button class="pal-op" style="--op-cor:${cor}" onclick="addOp(${o.id})" title="${escHtml(o.codigo)} — ${escHtml(o.descricao)}"><b>${escHtml(o.codigo)}</b><span>${escHtml(o.descricao)}</span></button>`
+      ).join("")}
     </div>`;
   }).join("") || '<div class="seq-empty">nenhuma operação encontrada</div>';
+}
+
+// reordena os grupos da paleta (persistido em roteiro_familias — vale p/ todos)
+async function moverFam(nome, dir){
+  // garante que toda família visível existe em FAMS
+  await ensureFamilia(nome);
+  FAMS.sort((a,b)=>a.ordem-b.ordem);
+  const vis = FAMS.map(f=>f.nome);
+  const i = vis.indexOf(nome), j = i+dir;
+  if(i<0||j<0||j>=FAMS.length) return;
+  [FAMS[i],FAMS[j]] = [FAMS[j],FAMS[i]];
+  const patches = [];
+  FAMS.forEach((f,idx)=>{ if(f.ordem!==idx+1){ f.ordem = idx+1; patches.push(f); } });
+  renderPaleta();
+  for(const f of patches){
+    try{ await supaWrite(`/rest/v1/roteiro_familias?id=eq.${f.id}`,"PATCH",{ordem:f.ordem},"return=minimal"); }
+    catch(e){ toast("Erro ao salvar ordem: "+e.message); }
+  }
+}
+
+// cria a família em roteiro_familias se ainda não existir (ordem no fim)
+async function ensureFamilia(nome){
+  nome = String(nome||"").trim();
+  if(!nome || FAMS.find(f=>f.nome===nome)) return;
+  try{
+    const novo = await supaWrite("/rest/v1/roteiro_familias","POST",{nome, ordem:(FAMS.length?Math.max(...FAMS.map(f=>f.ordem)):0)+1});
+    FAMS.push(Array.isArray(novo)?novo[0]:novo);
+  }catch(e){}
 }
 
 function renderSeq(){
@@ -719,6 +778,7 @@ async function addOpCatalogo(){
   if(!cod||!desc){ toast("Preencha código e descrição"); return; }
   try{
     const novo = await supaWrite("/rest/v1/roteiro_operacoes","POST",{codigo:cod,descricao:desc,familia:fam});
+    await ensureFamilia(fam);
     OPS.push(Array.isArray(novo)?novo[0]:novo);
     OPS.sort((a,b)=>cmpCod(a.codigo,b.codigo));
     document.getElementById("nOpCod").value=""; document.getElementById("nOpDesc").value=""; document.getElementById("nOpFam").value="";
@@ -728,6 +788,7 @@ async function addOpCatalogo(){
 function editOp(id,campo,val){
   const o = OPS.find(x=>x.id===id); if(!o) return;
   o[campo] = val.trim();
+  if(campo==="familia") ensureFamilia(o.familia);
   supaWrite(`/rest/v1/roteiro_operacoes?id=eq.${id}`,"PATCH",{[campo]:o[campo],updated_at:new Date().toISOString()},"return=minimal")
     .then(()=>toast("Salvo")).catch(e=>toast("Erro: "+e.message));
 }

@@ -35,6 +35,7 @@ O menu de navegação (`.nav` no topbar) deve conter as 14 páginas, em **todas*
 - **`roteiros`** (tabela) — cabeçalho do roteiro, **unique(pedido, codigo_peca)**: `pedido`, `codigo_peca`, `os`, `quantidade`, `observacao` (orientações do impresso). Índices em `pedido` e `codigo_peca`.
 - **`roteiro_itens`** (tabela) — linhas da sequência: `roteiro_id` (FK, on delete cascade), `sequencia`, `subcomponente`, `operacao_codigo`, `operacao_descricao` (snapshot — não muda se o catálogo mudar), `observacao`.
 - **`roteiro_subcomponentes`** (tabela) — lista de subcomponentes possíveis: `nome` (único), `ordem`. Carga inicial: Inferior, Superior, Luva.
+- **`roteiro_familias`** (tabela) — ordem dos grupos da paleta da Engenharia (o processista reordena com ◂▸): `nome` (único), `ordem`. Família nova entra automaticamente no fim (`ensureFamilia`).
 - **Bucket `demanda-arquivos`** (Storage, público) — anexos de desenho/roteiro (PDF **ou imagem** — `allowed_mime_types` liberado). Caminho: `CLIENTE/CODIGO/{desenho|fluxo}-{timestamp}.ext`. Ao remover anexo / trocar / remover item, o arquivo é apagado do bucket.
 - **Realtime** habilitado (publication `supabase_realtime`) nas tabelas `producao_eventos` e `demanda_itens`. Kanban, Painel e Expedição usam `@supabase/supabase-js` (CDN) para atualizar instantaneamente; todas têm fallback `setInterval` (60s).
 - Criação de tabela/coluna/view/bucket exige credencial elevada (ver seção própria). Tabelas novas seguem o padrão: `grant all to anon, authenticated` + RLS com policy permissiva `using(true) with check(true)`.

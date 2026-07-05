@@ -37,7 +37,13 @@ const NAV = [
       { page: "qualidade.html", label: "Qualidade", mobile: "Qualidade" },
     ],
   },
-  { page: "engenharia.html", label: "Engenharia", mobile: "Engenharia" },
+  {
+    group: "Engenharia",
+    items: [
+      { page: "engenharia.html", label: "Item existente", mobile: "Existente" },
+      { page: "engenharia.html?modo=novo", label: "Item novo", mobile: "Novo" },
+    ],
+  },
 ];
 // ===========================================================================
 
@@ -47,9 +53,12 @@ const REPO = args.find((a) => a !== "--dry") || ".";
 
 function btn(cls, item, atual, mobile) {
   const label = mobile ? item.mobile : item.label;
+  // data-href fica sempre presente (mesmo no botao ativo, que nao tem onclick) --
+  // e o gancho que paginas com 2 itens de menu pro mesmo arquivo (ex.: Engenharia,
+  // "Item existente"/"Item novo") usam em runtime pra saber qual botao e qual.
   return item.page === atual
-    ? `<button class="${cls} active">${label}</button>`
-    : `<button class="${cls}" onclick="navTo('${item.page}')">${label}</button>`;
+    ? `<button class="${cls} active" data-href="${item.page}">${label}</button>`
+    : `<button class="${cls}" data-href="${item.page}" onclick="navTo('${item.page}')">${label}</button>`;
 }
 
 function gerarBloco(atual, mobile, eol) {
@@ -91,7 +100,13 @@ function acharBloco(src, marker) {
   return null;
 }
 
-const paginas = NAV.flatMap((e) => (e.page ? [e.page] : e.items.map((i) => i.page)));
+// item.page pode levar querystring (ex.: "engenharia.html?modo=novo") quando dois itens
+// do menu apontam pro mesmo arquivo com estados diferentes; o arquivo real (p/ existsSync
+// e p/ achar o bloco .nav) e sempre a parte antes do "?".
+function arquivoReal(pg) { return pg.split("?")[0]; }
+const paginas = [...new Set(
+  NAV.flatMap((e) => (e.page ? [e.page] : e.items.map((i) => i.page))).map(arquivoReal)
+)];
 let erros = 0;
 
 for (const pg of paginas) {

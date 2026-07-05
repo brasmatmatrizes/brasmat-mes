@@ -113,35 +113,41 @@
     <div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div>
   </div>
   <div class="nav">
-    <button class="nb active">Buscar Peça</button>
+    <button class="nb active" data-href="index.html">Buscar Peça</button>
     <div class="nav-group">
       <button class="nb nb-group">Cliente ▾</button>
       <div class="nav-dropdown">
-        <button class="nb" onclick="navTo('demanda.html')">Demanda Cliente</button>
-        <button class="nb" onclick="navTo('cliente.html')">Consulta Cliente</button>
-        <button class="nb" onclick="navTo('expedicao.html')">Expedição</button>
+        <button class="nb" data-href="demanda.html" onclick="navTo('demanda.html')">Demanda Cliente</button>
+        <button class="nb" data-href="cliente.html" onclick="navTo('cliente.html')">Consulta Cliente</button>
+        <button class="nb" data-href="expedicao.html" onclick="navTo('expedicao.html')">Expedição</button>
       </div>
     </div>
     <div class="nav-group">
       <button class="nb nb-group">Produção ▾</button>
       <div class="nav-dropdown">
-        <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
-        <button class="nb" onclick="navTo('op-kanban.html')">Painel</button>
-        <button class="nb" onclick="navTo('apontamentos.html')">Apontamentos</button>
-        <button class="nb" onclick="navTo('paradas.html')">Peças paradas</button>
+        <button class="nb" data-href="kanban.html" onclick="navTo('kanban.html')">Kanban</button>
+        <button class="nb" data-href="op-kanban.html" onclick="navTo('op-kanban.html')">Painel</button>
+        <button class="nb" data-href="apontamentos.html" onclick="navTo('apontamentos.html')">Apontamentos</button>
+        <button class="nb" data-href="paradas.html" onclick="navTo('paradas.html')">Peças paradas</button>
       </div>
     </div>
     <div class="nav-group">
       <button class="nb nb-group">Indicadores ▾</button>
       <div class="nav-dropdown">
-        <button class="nb" onclick="navTo('prazos.html')">Prazos</button>
-        <button class="nb" onclick="navTo('otd.html')">OTD</button>
-        <button class="nb" onclick="navTo('ordens.html')">Ordens em Aberto</button>
-        <button class="nb" onclick="navTo('operadores.html')">Performance</button>
-        <button class="nb" onclick="navTo('qualidade.html')">Qualidade</button>
+        <button class="nb" data-href="prazos.html" onclick="navTo('prazos.html')">Prazos</button>
+        <button class="nb" data-href="otd.html" onclick="navTo('otd.html')">OTD</button>
+        <button class="nb" data-href="ordens.html" onclick="navTo('ordens.html')">Ordens em Aberto</button>
+        <button class="nb" data-href="operadores.html" onclick="navTo('operadores.html')">Performance</button>
+        <button class="nb" data-href="qualidade.html" onclick="navTo('qualidade.html')">Qualidade</button>
       </div>
     </div>
-    <button class="nb" onclick="navTo('engenharia.html')">Engenharia</button>
+    <div class="nav-group">
+      <button class="nb nb-group">Engenharia ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="engenharia.html" onclick="navTo('engenharia.html')">Item existente</button>
+        <button class="nb" data-href="engenharia.html?modo=novo" onclick="navTo('engenharia.html?modo=novo')">Item novo</button>
+      </div>
+    </div>
   </div>
   <div class="tr-right">
     <div class="sync-dot"></div>
@@ -150,35 +156,41 @@
 </div>
 
 <div class="mobile-nav">
-  <button class="mnb active">Buscar Peça</button>
+  <button class="mnb active" data-href="index.html">Buscar Peça</button>
   <div class="nav-group">
     <button class="mnb nb-group">Cliente ▾</button>
     <div class="nav-dropdown">
-      <button class="mnb" onclick="navTo('demanda.html')">Demanda</button>
-      <button class="mnb" onclick="navTo('cliente.html')">Cliente</button>
-      <button class="mnb" onclick="navTo('expedicao.html')">Expedição</button>
+      <button class="mnb" data-href="demanda.html" onclick="navTo('demanda.html')">Demanda</button>
+      <button class="mnb" data-href="cliente.html" onclick="navTo('cliente.html')">Cliente</button>
+      <button class="mnb" data-href="expedicao.html" onclick="navTo('expedicao.html')">Expedição</button>
     </div>
   </div>
   <div class="nav-group">
     <button class="mnb nb-group">Produção ▾</button>
     <div class="nav-dropdown">
-      <button class="mnb" onclick="navTo('kanban.html')">Kanban</button>
-      <button class="mnb" onclick="navTo('op-kanban.html')">Painel</button>
-      <button class="mnb" onclick="navTo('apontamentos.html')">Apontamentos</button>
-      <button class="mnb" onclick="navTo('paradas.html')">Paradas</button>
+      <button class="mnb" data-href="kanban.html" onclick="navTo('kanban.html')">Kanban</button>
+      <button class="mnb" data-href="op-kanban.html" onclick="navTo('op-kanban.html')">Painel</button>
+      <button class="mnb" data-href="apontamentos.html" onclick="navTo('apontamentos.html')">Apontamentos</button>
+      <button class="mnb" data-href="paradas.html" onclick="navTo('paradas.html')">Paradas</button>
     </div>
   </div>
   <div class="nav-group">
     <button class="mnb nb-group">Indicadores ▾</button>
     <div class="nav-dropdown">
-      <button class="mnb" onclick="navTo('prazos.html')">Prazos</button>
-      <button class="mnb" onclick="navTo('otd.html')">OTD</button>
-      <button class="mnb" onclick="navTo('ordens.html')">Ordens</button>
-      <button class="mnb" onclick="navTo('operadores.html')">Performance</button>
-      <button class="mnb" onclick="navTo('qualidade.html')">Qualidade</button>
+      <button class="mnb" data-href="prazos.html" onclick="navTo('prazos.html')">Prazos</button>
+      <button class="mnb" data-href="otd.html" onclick="navTo('otd.html')">OTD</button>
+      <button class="mnb" data-href="ordens.html" onclick="navTo('ordens.html')">Ordens</button>
+      <button class="mnb" data-href="operadores.html" onclick="navTo('operadores.html')">Performance</button>
+      <button class="mnb" data-href="qualidade.html" onclick="navTo('qualidade.html')">Qualidade</button>
     </div>
   </div>
-  <button class="mnb" onclick="navTo('engenharia.html')">Engenharia</button>
+  <div class="nav-group">
+    <button class="mnb nb-group">Engenharia ▾</button>
+    <div class="nav-dropdown">
+      <button class="mnb" data-href="engenharia.html" onclick="navTo('engenharia.html')">Existente</button>
+      <button class="mnb" data-href="engenharia.html?modo=novo" onclick="navTo('engenharia.html?modo=novo')">Novo</button>
+    </div>
+  </div>
 </div>
 
 <!-- HERO SEARCH -->

@@ -16,6 +16,14 @@ Produção, Indicadores), cada item com `label` (desktop) e `mobile` (rótulo cu
 
 Para incluir/reordenar/renomear página: **editar a constante `NAV`** e rodar o script.
 
+Dois itens de menu podem apontar pro **mesmo arquivo** com estados diferentes via
+querystring (ex.: grupo "Engenharia" → "Item existente" = `engenharia.html`, "Item novo" =
+`engenharia.html?modo=novo`). O script deduplica pelo nome do arquivo (ignora a querystring)
+pra achar/escrever o bloco `.nav` uma vez só. Cada botão sempre ganha `data-href="<page>"`
+(mesmo o que está `active`, que não tem `onclick`) — é o gancho que a própria página usa em
+runtime (`aplicarModo()` em `engenharia.html`) pra corrigir qual dos dois botões fica ativo
+conforme a querystring da URL atual, já que a geração estática não sabe distinguir os dois.
+
 ## Como usar
 
 1. Sempre começar com dry-run (não grava nada):

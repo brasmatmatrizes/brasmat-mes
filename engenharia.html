@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRASMAT MES — Engenharia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="design.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:9px;color:var(--text3);font-family:var(--mono)}
+.nav{display:flex;gap:4px}
+.nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
+.tr-right{display:flex;align-items:center;gap:8px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-lbl{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.btn-sm{background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--mono)}
+.btn-sm:hover{border-color:var(--border2);color:var(--text2)}
+
+.content{overflow-y:auto;height:calc(100vh - 56px);padding:20px 24px}
+.page-hdr{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.page-title{font-size:19px;font-weight:500;color:var(--text);letter-spacing:0.01em}
+.page-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+.btn-g{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;height:32px;font-family:var(--sans)}
+.btn-g:hover{border-color:var(--border2);color:var(--text)}
+.btn-acc{background:var(--accent);border:1px solid var(--accent);color:#fff}
+.btn-acc:hover{opacity:0.9;color:#fff}
+
+/* BUSCA */
+.search-wrap{position:relative;max-width:560px;margin-bottom:20px}
+.search-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;font-size:14px;color:var(--text);outline:none;font-family:var(--mono)}
+.search-input:focus{border-color:var(--accent)}
+.sugg{position:absolute;top:100%;left:0;right:0;margin-top:6px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;z-index:50;max-height:340px;overflow-y:auto;box-shadow:0 12px 30px rgba(0,0,0,0.5);display:none}
+.sugg-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border)}
+.sugg-item:last-child{border-bottom:none}
+.sugg-item:hover{background:var(--bg3)}
+.sugg-cod{font-family:var(--mono);font-size:13px;color:var(--text);font-weight:500}
+.sugg-desc{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+
+/* LISTA DE ROTEIROS */
+.rot-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.rot-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;cursor:pointer;transition:border-color 0.15s}
+.rot-card:hover{border-color:var(--accent)}
+.rot-cod{font-family:var(--mono);font-size:14px;font-weight:500;color:var(--text)}
+.rot-meta{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+.rot-cnt{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:999px;background:rgba(59,127,255,0.15);color:var(--accent)}
+
+/* EDITOR */
+.ed-hdr{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.ed-f{display:flex;flex-direction:column;gap:3px}
+.ed-l{font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em}
+.ed-v{font-size:14px;font-family:var(--mono);color:var(--text);font-weight:500}
+.ed-inp{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;color:var(--text);outline:none;font-family:var(--mono);width:90px}
+.ed-inp:focus{border-color:var(--accent)}
+.ed-grid{display:grid;grid-template-columns:1fr 340px;gap:14px;align-items:start}
+
+/* TABELA DE SEQUÊNCIA */
+.seq-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.seq-hd{display:grid;grid-template-columns:38px 52px 1fr 120px 1fr 76px;padding:8px 12px;background:var(--bg3);border-bottom:1px solid var(--border);gap:6px}
+.seq-hd span{font-size:9px;font-weight:500;letter-spacing:0.07em;text-transform:uppercase;color:var(--text2);font-family:var(--mono)}
+.seq-row{display:grid;grid-template-columns:38px 52px 1fr 120px 1fr 76px;padding:6px 12px;border-bottom:1px solid var(--border);gap:6px;align-items:center}
+.seq-row:last-child{border-bottom:none}
+.seq-row:hover{background:var(--bg3)}
+.seq-n{font-family:var(--mono);font-size:12px;color:var(--text3)}
+.seq-cod{font-family:var(--mono);font-size:12px;color:var(--accent);font-weight:500}
+.seq-desc{font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seq-sel{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 6px;font-size:11px;color:var(--text2);outline:none;width:100%;cursor:pointer}
+.seq-obs{background:transparent;border:1px solid transparent;border-radius:6px;padding:3px 6px;font-size:11px;color:var(--text2);outline:none;width:100%;font-family:var(--mono)}
+.seq-obs:hover{border-color:var(--border)}
+.seq-obs:focus{border-color:var(--accent);background:var(--bg3)}
+.seq-btns{display:flex;gap:2px;justify-content:flex-end}
+.ib{background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:4px;line-height:1}
+.ib:hover{background:var(--bg4);color:var(--text)}
+.ib.del:hover{color:var(--danger)}
+.seq-empty{padding:34px;text-align:center;color:var(--text3);font-size:12px;font-family:var(--mono)}
+
+/* PALETA */
+.pal-panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px;position:sticky;top:0;max-height:calc(100vh - 96px);overflow-y:auto}
+.pal-title{font-size:10px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:0.08em;font-family:var(--mono);margin-bottom:8px}
+.pal-filter{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text);outline:none;margin-bottom:8px;font-family:var(--mono)}
+.pal-filter:focus{border-color:var(--accent)}
+.sub-chips{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+.sub-chip{font-size:10px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--mono);white-space:nowrap}
+.sub-chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.pal-fam{margin-bottom:10px}
+.pal-fam-t{font-size:10px;font-family:var(--mono);color:var(--text3);margin-bottom:4px;display:flex;align-items:center;gap:6px}
+.pal-fam-dot{width:8px;height:8px;border-radius:3px;flex-shrink:0}
+.pal-ops{display:flex;flex-wrap:wrap;gap:4px}
+.pal-op{font-size:11px;padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);cursor:pointer;font-family:var(--mono);transition:all 0.1s;white-space:nowrap}
+.pal-op:hover{border-color:var(--op-cor,var(--accent));color:var(--text);transform:translateY(-1px)}
+.pal-op b{color:var(--op-cor,var(--accent));font-weight:500}
+
+/* MODAL CATÁLOGO */
+.modal-bg{position:fixed;inset:0;background:rgba(15,17,23,0.7);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:200}
+.modal-bg.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;width:min(680px,94vw);max-height:86vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)}
+.modal-t{font-size:14px;font-weight:500}
+.modal-body{padding:14px 18px;overflow-y:auto}
+.cat-tabs{display:flex;gap:4px;margin-bottom:12px}
+.cat-tab{font-size:11px;padding:5px 12px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;font-family:var(--mono)}
+.cat-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.cat-add{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.cat-add input,.cat-add select{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text);outline:none;font-family:var(--mono)}
+.cat-add input:focus{border-color:var(--accent)}
+.cat-row{display:grid;grid-template-columns:56px 1fr 150px 60px;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)}
+.cat-row:last-child{border-bottom:none}
+.cat-row .c-cod{font-family:var(--mono);font-size:12px;color:var(--accent)}
+.cat-row input,.cat-row select{background:transparent;border:1px solid transparent;border-radius:6px;padding:4px 6px;font-size:12px;color:var(--text2);outline:none;width:100%}
+.cat-row input:hover,.cat-row select:hover{border-color:var(--border)}
+.cat-row input:focus,.cat-row select:focus{border-color:var(--accent);background:var(--bg3)}
+.cat-row .c-atv{font-size:10px;font-family:var(--mono);cursor:pointer;text-align:center;padding:3px 6px;border-radius:6px}
+.cat-row .c-atv.on{background:rgba(45,191,126,0.15);color:var(--ok)}
+.cat-row .c-atv.off{background:var(--bg3);color:var(--text3)}
+.sc-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
+.sc-row:last-child{border-bottom:none}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);color:var(--text);padding:9px 18px;border-radius:9px;font-size:12px;font-family:var(--mono);z-index:300;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.5)}
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media (max-width:900px){
+  .ed-grid{grid-template-columns:1fr}
+  .pal-panel{position:static;max-height:none}
+  .seq-hd,.seq-row{grid-template-columns:30px 44px 1fr 90px 90px 66px}
+}
+
+/* IMPRESSÃO — só a área de impressão aparece */
+#printArea{display:none}
+@media print{
+  body *{visibility:hidden}
+  #printArea,#printArea *{visibility:visible}
+  #printArea{display:block;position:absolute;top:0;left:0;width:100%;background:#fff;color:#000;font-family:Arial,sans-serif;padding:10mm}
+  .p-top{display:flex;justify-content:space-between;align-items:flex-start;border:2px solid #000;padding:8px 12px}
+  .p-logo{font-size:20px;font-weight:700;letter-spacing:0.05em}
+  .p-title{font-size:15px;font-weight:700;text-align:center;flex:1;align-self:center}
+  .p-hdr{display:grid;grid-template-columns:1fr 1fr;border:2px solid #000;border-top:none}
+  .p-hf{display:flex;border-right:1px solid #000;padding:5px 10px;font-size:12px;gap:6px}
+  .p-hf:nth-child(2n){border-right:none}
+  .p-hf b{min-width:64px}
+  .p-tbl{width:100%;border-collapse:collapse;margin-top:8px}
+  .p-tbl th{border:1px solid #000;background:#e8e8e8;font-size:10px;padding:5px 6px;text-transform:uppercase}
+  .p-tbl td{border:1px solid #000;font-size:11px;padding:6px;height:26px;vertical-align:middle}
+  .p-sub{background:#f0f0f0;font-weight:700;font-size:11px;text-transform:uppercase}
+  .p-foot{display:flex;gap:10px;margin-top:10px;align-items:stretch}
+  .p-obs{flex:1;border:2px solid #000;padding:6px 10px;min-height:120px}
+  .p-obs-t{font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px}
+  .p-obs-x{font-size:11px;white-space:pre-wrap}
+  .p-qr{width:130px;border:2px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;gap:4px}
+  .p-qr img{width:110px;height:110px}
+  .p-qr span{font-size:8px;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<div style="display:grid;grid-template-rows:56px 1fr;height:100vh">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand"><div class="bm">BM</div><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="nav">
+    <button class="nb" onclick="navTo('index.html')">Buscar Peça</button>
+    <div class="nav-group">
+      <button class="nb nb-group">Cliente ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" onclick="navTo('demanda.html')">Demanda Cliente</button>
+        <button class="nb" onclick="navTo('cliente.html')">Consulta Cliente</button>
+        <button class="nb" onclick="navTo('expedicao.html')">Expedição</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nb nb-group">Produção ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" onclick="navTo('kanban.html')">Kanban</button>
+        <button class="nb" onclick="navTo('op-kanban.html')">Painel</button>
+        <button class="nb" onclick="navTo('apontamentos.html')">Apontamentos</button>
+        <button class="nb" onclick="navTo('paradas.html')">Peças paradas</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nb nb-group">Indicadores ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" onclick="navTo('prazos.html')">Prazos</button>
+        <button class="nb" onclick="navTo('otd.html')">OTD</button>
+        <button class="nb" onclick="navTo('ordens.html')">Ordens em Aberto</button>
+        <button class="nb" onclick="navTo('operadores.html')">Performance</button>
+        <button class="nb" onclick="navTo('qualidade.html')">Qualidade</button>
+      </div>
+    </div>
+    <button class="nb active">Engenharia</button>
+  </div>
+  <div class="tr-right">
+    <div class="sync-dot"></div>
+    <span class="sync-lbl" id="slbl">carregando...</span>
+  </div>
+</div>
+
+<!-- CONTEÚDO -->
+<div class="content" id="content">
+
+  <!-- HOME: busca + lista de roteiros -->
+  <div id="viewHome">
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">Engenharia — Roteiros de Processo</div>
+        <div class="page-sub" id="homeSub">—</div>
+      </div>
+      <button class="btn-g" onclick="abrirCatalogo()">⚙ Catálogo de operações</button>
+    </div>
+    <div class="search-wrap">
+      <input class="search-input" id="buscaInput" placeholder="Buscar peça por código, pedido ou OS para criar/abrir roteiro..." oninput="onBusca()" autocomplete="off">
+      <div class="sugg" id="sugg"></div>
+    </div>
+    <div id="rotLista"><div class="loading"><div class="spinner"></div>carregando...</div></div>
+  </div>
+
+  <!-- EDITOR -->
+  <div id="viewEditor" style="display:none">
+    <div class="page-hdr">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn-g" onclick="voltarHome()">← Voltar</button>
+        <div>
+          <div class="page-title" style="font-family:var(--mono)" id="edCod">—</div>
+          <div class="page-sub" id="edSub">—</div>
+        </div>
+        <span id="edTipo"></span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-g" onclick="abrirCatalogo()">⚙ Catálogo</button>
+        <button class="btn-g" onclick="excluirRoteiro()" style="color:var(--danger)">🗑 Excluir roteiro</button>
+        <button class="btn-g btn-acc" onclick="imprimir()">🖨 Imprimir / PDF</button>
+      </div>
+    </div>
+
+    <div class="ed-hdr">
+      <div class="ed-f"><span class="ed-l">Pedido</span><span class="ed-v" id="edPedido">—</span></div>
+      <div class="ed-f"><span class="ed-l">OS</span><input class="ed-inp" id="edOs" oninput="salvarHdrDeb()"></div>
+      <div class="ed-f"><span class="ed-l">Qtd</span><input class="ed-inp" id="edQtd" style="width:60px" oninput="salvarHdrDeb()"></div>
+      <div class="ed-f" style="flex:1;min-width:200px"><span class="ed-l">Orientações e observações (sai no impresso)</span><input class="ed-inp" id="edObs" style="width:100%" oninput="salvarHdrDeb()"></div>
+    </div>
+
+    <div class="ed-grid">
+      <div class="seq-panel">
+        <div class="seq-hd"><span>Seq</span><span>Cód</span><span>Operação</span><span>Subcomp.</span><span>Observação</span><span></span></div>
+        <div id="seqBody"><div class="seq-empty">Clique nas operações da paleta ao lado para montar a sequência →</div></div>
+      </div>
+      <div class="pal-panel">
+        <div class="pal-title">Paleta de operações — clique para adicionar</div>
+        <input class="pal-filter" id="palFilter" placeholder="filtrar operação..." oninput="renderPaleta()">
+        <div class="pal-title" style="margin-top:4px">Subcomponente das novas linhas</div>
+        <div class="sub-chips" id="subChips"></div>
+        <div id="palBody"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- MODAL CATÁLOGO -->
+<div class="modal-bg" id="catModal">
+  <div class="modal">
+    <div class="modal-hd">
+      <div class="modal-t">Catálogo</div>
+      <button class="ib" style="font-size:16px" onclick="fecharCatalogo()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="cat-tabs">
+        <button class="cat-tab active" id="tabOps" onclick="catTab('ops')">Operações</button>
+        <button class="cat-tab" id="tabSubs" onclick="catTab('subs')">Subcomponentes</button>
+      </div>
+      <div id="catOps">
+        <div class="cat-add">
+          <input id="nOpCod" placeholder="cód. (ex 5.15)" style="width:100px">
+          <input id="nOpDesc" placeholder="descrição" style="flex:1;min-width:160px">
+          <input id="nOpFam" placeholder="família" list="famList" style="width:150px">
+          <datalist id="famList"></datalist>
+          <button class="btn-g btn-acc" onclick="addOpCatalogo()">+ Adicionar</button>
+        </div>
+        <div id="catOpsLista"></div>
+      </div>
+      <div id="catSubs" style="display:none">
+        <div class="cat-add">
+          <input id="nSubNome" placeholder="nome do subcomponente" style="flex:1;min-width:160px">
+          <button class="btn-g btn-acc" onclick="addSubcomp()">+ Adicionar</button>
+        </div>
+        <div id="catSubsLista"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ÁREA DE IMPRESSÃO -->
+<div id="printArea"></div>
+
+<div class="toast" id="toast"></div>
+
+<script src="status.js"></script>
+<script>
+function navTo(p){ location.href = p; }
+
+// ---- estado ----
+let POS = [];        // posicao_atual (busca de peça)
+let OPS = [];        // roteiro_operacoes (catálogo completo)
+let SUBS = [];       // roteiro_subcomponentes
+let ROTS = [];       // lista de roteiros
+let R = null;        // roteiro aberto (cabeçalho)
+let ITENS = [];      // itens do roteiro aberto
+let SUB_ATUAL = "";  // subcomponente aplicado às novas linhas
+let _suggTimer = null, _hdrTimer = null;
+const OBS_TIMERS = {};
+
+const FAM_COR = {
+  "Retífica Furo":"#9B5DE5","Retífica Plana":"#3B7FFF","Retífica Externa":"#7C3AED",
+  "Erosão a Fio":"#DC2626","Forma":"#D97706","Polimento":"#DB2777","Brunidora":"#0891B2",
+  "Prensa":"#65A30D","Torno":"#059669","Qualidade":"#F59E0B","Administrativo":"#4B5563",
+  "Serviço Externo":"#6B7280","Erosão Penetração":"#B91C1C"
+};
+
+// ---- escrita no Supabase ----
+async function supaWrite(path, method, body, prefer){
+  const r = await fetch(SUPA_URL + path, {
+    method,
+    headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer: prefer||"return=representation" },
+    body: body!==undefined ? JSON.stringify(body) : undefined
+  });
+  if(r.status===204) return null;
+  const j = await r.json().catch(()=>null);
+  if(!r.ok) throw new Error((j&&j.message)||("HTTP "+r.status));
+  return j;
+}
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  clearTimeout(t._tm); t._tm = setTimeout(()=>{ t.style.display="none"; }, 2200);
+}
+function setSync(s){ document.getElementById("slbl").textContent = s; }
+
+// ordena códigos "5.10" numericamente
+function cmpCod(a,b){
+  const pa = String(a).split("."), pb = String(b).split(".");
+  return (parseInt(pa[0])||0)-(parseInt(pb[0])||0) || (parseInt(pa[1])||0)-(parseInt(pb[1])||0);
+}
+
+// ---- init ----
+async function init(){
+  setSync("carregando...");
+  const [ops, subs, rots, pos] = await Promise.all([
+    supaFetch("/rest/v1/roteiro_operacoes?select=id,codigo,descricao,familia,ativo&order=codigo&limit=1000"),
+    supaFetch("/rest/v1/roteiro_subcomponentes?select=id,nome,ordem&order=ordem&limit=100"),
+    supaFetch("/rest/v1/roteiros?select=*,roteiro_itens(count)&order=updated_at.desc&limit=300"),
+    supaFetch("/rest/v1/posicao_atual?select=codigo_peca,pedido,os,quantidade_solicitada,cliente&limit=10000")
+  ]);
+  OPS  = Array.isArray(ops)  ? ops.sort((a,b)=>cmpCod(a.codigo,b.codigo)) : [];
+  SUBS = Array.isArray(subs) ? subs : [];
+  ROTS = Array.isArray(rots) ? rots : [];
+  POS  = Array.isArray(pos)  ? pos  : [];
+  renderRoteiros();
+  document.getElementById("homeSub").textContent =
+    ROTS.length + " roteiro(s) · catálogo com " + OPS.filter(o=>o.ativo).length + " operações";
+  setSync("atualizado " + new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));
+
+  // deep-link ?pedido=&codigo= (QR Code do impresso)
+  const q = new URLSearchParams(location.search);
+  if(q.get("codigo")){
+    const rot = ROTS.find(r => r.codigo_peca===q.get("codigo") && (!q.get("pedido") || r.pedido===q.get("pedido")));
+    if(rot) abrirRoteiro(rot.id);
+  }
+}
+
+// ---- HOME: lista ----
+function renderRoteiros(){
+  const el = document.getElementById("rotLista");
+  if(!ROTS.length){
+    el.innerHTML = '<div class="seq-empty" style="padding:40px">Nenhum roteiro ainda — busque uma peça acima para criar o primeiro.</div>';
+    return;
+  }
+  el.innerHTML = '<div class="rot-grid">' + ROTS.map(r=>{
+    const n = (r.roteiro_itens && r.roteiro_itens[0] && r.roteiro_itens[0].count) || 0;
+    return `<div class="rot-card" onclick="abrirRoteiro(${r.id})">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div class="rot-cod">${escHtml(r.codigo_peca)}</div>
+        <span class="rot-cnt">${n} op.</span>
+      </div>
+      <div class="rot-meta">Pedido: ${escHtml(r.pedido)}${r.os?" · OS: "+escHtml(r.os):""}</div>
+      <div class="rot-meta">atualizado ${fmtDt(r.updated_at)}</div>
+    </div>`;
+  }).join("") + '</div>';
+}
+
+// ---- HOME: busca de peça ----
+function onBusca(){
+  const q = document.getElementById("buscaInput").value.trim();
+  clearTimeout(_suggTimer);
+  if(q.length<2){ document.getElementById("sugg").style.display="none"; return; }
+  _suggTimer = setTimeout(()=>buscarSugg(q), 180);
+}
+function buscarSugg(q){
+  const qU = q.toUpperCase();
+  const seen = new Set(); const lista = [];
+  POS.forEach(r=>{
+    const cod = String(r.codigo_peca||"").trim();
+    if(!cod) return;
+    const match = cod.toUpperCase().includes(qU) ||
+      String(r.pedido||"").toUpperCase().includes(qU) ||
+      String(r.os||"").toUpperCase().includes(qU);
+    if(!match) return;
+    const key = cod+"|"+(r.pedido||"");
+    if(seen.has(key)) return;
+    seen.add(key); lista.push(r);
+  });
+  const box = document.getElementById("sugg");
+  if(!lista.length){
+    box.innerHTML = '<div class="sugg-item" style="cursor:default;color:var(--text3)">Nenhuma peça encontrada no sistema.</div>';
+  }else{
+    box.innerHTML = lista.slice(0,12).map(r=>{
+      const cod = String(r.codigo_peca||"").trim(), ped = String(r.pedido||"").trim();
+      const os = String(r.os||"").trim(), qtd = String(r.quantidade_solicitada||"").trim();
+      const jaTem = ROTS.find(x=>x.codigo_peca===cod && x.pedido===ped);
+      const tag = jaTem ? '<span class="rot-cnt" style="background:rgba(45,191,126,0.15);color:var(--ok)">✓ já tem roteiro</span>' : '<span class="rot-cnt">+ criar roteiro</span>';
+      return `<div class="sugg-item" onclick="selPeca('${esc(cod)}','${esc(ped)}')">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <div class="sugg-cod">${escHtml(cod)}</div>${tag}
+        </div>
+        <div class="sugg-desc">${[ped?"Pedido: "+escHtml(ped):"",os?"OS: "+escHtml(os):"",qtd?"Qtd: "+escHtml(qtd)+" pç":""].filter(Boolean).join(" · ")}</div>
+      </div>`;
+    }).join("");
+  }
+  box.style.display = "block";
+}
+document.addEventListener("click", e=>{
+  if(!e.target.closest(".search-wrap")) document.getElementById("sugg").style.display="none";
+});
+
+async function selPeca(codigo, pedido){
+  document.getElementById("sugg").style.display="none";
+  document.getElementById("buscaInput").value="";
+  const existente = ROTS.find(x=>x.codigo_peca===codigo && x.pedido===pedido);
+  if(existente){ abrirRoteiro(existente.id); return; }
+  // cria o cabeçalho já com OS/qtd puxados da posição atual
+  const posRow = POS.find(r=>String(r.codigo_peca||"").trim()===codigo && String(r.pedido||"").trim()===pedido);
+  try{
+    const novo = await supaWrite("/rest/v1/roteiros","POST",{
+      pedido, codigo_peca: codigo,
+      os: posRow ? String(posRow.os||"").trim() : "",
+      quantidade: posRow ? String(posRow.quantidade_solicitada||"").trim() : ""
+    });
+    const rot = Array.isArray(novo)?novo[0]:novo;
+    rot.roteiro_itens = [{count:0}];
+    ROTS.unshift(rot);
+    abrirRoteiro(rot.id);
+    toast("Roteiro criado");
+  }catch(e){ toast("Erro ao criar: "+e.message); }
+}
+
+// ---- EDITOR ----
+async function abrirRoteiro(id){
+  R = ROTS.find(x=>x.id===id);
+  if(!R) return;
+  document.getElementById("viewHome").style.display="none";
+  document.getElementById("viewEditor").style.display="block";
+  document.getElementById("edCod").textContent = R.codigo_peca;
+  document.getElementById("edPedido").textContent = R.pedido;
+  document.getElementById("edOs").value = R.os||"";
+  document.getElementById("edQtd").value = R.quantidade||"";
+  document.getElementById("edObs").value = R.observacao||"";
+  const posRow = POS.find(r=>String(r.codigo_peca||"").trim()===R.codigo_peca && String(r.pedido||"").trim()===R.pedido);
+  document.getElementById("edSub").textContent = posRow&&posRow.cliente ? String(posRow.cliente).replace(/^\d+_/,"") : "—";
+  // tipo V/I por pedido+código
+  document.getElementById("edTipo").innerHTML = "";
+  supaFetch(`/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(R.codigo_peca)}&pedido=eq.${encodeURIComponent(R.pedido)}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`)
+    .then(t=>{ if(Array.isArray(t)&&t[0]) document.getElementById("edTipo").innerHTML = renderTipoBadge(t[0]); }).catch(()=>{});
+
+  SUB_ATUAL = "";
+  renderSubChips();
+  renderPaleta();
+  document.getElementById("seqBody").innerHTML = '<div class="loading"><div class="spinner"></div>carregando...</div>';
+  const its = await supaFetch(`/rest/v1/roteiro_itens?select=*&roteiro_id=eq.${R.id}&order=sequencia&limit=500`);
+  ITENS = Array.isArray(its)?its:[];
+  renderSeq();
+}
+
+function voltarHome(){
+  R = null; ITENS = [];
+  document.getElementById("viewEditor").style.display="none";
+  document.getElementById("viewHome").style.display="block";
+  renderRoteiros();
+  document.getElementById("homeSub").textContent =
+    ROTS.length + " roteiro(s) · catálogo com " + OPS.filter(o=>o.ativo).length + " operações";
+}
+
+function renderSubChips(){
+  const el = document.getElementById("subChips");
+  let h = `<button class="sub-chip${SUB_ATUAL===""?" active":""}" onclick="setSubAtual('')">peça única</button>`;
+  h += SUBS.map(s=>`<button class="sub-chip${SUB_ATUAL===s.nome?" active":""}" onclick="setSubAtual('${esc(s.nome)}')">${escHtml(s.nome)}</button>`).join("");
+  el.innerHTML = h;
+}
+function setSubAtual(v){ SUB_ATUAL = v; renderSubChips(); }
+
+function renderPaleta(){
+  const f = (document.getElementById("palFilter").value||"").trim().toLowerCase();
+  const ativos = OPS.filter(o=>o.ativo && (!f || o.descricao.toLowerCase().includes(f) || o.codigo.includes(f)));
+  const fams = [];
+  ativos.forEach(o=>{ if(!fams.includes(o.familia)) fams.push(o.familia); });
+  document.getElementById("palBody").innerHTML = fams.map(fam=>{
+    const cor = FAM_COR[fam]||"#6E7A92";
+    const ops = ativos.filter(o=>o.familia===fam);
+    return `<div class="pal-fam">
+      <div class="pal-fam-t"><span class="pal-fam-dot" style="background:${cor}"></span>${escHtml(fam)||"—"}</div>
+      <div class="pal-ops">${ops.map(o=>
+        `<button class="pal-op" style="--op-cor:${cor}" onclick="addOp(${o.id})" title="${escHtml(o.descricao)}"><b>${escHtml(o.codigo)}</b> ${escHtml(o.descricao)}</button>`
+      ).join("")}</div>
+    </div>`;
+  }).join("") || '<div class="seq-empty">nenhuma operação encontrada</div>';
+}
+
+function renderSeq(){
+  const el = document.getElementById("seqBody");
+  if(!ITENS.length){
+    el.innerHTML = '<div class="seq-empty">Clique nas operações da paleta ao lado para montar a sequência →</div>';
+    return;
+  }
+  const opts = v => `<option value=""${v===""?" selected":""}>—</option>` +
+    SUBS.map(s=>`<option value="${escHtml(s.nome)}"${v===s.nome?" selected":""}>${escHtml(s.nome)}</option>`).join("");
+  el.innerHTML = ITENS.map((it,i)=>`<div class="seq-row">
+    <span class="seq-n">${it.sequencia}ª</span>
+    <span class="seq-cod">${escHtml(it.operacao_codigo)}</span>
+    <span class="seq-desc" title="${escHtml(it.operacao_descricao)}">${escHtml(it.operacao_descricao)}</span>
+    <select class="seq-sel" onchange="setSub(${it.id},this.value)">${opts(it.subcomponente||"")}</select>
+    <input class="seq-obs" value="${escHtml(it.observacao||"")}" placeholder="obs..." oninput="setObs(${it.id},this.value)">
+    <div class="seq-btns">
+      <button class="ib" title="subir" onclick="mover(${it.id},-1)" ${i===0?"disabled style='opacity:0.25'":""}>▲</button>
+      <button class="ib" title="descer" onclick="mover(${it.id},1)" ${i===ITENS.length-1?"disabled style='opacity:0.25'":""}>▼</button>
+      <button class="ib del" title="remover" onclick="delItem(${it.id})">✕</button>
+    </div>
+  </div>`).join("");
+}
+
+async function addOp(opId){
+  if(!R) return;
+  const op = OPS.find(o=>o.id===opId);
+  if(!op) return;
+  const seq = ITENS.length+1;
+  try{
+    const novo = await supaWrite("/rest/v1/roteiro_itens","POST",{
+      roteiro_id:R.id, sequencia:seq, subcomponente:SUB_ATUAL,
+      operacao_codigo:op.codigo, operacao_descricao:op.descricao
+    });
+    ITENS.push(Array.isArray(novo)?novo[0]:novo);
+    renderSeq(); tocarHdr();
+  }catch(e){ toast("Erro ao adicionar: "+e.message); }
+}
+
+async function delItem(id){
+  const idx = ITENS.findIndex(x=>x.id===id);
+  if(idx<0) return;
+  try{
+    await supaWrite(`/rest/v1/roteiro_itens?id=eq.${id}`,"DELETE",undefined,"return=minimal");
+    ITENS.splice(idx,1);
+    await renumerar(); renderSeq(); tocarHdr();
+  }catch(e){ toast("Erro ao remover: "+e.message); }
+}
+
+async function mover(id,dir){
+  const i = ITENS.findIndex(x=>x.id===id);
+  const j = i+dir;
+  if(i<0||j<0||j>=ITENS.length) return;
+  [ITENS[i],ITENS[j]] = [ITENS[j],ITENS[i]];
+  await renumerar(); renderSeq(); tocarHdr();
+}
+
+// regrava sequencia = posição no array (só onde mudou)
+async function renumerar(){
+  const patches = [];
+  ITENS.forEach((it,idx)=>{
+    const seq = idx+1;
+    if(it.sequencia!==seq){ it.sequencia = seq; patches.push(it); }
+  });
+  for(const it of patches){
+    try{ await supaWrite(`/rest/v1/roteiro_itens?id=eq.${it.id}`,"PATCH",{sequencia:it.sequencia},"return=minimal"); }
+    catch(e){ toast("Erro ao renumerar: "+e.message); }
+  }
+}
+
+function setSub(id,val){
+  const it = ITENS.find(x=>x.id===id); if(!it) return;
+  it.subcomponente = val;
+  supaWrite(`/rest/v1/roteiro_itens?id=eq.${id}`,"PATCH",{subcomponente:val},"return=minimal").then(tocarHdr).catch(e=>toast("Erro: "+e.message));
+}
+function setObs(id,val){
+  const it = ITENS.find(x=>x.id===id); if(!it) return;
+  it.observacao = val;
+  clearTimeout(OBS_TIMERS[id]);
+  OBS_TIMERS[id] = setTimeout(()=>{
+    supaWrite(`/rest/v1/roteiro_itens?id=eq.${id}`,"PATCH",{observacao:val},"return=minimal").then(tocarHdr).catch(e=>toast("Erro: "+e.message));
+  },700);
+}
+
+// cabeçalho (OS/qtd/obs) — salvamento automático com debounce
+function salvarHdrDeb(){
+  clearTimeout(_hdrTimer);
+  _hdrTimer = setTimeout(salvarHdr, 700);
+}
+async function salvarHdr(){
+  if(!R) return;
+  R.os = document.getElementById("edOs").value.trim();
+  R.quantidade = document.getElementById("edQtd").value.trim();
+  R.observacao = document.getElementById("edObs").value;
+  try{
+    await supaWrite(`/rest/v1/roteiros?id=eq.${R.id}`,"PATCH",
+      {os:R.os, quantidade:R.quantidade, observacao:R.observacao, updated_at:new Date().toISOString()},"return=minimal");
+    setSync("salvo "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));
+  }catch(e){ toast("Erro ao salvar: "+e.message); }
+}
+// marca updated_at do roteiro quando itens mudam
+function tocarHdr(){
+  if(!R) return;
+  supaWrite(`/rest/v1/roteiros?id=eq.${R.id}`,"PATCH",{updated_at:new Date().toISOString()},"return=minimal").catch(()=>{});
+  setSync("salvo "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));
+}
+
+async function excluirRoteiro(){
+  if(!R) return;
+  if(!confirm(`Excluir o roteiro de ${R.codigo_peca} (pedido ${R.pedido}) com ${ITENS.length} operação(ões)?`)) return;
+  try{
+    await supaWrite(`/rest/v1/roteiros?id=eq.${R.id}`,"DELETE",undefined,"return=minimal");
+    ROTS = ROTS.filter(x=>x.id!==R.id);
+    toast("Roteiro excluído");
+    voltarHome();
+  }catch(e){ toast("Erro ao excluir: "+e.message); }
+}
+
+// ---- IMPRESSÃO ----
+function imprimir(){
+  if(!R) return;
+  const link = `https://brasmat-mes.vercel.app/engenharia.html?pedido=${encodeURIComponent(R.pedido)}&codigo=${encodeURIComponent(R.codigo_peca)}`;
+  const qrSrc = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data="+encodeURIComponent(link);
+  const temSub = ITENS.some(it=>String(it.subcomponente||"").trim());
+  let linhas = "";
+  if(temSub){
+    // agrupa por subcomponente, mantendo a ordem da sequência
+    const grupos = [];
+    ITENS.forEach(it=>{
+      const s = String(it.subcomponente||"").trim()||"—";
+      let g = grupos.find(x=>x.nome===s && x===grupos[grupos.length-1]);
+      if(!g){ g = {nome:s, itens:[]}; grupos.push(g); }
+      g.itens.push(it);
+    });
+    grupos.forEach(g=>{
+      linhas += `<tr><td class="p-sub" colspan="5">${escHtml(g.nome)}</td></tr>`;
+      linhas += g.itens.map(linhaPrint).join("");
+    });
+  }else{
+    linhas = ITENS.map(linhaPrint).join("");
+  }
+  document.getElementById("printArea").innerHTML = `
+    <div class="p-top"><div class="p-logo">BRASMAT</div><div class="p-title">PROCESSO PRODUTIVO</div><div style="font-size:10px">${new Date().toLocaleDateString("pt-BR")}</div></div>
+    <div class="p-hdr">
+      <div class="p-hf"><b>CÓDIGO:</b> ${escHtml(R.codigo_peca)}</div>
+      <div class="p-hf"><b>PEDIDO:</b> ${escHtml(R.pedido)}</div>
+      <div class="p-hf"><b>QTD:</b> ${escHtml(R.quantidade||"")}</div>
+      <div class="p-hf"><b>OS:</b> ${escHtml(R.os||"")}</div>
+    </div>
+    <table class="p-tbl">
+      <tr><th style="width:52px">Sequência</th><th style="width:60px">Cód.</th><th>Processo</th><th style="width:110px">Visto operador</th><th style="width:32%">Observações</th></tr>
+      ${linhas}
+    </table>
+    <div class="p-foot">
+      <div class="p-obs"><div class="p-obs-t">Orientações e observações</div><div class="p-obs-x">${escHtml(R.observacao||"")}</div></div>
+      <div class="p-qr"><img src="${qrSrc}" alt="QR"><span>escaneie para ver o roteiro e a posição da peça no sistema</span></div>
+    </div>`;
+  // espera o QR carregar antes de abrir a impressão
+  const img = document.querySelector("#printArea img");
+  if(img && !img.complete){ img.onload = ()=>window.print(); img.onerror = ()=>window.print(); }
+  else window.print();
+}
+function linhaPrint(it){
+  return `<tr><td style="text-align:center">${it.sequencia}ª</td><td style="text-align:center">${escHtml(it.operacao_codigo)}</td><td>${escHtml(it.operacao_descricao)}</td><td></td><td>${escHtml(it.observacao||"")}</td></tr>`;
+}
+
+// ---- CATÁLOGO (modal) ----
+function abrirCatalogo(){
+  document.getElementById("catModal").classList.add("show");
+  renderCatOps(); renderCatSubs();
+}
+function fecharCatalogo(){
+  document.getElementById("catModal").classList.remove("show");
+  renderPaleta(); if(R) renderSeq();
+  renderSubChips && R && renderSubChips();
+}
+function catTab(t){
+  document.getElementById("tabOps").classList.toggle("active",t==="ops");
+  document.getElementById("tabSubs").classList.toggle("active",t==="subs");
+  document.getElementById("catOps").style.display = t==="ops"?"block":"none";
+  document.getElementById("catSubs").style.display = t==="subs"?"block":"none";
+}
+function renderCatOps(){
+  const fams = [...new Set(OPS.map(o=>o.familia))];
+  document.getElementById("famList").innerHTML = fams.map(f=>`<option value="${escHtml(f)}">`).join("");
+  document.getElementById("catOpsLista").innerHTML = OPS.map(o=>`<div class="cat-row">
+    <span class="c-cod">${escHtml(o.codigo)}</span>
+    <input value="${escHtml(o.descricao)}" onchange="editOp(${o.id},'descricao',this.value)">
+    <input value="${escHtml(o.familia)}" list="famList" onchange="editOp(${o.id},'familia',this.value)">
+    <span class="c-atv ${o.ativo?"on":"off"}" onclick="toggleOp(${o.id})">${o.ativo?"ativa":"inativa"}</span>
+  </div>`).join("");
+}
+async function addOpCatalogo(){
+  const cod = document.getElementById("nOpCod").value.trim();
+  const desc = document.getElementById("nOpDesc").value.trim();
+  const fam = document.getElementById("nOpFam").value.trim();
+  if(!cod||!desc){ toast("Preencha código e descrição"); return; }
+  try{
+    const novo = await supaWrite("/rest/v1/roteiro_operacoes","POST",{codigo:cod,descricao:desc,familia:fam});
+    OPS.push(Array.isArray(novo)?novo[0]:novo);
+    OPS.sort((a,b)=>cmpCod(a.codigo,b.codigo));
+    document.getElementById("nOpCod").value=""; document.getElementById("nOpDesc").value=""; document.getElementById("nOpFam").value="";
+    renderCatOps(); toast("Operação adicionada");
+  }catch(e){ toast(e.message.includes("duplicate")?"Já existe operação com esse código":"Erro: "+e.message); }
+}
+function editOp(id,campo,val){
+  const o = OPS.find(x=>x.id===id); if(!o) return;
+  o[campo] = val.trim();
+  supaWrite(`/rest/v1/roteiro_operacoes?id=eq.${id}`,"PATCH",{[campo]:o[campo],updated_at:new Date().toISOString()},"return=minimal")
+    .then(()=>toast("Salvo")).catch(e=>toast("Erro: "+e.message));
+}
+function toggleOp(id){
+  const o = OPS.find(x=>x.id===id); if(!o) return;
+  o.ativo = !o.ativo;
+  supaWrite(`/rest/v1/roteiro_operacoes?id=eq.${id}`,"PATCH",{ativo:o.ativo,updated_at:new Date().toISOString()},"return=minimal")
+    .then(renderCatOps).catch(e=>toast("Erro: "+e.message));
+}
+function renderCatSubs(){
+  document.getElementById("catSubsLista").innerHTML = SUBS.map(s=>`<div class="sc-row">
+    <span style="font-size:13px">${escHtml(s.nome)}</span>
+    <button class="ib del" onclick="delSubcomp(${s.id})">✕</button>
+  </div>`).join("") || '<div class="seq-empty">nenhum subcomponente</div>';
+}
+async function addSubcomp(){
+  const nome = document.getElementById("nSubNome").value.trim();
+  if(!nome){ toast("Digite o nome"); return; }
+  try{
+    const novo = await supaWrite("/rest/v1/roteiro_subcomponentes","POST",{nome, ordem:SUBS.length+1});
+    SUBS.push(Array.isArray(novo)?novo[0]:novo);
+    document.getElementById("nSubNome").value="";
+    renderCatSubs(); toast("Adicionado");
+  }catch(e){ toast(e.message.includes("duplicate")?"Já existe":"Erro: "+e.message); }
+}
+async function delSubcomp(id){
+  try{
+    await supaWrite(`/rest/v1/roteiro_subcomponentes?id=eq.${id}`,"DELETE",undefined,"return=minimal");
+    SUBS = SUBS.filter(s=>s.id!==id);
+    renderCatSubs();
+  }catch(e){ toast("Erro: "+e.message); }
+}
+
+init();
+</script>
+</body>
+</html>

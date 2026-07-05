@@ -147,6 +147,16 @@ function renderAnexosIcons(a){
   return h;
 }
 
+// Total de operações do roteiro cadastrado (Engenharia) — 0 se a peça não tem roteiro
+async function buscarTotalRoteiro(pedido, codigo){
+  try{
+    const p = encodeURIComponent(pedido||""), c = encodeURIComponent(codigo||"");
+    const r = await supaFetch(`/rest/v1/roteiros?select=roteiro_itens(count)&pedido=eq.${p}&codigo_peca=eq.${c}&limit=1`);
+    if(Array.isArray(r)&&r[0]&&r[0].roteiro_itens&&r[0].roteiro_itens[0]) return parseInt(r[0].roteiro_itens[0].count)||0;
+  }catch(e){}
+  return 0;
+}
+
 function calcProgresso(eventos){
   const ultimo = eventos[eventos.length-1];
   const total  = parseInt(ultimo.quantidade_operacoes)||0;
@@ -193,7 +203,13 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
   const dias   = diasDesde(ultimo);
   const dc     = diasCls(dias);
   const ret    = eventos.filter(r=>String(r.retrabalho||"").trim()).length;
-  const prog   = calcProgresso(eventos);
+  let prog     = calcProgresso(eventos);
+  // Se a peça tem roteiro cadastrado (Engenharia), o total de operações vem do roteiro
+  const rotTotal = await buscarTotalRoteiro(pedido, codigo);
+  if(rotTotal>0){
+    const curOp = parseInt(ultimo.sequencial_operacao)||0;
+    if(curOp) prog = {pct:Math.min(100,Math.round(curOp/rotTotal*100)), cur:curOp, max:rotTotal};
+  }
   const anexos = await buscarAnexosDemanda(pedido, codigo);
   const prazo  = ultimo.prazo_entrega||"—";
   const prazoD = prazo!=="—"?new Date(prazo):null;

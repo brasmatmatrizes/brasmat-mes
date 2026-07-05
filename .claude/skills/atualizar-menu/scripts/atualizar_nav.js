@@ -37,6 +37,7 @@ const NAV = [
       { page: "qualidade.html", label: "Qualidade", mobile: "Qualidade" },
     ],
   },
+  { page: "engenharia.html", label: "Engenharia", mobile: "Engenharia" },
 ];
 // ===========================================================================
 

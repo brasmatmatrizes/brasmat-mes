@@ -50,6 +50,25 @@ não só servir de documento impresso.
     descrição + família) — acessível ao gestor de produção, não só ao dono.
   - Gera o PDF/impressão a partir do roteiro cadastrado (substitui o anexo manual de
     "fluxo" na Demanda) e mantém a geração de QR Code.
+- **QR Code do impresso = link do Forms pré-preenchido, montado automaticamente**
+  (decisão firmada 06/07/2026): o sistema monta sozinho a URL
+  `.../viewform?usp=pp_url&entry.NNN=...` do Forms "PILOTO 2 REV.A Rastreabilidade de
+  Processo", preenchendo Razão Social, Classificação Fiscal, Código, Pedido, OS,
+  Quantidade Solicitada, **Quantidade de Operações Planejadas (= nº de linhas do
+  roteiro)**, Cliente e Prazo de Entrega. O operador escaneia e completa o resto
+  (Operador, Evento, Máquina/Operação, etc.). Os `entry.ID` estão fixos no
+  `engenharia.html` (constante `FORM_ENTRY`); se o Forms for recriado, reconferir.
+  - **Peça existente**: Cliente/Tipo/Prazo vêm de `producao_eventos` — QR sai sem digitar
+    nada além do que já é do sistema.
+  - **Peça nova**: como não há apontamento ainda, o painel "Item novo" pede também Tipo
+    (Vendas/Brasmat ou Industrialização/Mota → preenche Razão Social + Classificação
+    Fiscal), Cliente (lista `roteiro_clientes`, espelho do dropdown do Forms) e Prazo.
+  - Campo "Link do Forms manual" continua existindo como **override opcional** (se
+    preenchido, usa ele no lugar do automático).
+  - **Lista de clientes** (`roteiro_clientes`): espelha o dropdown do Forms (28 opções na
+    carga inicial). Decisão do usuário: quando o Forms mudar, ele pede e a lista é
+    **re-sincronizada do Forms** (extraída do HTML público do formulário), não mantida à
+    mão na tela.
 - Ligação com o resto do sistema:
   - A quantidade de operações do roteiro passa a alimentar automaticamente o cálculo de
     progresso da peça (hoje `quantidade_operacoes` é digitado a cada apontamento) — acaba

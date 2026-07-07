@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "mcp__Claude_Preview__preview_stop",
+      "mcp__Claude_Preview__preview_list",
+      "mcp__Claude_Preview__preview_eval",
+      "mcp__Claude_Preview__preview_console_logs",
+      "mcp__Claude_Preview__preview_logs",
+      "mcp__Claude_Preview__preview_network",
+      "mcp__Claude_Preview__preview_screenshot",
+      "mcp__Claude_Preview__preview_snapshot",
+      "mcp__Claude_Preview__preview_inspect",
+      "mcp__Claude_Preview__preview_click",
+      "mcp__Claude_Preview__preview_fill",
+      "mcp__Claude_Preview__preview_resize",
+      "mcp__4ae21b67-630f-4a57-aa38-73140f28b059__list_deployments",
+      "mcp__4ae21b67-630f-4a57-aa38-73140f28b059__get_deployment",
+      "mcp__4ae21b67-630f-4a57-aa38-73140f28b059__web_fetch_vercel_url",
+      "Bash(node .claude/skills/atualizar-menu/scripts/atualizar_nav.js . --dry)"
+    ]
+  }
+}

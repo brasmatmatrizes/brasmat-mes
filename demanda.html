@@ -84,10 +84,12 @@
 .seq-handle:active{cursor:grabbing}
 .seq-row .seq-num{color:var(--accent);font-weight:700;flex-shrink:0;width:20px}
 .seq-row .seq-status{flex-shrink:0;font-size:11px}
-.seq-row .seq-cod{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
-.seq-row .seq-prazo{color:var(--text3);flex-shrink:0;font-size:10px}
-.seq-row .seq-prazo.falta{color:var(--danger);font-weight:700}
-.seq-row .seq-ped{color:var(--text3);flex-shrink:0;font-size:10px}
+.seq-row .seq-cod{width:130px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.seq-row .seq-prazo{color:var(--text);flex-shrink:0;font-size:10px;width:58px;text-align:center;white-space:nowrap}
+.seq-row .seq-prazo.hoje{color:var(--warn);font-weight:700}
+.seq-row .seq-prazo.atrasado{color:var(--danger);font-weight:700}
+.seq-row .seq-prazo.falta{color:var(--danger);font-weight:700;font-size:9px}
+.seq-row .seq-ped{color:var(--text3);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
 .item-card.seq-target{animation:seq-flash 0.6s ease-in-out 2}
 .item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
 .item-cod{font-size:15px;font-weight:500;color:var(--text);font-family:var(--mono)}
@@ -905,10 +907,17 @@ function renderSeqPanel(){
   const panel = document.getElementById("seqPanel");
   if(!panel) return;
   if(!CLIENTE || !ITENS.length){ panel.innerHTML=""; return; }
+  const hoje = new Date();
+  const hojeISO = hoje.getFullYear()+"-"+String(hoje.getMonth()+1).padStart(2,"0")+"-"+String(hoje.getDate()).padStart(2,"0");
   const rows = ITENS.map((it,i)=>{
     const expedida = it._sit==="expedida";
     const stIco = expedida ? "🚚" : "⚙️";
     const stTitle = expedida ? "Expedida" : "Em processo";
+    let prazoCls = "", prazoTitle = "Prazo confirmado";
+    if(it.prazo_confirmado && !it.concluido){
+      if(it.prazo_confirmado < hojeISO){ prazoCls = " atrasado"; prazoTitle = "Prazo atrasado"; }
+      else if(it.prazo_confirmado === hojeISO){ prazoCls = " hoje"; prazoTitle = "Prazo é hoje"; }
+    }
     return `
     <div class="seq-row" data-idx="${i}" onclick="scrollToItemCard(${i})"
          ondragover="dragOver(event,${i})" ondrop="dragDrop(event,${i})" ondragleave="dragLeave(event)">
@@ -919,7 +928,7 @@ function renderSeqPanel(){
       <span class="seq-status" title="${stTitle}">${stIco}</span>
       <span class="seq-cod" title="${escHtml(it.codigo_peca)}">${escHtml(it.codigo_peca||"(sem código)")}</span>
       ${it.prazo_confirmado
-        ? `<span class="seq-prazo" title="Prazo confirmado">📅 ${new Date(it.prazo_confirmado+"T00:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}</span>`
+        ? `<span class="seq-prazo${prazoCls}" title="${prazoTitle}">📅 ${new Date(it.prazo_confirmado+"T00:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}</span>`
         : `<span class="seq-prazo falta" title="Falta confirmar o prazo de produção">⚠ sem prazo</span>`}
       ${it.pedido?`<span class="seq-ped">#${escHtml(it.pedido)}</span>`:""}
     </div>`;

@@ -84,7 +84,8 @@
 .seq-handle:active{cursor:grabbing}
 .seq-row .seq-num{color:var(--accent);font-weight:700;flex-shrink:0;width:20px}
 .seq-row .seq-status{flex-shrink:0;font-size:11px}
-.seq-row .seq-cod{width:90px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.seq-row .seq-cod{width:82px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.seq-row .seq-tipo{width:12px;flex-shrink:0;text-align:center;font-weight:700;font-size:10px}
 .seq-row .seq-prazo{color:var(--text);flex-shrink:0;font-size:10px;width:54px;text-align:center;white-space:nowrap}
 .seq-row .seq-prazo.hoje{color:var(--warn);font-weight:700}
 .seq-row .seq-prazo.atrasado{color:var(--danger);font-weight:700}
@@ -302,6 +303,7 @@ let FILTRO_NPRONTO = false;  // mostrar só itens ainda não prontos p/ expedir
 let FILTRO_SEMPRAZO = false; // mostrar só itens sem prazo confirmado (produção)
 let FILTRO_SEMDESENHO = false; // mostrar só itens sem desenho anexado
 let FILTRO_SEMROTEIRO = false; // mostrar só itens sem roteiro (fluxo) anexado
+let FILTRO_TIPO = null;      // mostrar só itens de um tipo: "V" (Vendas) ou "I" (Industrialização)
 let REMOVIDOS = [];      // ids a deletar ao salvar
 let POS = [];            // peças existentes (posicao_atual) p/ busca local
 let _suggTimer = null;
@@ -539,6 +541,15 @@ function toggleFiltroSemRoteiro(){
   FILTRO_SEMROTEIRO = !FILTRO_SEMROTEIRO;
   render();
 }
+// Tipo do item (V - Vendas / I - Industrialização)
+function itemTipo(it){
+  const t = getTipo(it);
+  return t ? t.label : null;
+}
+function toggleFiltroTipo(t){
+  FILTRO_TIPO = (FILTRO_TIPO===t) ? null : t;
+  render();
+}
 
 // Busca tipo (V/I) e progresso da peça — MESMO cálculo da linha do tempo
 async function enriquecerItem(it){
@@ -720,11 +731,12 @@ function dragDrop(e,i){
 
 function removerItem(i){
   const it = ITENS[i];
-  if(it){
-    if(it.desenho_url) supaDeleteArquivo(it.desenho_url);   // apaga PDFs do item
-    if(it.fluxo_url)   supaDeleteArquivo(it.fluxo_url);
-    if(it.id) REMOVIDOS.push(it.id);
-  }
+  if(!it) return;
+  const nome = it.codigo_peca || "este item";
+  if(!confirm(`Remover "${nome}" da demanda?\n\nEssa ação não pode ser desfeita.`)) return;
+  if(it.desenho_url) supaDeleteArquivo(it.desenho_url);   // apaga PDFs do item
+  if(it.fluxo_url)   supaDeleteArquivo(it.fluxo_url);
+  if(it.id) REMOVIDOS.push(it.id);
   ITENS.splice(i,1);
   render();
   agendarSalvar();
@@ -909,10 +921,19 @@ function renderSeqPanel(){
   if(!CLIENTE || !ITENS.length){ panel.innerHTML=""; return; }
   const hoje = new Date();
   const hojeISO = hoje.getFullYear()+"-"+String(hoje.getMonth()+1).padStart(2,"0")+"-"+String(hoje.getDate()).padStart(2,"0");
+  let visiveis = 0;
   const rows = ITENS.map((it,i)=>{
-    const expedida = it._sit==="expedida";
-    const stIco = expedida ? "🚚" : "⚙️";
-    const stTitle = expedida ? "Expedida" : "Em processo";
+    if(FILTRO_NPRONTO && itemPronto(it)) return "";
+    if(FILTRO_SEMPRAZO && !itemSemPrazo(it)) return "";
+    if(FILTRO_SEMDESENHO && !itemSemDesenho(it)) return "";
+    if(FILTRO_SEMROTEIRO && !itemSemRoteiro(it)) return "";
+    if(FILTRO_TIPO && itemTipo(it)!==FILTRO_TIPO) return "";
+    visiveis++;
+    const stObj = it._ultimaOp && it._ultimaOp.st;
+    const stIco = stObj ? stObj.ico : (it._novo ? "🆕" : "❔");
+    const stTitle = stObj ? stObj.label : (it._novo ? "Item novo — sem registro no sistema" : "Sem apontamento");
+    const tipo = getTipo(it);
+    const tipoBadge = tipo ? `<span class="seq-tipo" style="color:${tipo.cor}" title="${tipo.full}">${tipo.label}</span>` : `<span class="seq-tipo"></span>`;
     let prazoCls = "", prazoTitle = "Prazo confirmado";
     if(it.prazo_confirmado && !it.concluido){
       if(it.prazo_confirmado < hojeISO){ prazoCls = " atrasado"; prazoTitle = "Prazo atrasado"; }
@@ -927,13 +948,15 @@ function renderSeqPanel(){
       <span class="seq-num">${i+1}ª</span>
       <span class="seq-status" title="${stTitle}">${stIco}</span>
       <span class="seq-cod" title="${escHtml(it.codigo_peca)}">${escHtml(it.codigo_peca||"(sem código)")}</span>
+      ${tipoBadge}
       ${it.pedido?`<span class="seq-ped">${escHtml(it.pedido)}</span>`:""}
       ${it.prazo_confirmado
         ? `<span class="seq-prazo${prazoCls}" title="${prazoTitle}">📅 ${new Date(it.prazo_confirmado+"T00:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}</span>`
         : `<span class="seq-prazo falta" title="Falta confirmar o prazo de produção">S/P</span>`}
     </div>`;
   }).join("");
-  panel.innerHTML = `<div class="divider"></div><div class="lbl" style="margin-bottom:6px">sequência (${ITENS.length})</div><div class="seq-list">${rows}</div>`;
+  const contagem = visiveis===ITENS.length ? `${ITENS.length}` : `${visiveis}/${ITENS.length}`;
+  panel.innerHTML = `<div class="divider"></div><div class="lbl" style="margin-bottom:6px">sequência (${contagem})</div><div class="seq-list">${rows}</div>`;
 }
 
 // ---------- Render ----------
@@ -950,6 +973,7 @@ function render(){
     if(FILTRO_SEMPRAZO && !itemSemPrazo(it)) return ""; // filtro: só sem prazo confirmado
     if(FILTRO_SEMDESENHO && !itemSemDesenho(it)) return ""; // filtro: só sem desenho
     if(FILTRO_SEMROTEIRO && !itemSemRoteiro(it)) return ""; // filtro: só sem roteiro
+    if(FILTRO_TIPO && itemTipo(it)!==FILTRO_TIPO) return ""; // filtro: só Vendas ou só Industrialização
     const novo = it._novo ? `<span class="item-badge-new">NOVO</span>` : "";
     const qtdInfo = it.quantidade_solicitada&&String(it.quantidade_solicitada).trim() ? (`<span style="color:var(--text);font-weight:600">Qtd: ${String(it.quantidade_solicitada).trim()} pç</span>`) : "";
     const sub  = [it.pedido?("Pedido: "+it.pedido):"", it.os?("OS: "+it.os):"", qtdInfo].filter(Boolean).join(" · ");
@@ -1015,10 +1039,14 @@ function render(){
   const nSemPrazo = ITENS.filter(it=>itemSemPrazo(it)).length;
   const nSemDesenho = ITENS.filter(it=>itemSemDesenho(it)).length;
   const nSemRoteiro = ITENS.filter(it=>itemSemRoteiro(it)).length;
+  const nV = ITENS.filter(it=>itemTipo(it)==="V").length;
+  const nI = ITENS.filter(it=>itemTipo(it)==="I").length;
   const btnFiltro = `<button class="btn-rm" onclick="toggleFiltroNPronto()" style="${FILTRO_NPRONTO?'border-color:var(--accent);color:var(--accent);background:rgba(59,127,255,0.1)':''}" title="Mostrar só itens que ainda não estão prontos p/ expedir">${FILTRO_NPRONTO?'✓ ':''}🔧 Itens abertos (${nNaoPronto})</button>`;
   const btnSemPrazo = `<button class="btn-rm" onclick="toggleFiltroSemPrazo()" style="${FILTRO_SEMPRAZO?'border-color:#DC2626;color:#DC2626;background:rgba(220,38,38,0.1)':''}" title="Mostrar só itens sem prazo confirmado (produção)">${FILTRO_SEMPRAZO?'✓ ':''}⏳ Sem prazo confirmado (${nSemPrazo})</button>`;
   const btnSemDesenho = `<button class="btn-rm" onclick="toggleFiltroSemDesenho()" style="${FILTRO_SEMDESENHO?'border-color:#DC2626;color:#DC2626;background:rgba(220,38,38,0.1)':''}" title="Mostrar só itens sem desenho anexado">${FILTRO_SEMDESENHO?'✓ ':''}📐 Sem desenho (${nSemDesenho})</button>`;
   const btnSemRoteiro = `<button class="btn-rm" onclick="toggleFiltroSemRoteiro()" style="${FILTRO_SEMROTEIRO?'border-color:#DC2626;color:#DC2626;background:rgba(220,38,38,0.1)':''}" title="Mostrar só itens sem roteiro anexado">${FILTRO_SEMROTEIRO?'✓ ':''}📋 Sem roteiro (${nSemRoteiro})</button>`;
+  const btnV = `<button class="btn-rm" onclick="toggleFiltroTipo('V')" style="${FILTRO_TIPO==='V'?'border-color:#3B7FFF;color:#3B7FFF;background:rgba(59,127,255,0.1)':''}" title="Mostrar só itens de Vendas">${FILTRO_TIPO==='V'?'✓ ':''}🔵 V - Vendas (${nV})</button>`;
+  const btnI = `<button class="btn-rm" onclick="toggleFiltroTipo('I')" style="${FILTRO_TIPO==='I'?'border-color:#F5A623;color:#F5A623;background:rgba(245,166,35,0.1)':''}" title="Mostrar só itens de Industrialização">${FILTRO_TIPO==='I'?'✓ ':''}🟠 I - Industrialização (${nI})</button>`;
   const vazioFiltro = (FILTRO_NPRONTO && nNaoPronto===0)
     ? `<div class="placeholder" style="height:50%"><div class="ph-ico">✅</div><div class="ph-txt">Todos os itens já estão prontos p/ expedir.</div></div>`
     : (FILTRO_SEMPRAZO && nSemPrazo===0)
@@ -1026,10 +1054,14 @@ function render(){
     : (FILTRO_SEMDESENHO && nSemDesenho===0)
     ? `<div class="placeholder" style="height:50%"><div class="ph-ico">✅</div><div class="ph-txt">Todos os itens já têm desenho anexado.</div></div>`
     : (FILTRO_SEMROTEIRO && nSemRoteiro===0)
-    ? `<div class="placeholder" style="height:50%"><div class="ph-ico">✅</div><div class="ph-txt">Todos os itens já têm roteiro anexado.</div></div>` : "";
+    ? `<div class="placeholder" style="height:50%"><div class="ph-ico">✅</div><div class="ph-txt">Todos os itens já têm roteiro anexado.</div></div>`
+    : (FILTRO_TIPO==='V' && nV===0)
+    ? `<div class="placeholder" style="height:50%"><div class="ph-ico">🔵</div><div class="ph-txt">Nenhum item de Vendas nesta demanda.</div></div>`
+    : (FILTRO_TIPO==='I' && nI===0)
+    ? `<div class="placeholder" style="height:50%"><div class="ph-ico">🟠</div><div class="ph-txt">Nenhum item de Industrialização nesta demanda.</div></div>` : "";
   c.innerHTML = `<div class="chdr">
       <div><div class="ctitle">${nomeExib(CLIENTE)}</div><div class="csub">${ITENS.length} ${ITENS.length===1?"item":"itens"} na demanda${FILTRO_NPRONTO?` · ${nNaoPronto} não pronto(s)`:""}${FILTRO_SEMPRAZO?` · ${nSemPrazo} sem prazo`:""}${FILTRO_SEMDESENHO?` · ${nSemDesenho} sem desenho`:""}${FILTRO_SEMROTEIRO?` · ${nSemRoteiro} sem roteiro`:""}</div></div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">${btnFiltro}${btnSemPrazo}${btnSemDesenho}${btnSemRoteiro}<button class="btn-rm" onclick="voltarResumo()">← voltar</button></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${btnFiltro}${btnSemPrazo}${btnSemDesenho}${btnSemRoteiro}${btnV}${btnI}<button class="btn-rm" onclick="voltarResumo()">← voltar</button></div>
     </div>${vazioFiltro}${cards}`;
 }
 

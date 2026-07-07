@@ -927,10 +927,10 @@ function renderSeqPanel(){
       <span class="seq-num">${i+1}ª</span>
       <span class="seq-status" title="${stTitle}">${stIco}</span>
       <span class="seq-cod" title="${escHtml(it.codigo_peca)}">${escHtml(it.codigo_peca||"(sem código)")}</span>
+      ${it.pedido?`<span class="seq-ped">${escHtml(it.pedido)}</span>`:""}
       ${it.prazo_confirmado
         ? `<span class="seq-prazo${prazoCls}" title="${prazoTitle}">📅 ${new Date(it.prazo_confirmado+"T00:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}</span>`
         : `<span class="seq-prazo falta" title="Falta confirmar o prazo de produção">S/P</span>`}
-      ${it.pedido?`<span class="seq-ped">${escHtml(it.pedido)}</span>`:""}
     </div>`;
   }).join("");
   panel.innerHTML = `<div class="divider"></div><div class="lbl" style="margin-bottom:6px">sequência (${ITENS.length})</div><div class="seq-list">${rows}</div>`;

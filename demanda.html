@@ -85,7 +85,7 @@
 .seq-row .seq-num{color:var(--accent);font-weight:700;flex-shrink:0;width:20px}
 .seq-row .seq-status{flex-shrink:0;font-size:11px}
 .seq-row .seq-cod{width:90px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
-.seq-row .seq-prazo{color:var(--text);flex-shrink:0;font-size:10px;width:46px;text-align:center;white-space:nowrap}
+.seq-row .seq-prazo{color:var(--text);flex-shrink:0;font-size:10px;width:54px;text-align:center;white-space:nowrap}
 .seq-row .seq-prazo.hoje{color:var(--warn);font-weight:700}
 .seq-row .seq-prazo.atrasado{color:var(--danger);font-weight:700}
 .seq-row .seq-prazo.falta{color:var(--danger);font-weight:700}
@@ -930,7 +930,7 @@ function renderSeqPanel(){
       ${it.prazo_confirmado
         ? `<span class="seq-prazo${prazoCls}" title="${prazoTitle}">📅 ${new Date(it.prazo_confirmado+"T00:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}</span>`
         : `<span class="seq-prazo falta" title="Falta confirmar o prazo de produção">S/P</span>`}
-      ${it.pedido?`<span class="seq-ped">#${escHtml(it.pedido)}</span>`:""}
+      ${it.pedido?`<span class="seq-ped">${escHtml(it.pedido)}</span>`:""}
     </div>`;
   }).join("");
   panel.innerHTML = `<div class="divider"></div><div class="lbl" style="margin-bottom:6px">sequência (${ITENS.length})</div><div class="seq-list">${rows}</div>`;

@@ -67,6 +67,7 @@
 .seg button{font-size:10px;padding:4px 9px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text3);cursor:pointer;white-space:nowrap}
 .seg button:hover{border-color:var(--border2);color:var(--text2)}
 .seg button.on-p{background:var(--text3);color:#0F172A;border-color:transparent}
+.seg button.on-sp{background:var(--roxo);color:#fff;border-color:transparent}
 .seg button.on-s{background:var(--warn);color:#3A2800;border-color:transparent}
 .seg button.on-e{background:var(--ok);color:#06281A;border-color:transparent}
 .loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
@@ -192,7 +193,8 @@
 <div class="toolbar">
   <span class="tt">📦 Expedição</span>
   <button class="fchip on" id="f-todos" onclick="setFiltro('todos')">Todos</button>
-  <button class="fchip" id="f-pendente" onclick="setFiltro('pendente')">Sem pedido</button>
+  <button class="fchip" id="f-pendente" onclick="setFiltro('pendente')">Pendentes</button>
+  <button class="fchip" id="f-sem_pedido" onclick="setFiltro('sem_pedido')">Sem pedido</button>
   <button class="fchip" id="f-separado" onclick="setFiltro('separado')">Separados</button>
   <button class="fchip" id="f-expedido" onclick="setFiltro('expedido')">Expedidos</button>
   <select class="fsel-exp" id="fcli" onchange="setCliente(this.value)"><option value="">Todos os clientes</option></select>
@@ -325,7 +327,7 @@ function passaPrazo(it){
 
 function setFiltro(f){
   FILTRO=f;
-  ["todos","pendente","separado","expedido"].forEach(t=>document.getElementById("f-"+t).classList.toggle("on",t===f));
+  ["todos","pendente","sem_pedido","separado","expedido"].forEach(t=>document.getElementById("f-"+t).classList.toggle("on",t===f));
   render();
 }
 
@@ -399,7 +401,8 @@ function linhaItem(it){
     <div class="ei-prazo ${venc?'venc':''}">${prazo}${venc?" ⚠":""}</div>
     <div class="sit" style="background:${sit.cor}22;color:${sit.cor}">${sit.label}</div>
     <div class="seg">
-      <button class="${st==='pendente'?'on-p':''}" onclick="marcar(${it.id},'pendente')">Sem pedido</button>
+      <button class="${st==='pendente'?'on-p':''}" onclick="marcar(${it.id},'pendente')">Pendente</button>
+      <button class="${st==='sem_pedido'?'on-sp':''}" onclick="marcar(${it.id},'sem_pedido')">Sem pedido</button>
       <button class="${st==='separado'?'on-s':''}" onclick="marcar(${it.id},'separado')">Separado</button>
       <button class="${st==='expedido'?'on-e':''}" onclick="marcar(${it.id},'expedido')">Expedido</button>
     </div>
@@ -429,7 +432,7 @@ function fechar(){ document.getElementById("dp").classList.remove("open"); }
 
 // ---------- Impressão A4 ----------
 function escH(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-const EXP_LBL={pendente:"Sem pedido",separado:"Separado",expedido:"Expedido"};
+const EXP_LBL={pendente:"Pendente",sem_pedido:"Sem pedido",separado:"Separado",expedido:"Expedido"};
 
 function imprimir(){
   let itens=ITENS.slice();

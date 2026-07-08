@@ -44,9 +44,20 @@ async function supaFetch(path){
 }
 
 // Busca posição atual via view (rápido — um registro por peça)
+// Pagina em blocos de 1000: o Supabase limita toda resposta REST a 1000 linhas
+// por padrão (db-max-rows), então um só fetch com limit=10000 é truncado em silêncio
+// assim que a view passar de 1000 peças.
 async function buscarPosicao(){
-  const r = await supaFetch("/rest/v1/posicao_atual?select=*&limit=10000");
-  return Array.isArray(r) ? r : [];
+  let all = [], offset = 0;
+  const pageSize = 1000;
+  while(true){
+    const r = await supaFetch(`/rest/v1/posicao_atual?select=*&order=id.asc&limit=${pageSize}&offset=${offset}`);
+    const page = Array.isArray(r) ? r : [];
+    all = all.concat(page);
+    if(page.length < pageSize) break;
+    offset += pageSize;
+  }
+  return all;
 }
 
 // Busca histórico completo de UMA peça (chamado só ao abrir detalhe)

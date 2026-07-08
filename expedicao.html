@@ -577,7 +577,7 @@ function iniciarRealtime(){
   }catch(e){}
 }
 iniciarRealtime();
-setInterval(()=>{ if(!_rtConectado) init(); }, 60000);   // só recarrega no polling se o realtime não estiver conectado
+setInterval(init, 60000);   // sempre recarrega — o realtime pode ficar "conectado" sem entregar eventos, então o polling é o teto real de atraso
 init();
 </script>
 </body>

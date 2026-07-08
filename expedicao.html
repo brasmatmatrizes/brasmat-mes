@@ -192,7 +192,7 @@
 <div class="toolbar">
   <span class="tt">📦 Expedição</span>
   <button class="fchip on" id="f-todos" onclick="setFiltro('todos')">Todos</button>
-  <button class="fchip" id="f-pendente" onclick="setFiltro('pendente')">Pendentes</button>
+  <button class="fchip" id="f-pendente" onclick="setFiltro('pendente')">Sem pedido</button>
   <button class="fchip" id="f-separado" onclick="setFiltro('separado')">Separados</button>
   <button class="fchip" id="f-expedido" onclick="setFiltro('expedido')">Expedidos</button>
   <select class="fsel-exp" id="fcli" onchange="setCliente(this.value)"><option value="">Todos os clientes</option></select>
@@ -399,7 +399,7 @@ function linhaItem(it){
     <div class="ei-prazo ${venc?'venc':''}">${prazo}${venc?" ⚠":""}</div>
     <div class="sit" style="background:${sit.cor}22;color:${sit.cor}">${sit.label}</div>
     <div class="seg">
-      <button class="${st==='pendente'?'on-p':''}" onclick="marcar(${it.id},'pendente')">Pendente</button>
+      <button class="${st==='pendente'?'on-p':''}" onclick="marcar(${it.id},'pendente')">Sem pedido</button>
       <button class="${st==='separado'?'on-s':''}" onclick="marcar(${it.id},'separado')">Separado</button>
       <button class="${st==='expedido'?'on-e':''}" onclick="marcar(${it.id},'expedido')">Expedido</button>
     </div>
@@ -429,7 +429,7 @@ function fechar(){ document.getElementById("dp").classList.remove("open"); }
 
 // ---------- Impressão A4 ----------
 function escH(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-const EXP_LBL={pendente:"Pendente",separado:"Separado",expedido:"Expedido"};
+const EXP_LBL={pendente:"Sem pedido",separado:"Separado",expedido:"Expedido"};
 
 function imprimir(){
   let itens=ITENS.slice();

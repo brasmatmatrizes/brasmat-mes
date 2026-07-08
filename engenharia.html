@@ -480,7 +480,7 @@ async function init(){
     supaFetch("/rest/v1/roteiro_subcomponentes?select=id,nome,ordem&order=ordem&limit=100"),
     supaFetch("/rest/v1/roteiro_clientes?select=id,nome,ordem&order=ordem&limit=500"),
     supaFetch("/rest/v1/roteiros?select=*,roteiro_itens(count)&order=updated_at.desc&limit=300"),
-    supaFetch("/rest/v1/posicao_atual?select=codigo_peca,pedido,os,quantidade_solicitada,cliente&limit=10000")
+    buscarPosicao()   // paginado — posicao_atual já passa de 1000 linhas, o limit sozinho é truncado pela API
   ]);
   OPS  = Array.isArray(ops)  ? ops.sort((a,b)=>cmpCod(a.codigo,b.codigo)) : [];
   FAMS = Array.isArray(fams) ? fams : [];

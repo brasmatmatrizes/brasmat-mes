@@ -44,7 +44,7 @@
 .ph-ico{font-size:48px;opacity:0.3}.ph-txt{font-size:14px;text-align:center;line-height:1.6;max-width:300px}
 
 /* RESUMO */
-.resumo-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.resumo-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px}
 .res-card{border-radius:12px;padding:16px;cursor:pointer;transition:all 0.18s;border:1px solid transparent;position:relative;overflow:hidden}
 .res-card::after{content:"";position:absolute;inset:0;border-radius:12px;opacity:0;transition:opacity 0.18s;background:rgba(255,255,255,0.04)}
 .res-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.3)}.res-card:hover::after{opacity:1}
@@ -54,14 +54,16 @@
 .rc-final    {background:linear-gradient(135deg,rgba(45,191,126,0.18),rgba(45,191,126,0.08));border-color:rgba(45,191,126,0.35)}
 .rc-exped    {background:linear-gradient(135deg,rgba(139,92,246,0.18),rgba(139,92,246,0.08));border-color:rgba(139,92,246,0.35)}
 .rc-nao      {background:linear-gradient(135deg,rgba(240,69,69,0.18),rgba(240,69,69,0.08));border-color:rgba(240,69,69,0.35)}
+.rc-fora     {background:linear-gradient(135deg,rgba(100,116,139,0.18),rgba(100,116,139,0.08));border-color:rgba(100,116,139,0.35)}
 .rc-total.ativo    {border-color:rgba(59,127,255,0.7);background:linear-gradient(135deg,rgba(59,127,255,0.28),rgba(59,127,255,0.14))}
 .rc-processo.ativo {border-color:rgba(14,165,233,0.7);background:linear-gradient(135deg,rgba(14,165,233,0.28),rgba(14,165,233,0.14))}
 .rc-final.ativo    {border-color:rgba(45,191,126,0.7);background:linear-gradient(135deg,rgba(45,191,126,0.28),rgba(45,191,126,0.14))}
 .rc-exped.ativo    {border-color:rgba(139,92,246,0.7);background:linear-gradient(135deg,rgba(139,92,246,0.28),rgba(139,92,246,0.14))}
 .rc-nao.ativo      {border-color:rgba(240,69,69,0.7);background:linear-gradient(135deg,rgba(240,69,69,0.28),rgba(240,69,69,0.14))}
+.rc-fora.ativo     {border-color:rgba(100,116,139,0.7);background:linear-gradient(135deg,rgba(100,116,139,0.28),rgba(100,116,139,0.14))}
 .res-ico{font-size:18px;margin-bottom:8px}
 .res-val{font-size:28px;font-weight:600;font-family:var(--mono);line-height:1;margin-bottom:4px}
-.rc-total .res-val{color:#6BA3FF}.rc-processo .res-val{color:#38BDF8}.rc-final .res-val{color:var(--ok)}.rc-exped .res-val{color:#A78BFA}.rc-nao .res-val{color:var(--danger)}
+.rc-total .res-val{color:#6BA3FF}.rc-processo .res-val{color:#38BDF8}.rc-final .res-val{color:var(--ok)}.rc-exped .res-val{color:#A78BFA}.rc-nao .res-val{color:var(--danger)}.rc-fora .res-val{color:#94A3B8}
 .res-lbl{font-size:11px;color:var(--text2);font-weight:500}
 .res-hint{font-size:10px;color:var(--text3);font-family:var(--mono);margin-top:4px}
 
@@ -331,6 +333,7 @@ function renderResultados(resultados){
   const finalizadas  = resultados.filter(r=>r.status==="finalizada").length;
   const expedidas    = resultados.filter(r=>r.status==="expedida").length;
   const naoEnc       = resultados.filter(r=>r.status==="nao_encontrada"||r.status==="erro").length;
+  const foraDemanda  = resultados.filter(r=>r.dados && !naDemanda(r.dados.codigo_peca||r.codigoOriginal, r.dados.pedido)).length;
 
   const textoCliente = gerarTextoCliente(resultados);
 
@@ -363,6 +366,12 @@ function renderResultados(resultados){
       <div class="res-ico">⚠️</div>
       <div class="res-val">${naoEnc}</div>
       <div class="res-lbl">não encontradas</div>
+      <div class="res-hint">clique para filtrar</div>
+    </div>
+    <div class="res-card rc-fora" id="rc-fora" onclick="setFiltro('fora')">
+      <div class="res-ico">📭</div>
+      <div class="res-val">${foraDemanda}</div>
+      <div class="res-lbl">fora da demanda</div>
       <div class="res-hint">clique para filtrar</div>
     </div>
   </div>`;
@@ -567,7 +576,7 @@ function renderCard(r){
           ${r.pedidoCliente?`<div class="peca-pedido-cli">Pedido cliente: ${r.pedidoCliente} · Sistema: ${pedidoSist}</div>`:""}
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-          <span class="status-pill" style="background:rgba(45,191,126,0.12);color:var(--ok);border-color:rgba(45,191,126,0.3)">✅ Concluída / Expedida</span>
+          <span class="status-pill" style="background:rgba(45,191,126,0.12);color:var(--ok);border-color:rgba(45,191,126,0.3)">🚚 Concluída / Expedida</span>
           <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">ver linha do tempo →</span>
         </div>
       </div>
@@ -628,7 +637,7 @@ function setFiltro(tipo){
   _filtroAtivo = _filtroAtivo===tipo ? null : tipo;
 
   // Atualiza visual dos cards
-  ["total","encontradas","finalizadas","expedidas","nao"].forEach(t=>{
+  ["total","encontradas","finalizadas","expedidas","nao","fora"].forEach(t=>{
     const el = document.getElementById("rc-"+t);
     if(!el) return;
     el.classList.remove("ativo");
@@ -640,6 +649,7 @@ function setFiltro(tipo){
   else if(_filtroAtivo==="finalizadas") filtrados = _resultadosGlobais.filter(r=>r.status==="finalizada");
   else if(_filtroAtivo==="expedidas")   filtrados = _resultadosGlobais.filter(r=>r.status==="expedida");
   else if(_filtroAtivo==="nao")         filtrados = _resultadosGlobais.filter(r=>r.status==="nao_encontrada"||r.status==="erro");
+  else if(_filtroAtivo==="fora")        filtrados = _resultadosGlobais.filter(r=>r.dados && !naDemanda(r.dados.codigo_peca||r.codigoOriginal, r.dados.pedido));
   // "total" mostra tudo
 
   // Atualiza cards de detalhe
@@ -658,6 +668,7 @@ function setFiltro(tipo){
                  _filtroAtivo==="finalizadas"?"Peças finalizadas":
                  _filtroAtivo==="expedidas"?"Peças expedidas":
                  _filtroAtivo==="nao"?"Peças não encontradas":
+                 _filtroAtivo==="fora"?"Peças fora da demanda":
                  "Todas as peças";
   const expTitle = document.querySelector(".export-title");
   if(expTitle) expTitle.textContent = `📤 ${titulo} — resposta para o cliente`;

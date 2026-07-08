@@ -91,6 +91,9 @@
 .seq-row .seq-prazo.atrasado{color:var(--danger);font-weight:700}
 .seq-row .seq-prazo.falta{color:var(--danger);font-weight:700}
 .seq-row .seq-ped{color:var(--text3);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+.seq-sort-btn{font-size:9px;font-family:var(--sans);font-weight:500;text-transform:none;letter-spacing:normal;padding:2px 8px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer}
+.seq-sort-btn:hover{border-color:var(--accent);color:var(--accent)}
+.seq-sort-btn.ativo{border-color:var(--accent);color:var(--accent);background:rgba(59,127,255,0.12)}
 .item-card.seq-target{animation:seq-flash 0.6s ease-in-out 2}
 .item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
 .item-cod{font-size:15px;font-weight:500;color:var(--text);font-family:var(--mono)}
@@ -304,6 +307,7 @@ let FILTRO_SEMPRAZO = false; // mostrar só itens sem prazo confirmado (produç�
 let FILTRO_SEMDESENHO = false; // mostrar só itens sem desenho anexado
 let FILTRO_SEMROTEIRO = false; // mostrar só itens sem roteiro (fluxo) anexado
 let FILTRO_TIPO = null;      // mostrar só itens de um tipo: "V" (Vendas) ou "I" (Industrialização)
+let SORT_PRAZO = false;      // sequência: ordenar por prazo confirmado (sem prazo entra primeiro)
 let REMOVIDOS = [];      // ids a deletar ao salvar
 let POS = [];            // peças existentes (posicao_atual) p/ busca local
 let _suggTimer = null;
@@ -550,6 +554,11 @@ function toggleFiltroTipo(t){
   FILTRO_TIPO = (FILTRO_TIPO===t) ? null : t;
   render();
 }
+// Sequência: ordenar por prazo confirmado (itens sem prazo entram primeiro)
+function toggleSortPrazo(){
+  SORT_PRAZO = !SORT_PRAZO;
+  renderSeqPanel();
+}
 
 // Busca tipo (V/I) e progresso da peça — MESMO cálculo da linha do tempo
 async function enriquecerItem(it){
@@ -743,7 +752,7 @@ function removerItem(i){
 }
 
 // ---------- Edição de campos ----------
-function setCampo(i, campo, valor){ if(ITENS[i]){ ITENS[i][campo] = valor || null; agendarSalvar(); } }
+function setCampo(i, campo, valor){ if(ITENS[i]){ ITENS[i][campo] = valor || null; renderSeqPanel(); agendarSalvar(); } }
 
 function toggleCritico(i, checked){
   if(!ITENS[i]) return;
@@ -921,14 +930,26 @@ function renderSeqPanel(){
   if(!CLIENTE || !ITENS.length){ panel.innerHTML=""; return; }
   const hoje = new Date();
   const hojeISO = hoje.getFullYear()+"-"+String(hoje.getMonth()+1).padStart(2,"0")+"-"+String(hoje.getDate()).padStart(2,"0");
-  let visiveis = 0;
-  const rows = ITENS.map((it,i)=>{
-    if(FILTRO_NPRONTO && itemPronto(it)) return "";
-    if(FILTRO_SEMPRAZO && !itemSemPrazo(it)) return "";
-    if(FILTRO_SEMDESENHO && !itemSemDesenho(it)) return "";
-    if(FILTRO_SEMROTEIRO && !itemSemRoteiro(it)) return "";
-    if(FILTRO_TIPO && itemTipo(it)!==FILTRO_TIPO) return "";
-    visiveis++;
+  let indices = [];
+  ITENS.forEach((it,i)=>{
+    if(FILTRO_NPRONTO && itemPronto(it)) return;
+    if(FILTRO_SEMPRAZO && !itemSemPrazo(it)) return;
+    if(FILTRO_SEMDESENHO && !itemSemDesenho(it)) return;
+    if(FILTRO_SEMROTEIRO && !itemSemRoteiro(it)) return;
+    if(FILTRO_TIPO && itemTipo(it)!==FILTRO_TIPO) return;
+    indices.push(i);
+  });
+  if(SORT_PRAZO){
+    indices = indices.slice().sort((a,b)=>{
+      const pa = ITENS[a].prazo_confirmado, pb = ITENS[b].prazo_confirmado;
+      if(!pa && !pb) return a-b;
+      if(!pa) return -1;
+      if(!pb) return 1;
+      return pa<pb ? -1 : pa>pb ? 1 : a-b;
+    });
+  }
+  const rows = indices.map(i=>{
+    const it = ITENS[i];
     const stObj = it._ultimaOp && it._ultimaOp.st;
     const stIco = stObj ? stObj.ico : (it._novo ? "🆕" : "❔");
     const stTitle = stObj ? stObj.label : (it._novo ? "Item novo — sem registro no sistema" : "Sem apontamento");
@@ -939,12 +960,15 @@ function renderSeqPanel(){
       if(it.prazo_confirmado < hojeISO){ prazoCls = " atrasado"; prazoTitle = "Prazo atrasado"; }
       else if(it.prazo_confirmado === hojeISO){ prazoCls = " hoje"; prazoTitle = "Prazo é hoje"; }
     }
+    const handle = SORT_PRAZO
+      ? `<span class="seq-handle" style="cursor:default;opacity:0.3" title="Reordenação manual desativada — ordenando por prazo">⠿</span>`
+      : `<span class="seq-handle" draggable="true" title="Arraste para reordenar"
+              onclick="event.stopPropagation()"
+              ondragstart="dragStart(event,${i})" ondragend="dragEnd(event)">⠿</span>`;
+    const dragAttrs = SORT_PRAZO ? "" : `ondragover="dragOver(event,${i})" ondrop="dragDrop(event,${i})" ondragleave="dragLeave(event)"`;
     return `
-    <div class="seq-row" data-idx="${i}" onclick="scrollToItemCard(${i})"
-         ondragover="dragOver(event,${i})" ondrop="dragDrop(event,${i})" ondragleave="dragLeave(event)">
-      <span class="seq-handle" draggable="true" title="Arraste para reordenar"
-            onclick="event.stopPropagation()"
-            ondragstart="dragStart(event,${i})" ondragend="dragEnd(event)">⠿</span>
+    <div class="seq-row" data-idx="${i}" onclick="scrollToItemCard(${i})" ${dragAttrs}>
+      ${handle}
       <span class="seq-num">${i+1}ª</span>
       <span class="seq-status" title="${stTitle}">${stIco}</span>
       <span class="seq-cod" title="${escHtml(it.codigo_peca)}">${escHtml(it.codigo_peca||"(sem código)")}</span>
@@ -955,8 +979,10 @@ function renderSeqPanel(){
         : `<span class="seq-prazo falta" title="Falta confirmar o prazo de produção">S/P</span>`}
     </div>`;
   }).join("");
+  const visiveis = indices.length;
   const contagem = visiveis===ITENS.length ? `${ITENS.length}` : `${visiveis}/${ITENS.length}`;
-  panel.innerHTML = `<div class="divider"></div><div class="lbl" style="margin-bottom:6px">sequência (${contagem})</div><div class="seq-list">${rows}</div>`;
+  const sortBtn = `<button class="seq-sort-btn${SORT_PRAZO?' ativo':''}" onclick="toggleSortPrazo()" title="Ordenar por prazo confirmado — itens sem prazo aparecem primeiro">${SORT_PRAZO?'✓ ':''}📅 prazo</button>`;
+  panel.innerHTML = `<div class="divider"></div><div class="lbl" style="margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">sequência (${contagem}) ${sortBtn}</div><div class="seq-list">${rows}</div>`;
 }
 
 // ---------- Render ----------

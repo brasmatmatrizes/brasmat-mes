@@ -757,7 +757,8 @@ function removerItem(i){
   const it = ITENS[i];
   if(!it) return;
   const nome = it.codigo_peca || "este item";
-  if(!confirm(`Remover "${nome}" da demanda?\n\nEssa ação não pode ser desfeita.`)) return;
+  const obs = it.observacao ? `\n\nObservação:\n${it.observacao}` : "";
+  if(!confirm(`Remover "${nome}" da demanda?${obs}\n\nEssa ação não pode ser desfeita.`)) return;
   if(it.desenho_url) supaDeleteArquivo(it.desenho_url);   // apaga PDFs do item
   if(it.fluxo_url)   supaDeleteArquivo(it.fluxo_url);
   if(it.id) REMOVIDOS.push(it.id);

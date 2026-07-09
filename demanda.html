@@ -295,11 +295,6 @@
 <script>
 const BUCKET = "demanda-arquivos";
 
-function abrirArquivo(url){
-  const w = Math.round(screen.width*0.85), h = Math.round(screen.height*0.85);
-  window.open(url, "_blank", `noopener,width=${w},height=${h},left=${Math.round((screen.width-w)/2)},top=${Math.round((screen.height-h)/2)}`);
-}
-
 function abrirDetalhe(pedido, codigo){
   abrirPainelDetalhe(pedido, codigo, 'dp', 'dt', 'db');
 }
@@ -1093,7 +1088,7 @@ function fileBox(i, tipo, label, url){
   const has = !!url;
   const state = has ? `<div class="file-state ok" id="fst-${i}-${tipo}">✓ anexado</div>`
                     : `<div class="file-state" id="fst-${i}-${tipo}">nenhum arquivo</div>`;
-  const view = has ? `<button class="btn-file view" onclick="abrirArquivo('${url}')">abrir</button>
+  const view = has ? `<a class="btn-file view" href="${url}" target="_blank" rel="noopener">abrir</a>
                       <button class="btn-file" onclick="removerArquivo(${i},'${tipo}')">×</button>` : "";
   return `<div class="file-box ${has?'has-file':''}"
       ondragover="event.preventDefault();this.classList.add('drag')"

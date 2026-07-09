@@ -347,7 +347,7 @@ function render(){
   const grupos={};
   itens.forEach(it=>{ const c=it.cliente||"—"; (grupos[c]=grupos[c]||[]).push(it); });
   const clientes=Object.keys(grupos).sort((a,b)=>nomeExib(a).localeCompare(nomeExib(b),"pt-BR"));
-  const sortSit=(a,b)=>(SIT_ORDEM[situacao(a).key]-SIT_ORDEM[situacao(b).key])||String(a.codigo_peca).localeCompare(String(b.codigo_peca));
+  const sortSit=(a,b)=>(SIT_ORDEM[situacao(a).key]-SIT_ORDEM[situacao(b).key])||(a.prazo_confirmado||"9999-99-99").localeCompare(b.prazo_confirmado||"9999-99-99")||String(a.codigo_peca).localeCompare(String(b.codigo_peca));
   // sub-grupos por classificação (mesmo critério da linha do tempo)
   const TIPOS=[
     {k:"I", full:"Industrialização", cor:"#F5A623", bg:"rgba(245,166,35,0.15)"},
@@ -450,7 +450,7 @@ function imprimir(){
   const fCliTxt = FCLI ? nomeExib(FCLI) : "Todos os clientes";
   const agora = new Date().toLocaleString("pt-BR");
 
-  const sortSit=(a,b)=>(SIT_ORDEM[situacao(a).key]-SIT_ORDEM[situacao(b).key])||String(a.codigo_peca).localeCompare(String(b.codigo_peca));
+  const sortSit=(a,b)=>(SIT_ORDEM[situacao(a).key]-SIT_ORDEM[situacao(b).key])||(a.prazo_confirmado||"9999-99-99").localeCompare(b.prazo_confirmado||"9999-99-99")||String(a.codigo_peca).localeCompare(String(b.codigo_peca));
   const chaveTipo=(it)=>{ const r=tipoRowDe(it); const t=r?getTipo(r):null; return t?t.label:"?"; };
   const TIPOS_P=[{k:"I",full:"Industrialização"},{k:"V",full:"Vendas"},{k:"?",full:"Sem classificação"}];
   const linhaTr=(it)=>{

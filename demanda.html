@@ -295,9 +295,14 @@
 <script>
 const BUCKET = "demanda-arquivos";
 
-function abrirArquivo(url){
+function abrirArquivo(ev, url){
+  // touch (tablet/celular): deixa o link nativo — toque longo oferece "Abrir em nova janela" no Chrome
+  if(matchMedia("(pointer:coarse)").matches) return true;
+  // mouse (PC): abre janela separada com tamanho definido
+  ev.preventDefault();
   const w = Math.round(screen.width*0.85), h = Math.round(screen.height*0.85);
   window.open(url, "_blank", `noopener,width=${w},height=${h},left=${Math.round((screen.width-w)/2)},top=${Math.round((screen.height-h)/2)}`);
+  return false;
 }
 
 function abrirDetalhe(pedido, codigo){
@@ -1093,7 +1098,7 @@ function fileBox(i, tipo, label, url){
   const has = !!url;
   const state = has ? `<div class="file-state ok" id="fst-${i}-${tipo}">✓ anexado</div>`
                     : `<div class="file-state" id="fst-${i}-${tipo}">nenhum arquivo</div>`;
-  const view = has ? `<button class="btn-file view" onclick="abrirArquivo('${url}')">abrir</button>
+  const view = has ? `<a class="btn-file view" href="${url}" target="_blank" rel="noopener" onclick="return abrirArquivo(event,'${url}')">abrir</a>
                       <button class="btn-file" onclick="removerArquivo(${i},'${tipo}')">×</button>` : "";
   return `<div class="file-box ${has?'has-file':''}"
       ondragover="event.preventDefault();this.classList.add('drag')"

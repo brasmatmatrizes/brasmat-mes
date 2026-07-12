@@ -44,21 +44,46 @@ na demanda **sobrepõe** o progresso (usado quando o apontamento está errado).
 `razao_social` (Brasmat→V, Mota→I). Registro mais recente com o campo preenchido
 (`order=id.desc`), por pedido+código.
 
-## OTD (otd.html) — cascata de 5 etapas
+## OTD (otd.html)
 
 Peça **sem `prazo_entrega` não é analisada**. Prazo vale até 23:59:59 do dia.
+
+**Filtro V/I** (default **Vendas**): classifica cada grupo pedido+código pela regra do
+`getTipo` (registro mais recente com o campo preenchido) e filtra os grupos —
+**nunca** filtra evento no servidor (perderia eventos sem `classificacao_fiscal` e
+quebraria a cascata). "Todos" reproduz o comportamento antigo.
+
+### OTD global (do início ao fim) — o número de frente pro cliente
+
+Entrega final = **Saída ADM 11.4** vs prazo. Dois números:
+- **OTD Cliente (entregue no prazo)** = expedidos no prazo ÷ **expedidos**. É o desempenho
+  do que já saiu, sobre TODOS os entregues (independe da cascata).
+- **OTD incluindo atrasos em aberto** = expedidos no prazo ÷ (**expedidos + vencidos não
+  entregues**), onde "vencido não entregue" = grupo com prazo < hoje e sem evento de expedição.
+
+⚠️ Esse número (ex.: 51%) é **menor** que o card "OTD Expedição" da cascata (ex.: 79%) e não
+é divergência: a cascata só conta quem chegou íntegro na expedição; o global conta todos os
+entregues, inclusive os que já tinham atrasado na produção. São perguntas diferentes.
+
+### OTD por etapa — cascata (diagnóstico: onde furou)
 
 | Etapa | Evento de referência | No prazo se |
 |---|---|---|
 | Planejamento | Saída ADM 11.3 | faltavam ≥ N dias p/ o prazo (N configurável, padrão 5) |
 | Produção | 1ª Entrada em QUALIDADE; senão, última Saída de processo produtivo (≠ QUALIDADE/ADM) | antes do prazo |
 | Qualidade | Saída QUALIDADE 10.2 | antes do prazo |
-| Estoque | Entrada ADM 11.4 | antes do prazo |
 | Expedição | Saída ADM 11.4 | antes do prazo |
 
 **Cascata**: se uma etapa atrasou, as seguintes ficam **não avaliadas** (null) — o
 atraso é atribuído à primeira etapa que falhou, não se propaga como "culpa" das demais.
 % OTD por etapa = ok / (ok + atrasadas), ignorando as não avaliadas.
+
+> Etapa **Estoque** (Entrada ADM 11.4) foi **removida** (12/07/2026) — o apontamento de
+> entrada no estoque deixou de ser feito (peças vão direto pra expedição). Se voltar a ser
+> apontado, readicionar a etapa entre Qualidade e Expedição.
+
+**Ranking por cliente**: OTD de entrega (número realizado) por cliente, piores primeiro.
+A soma dos clientes fecha com o número global.
 
 ## Produtividade da inspeção (qualidade.html)
 

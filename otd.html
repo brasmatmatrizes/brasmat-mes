@@ -30,6 +30,10 @@
 .btn-g{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;height:32px}
 .btn-g:hover{border-color:var(--border2);color:var(--text)}
 .sep{width:1px;height:20px;background:var(--border);margin:0 4px}
+.seg-tipo{display:inline-flex;background:var(--bg3);border:1px solid var(--border);border-radius:6px;overflow:hidden;height:32px}
+.seg-tipo button{background:transparent;border:none;padding:0 12px;font-size:12px;color:var(--text2);cursor:pointer;font-family:var(--sans);white-space:nowrap}
+.seg-tipo button:not(:last-child){border-right:1px solid var(--border)}
+.seg-tipo button.on{background:var(--accent);color:#fff}
 
 /* CONFIG */
 .cfg-inline{display:flex;align-items:center;gap:6px;margin-left:auto;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:4px 12px}
@@ -41,8 +45,18 @@
 /* CONTENT */
 .content{overflow-y:auto;height:calc(100vh - 108px);padding:20px 24px}
 
+/* OTD GLOBAL (hero) */
+.hero-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.hero-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 22px;position:relative;overflow:hidden}
+.hero-card.destaque{border-color:rgba(59,127,255,0.4);background:rgba(59,127,255,0.05)}
+.hero-lbl{font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);margin-bottom:8px}
+.hero-pct{font-size:48px;font-weight:500;font-family:var(--mono);line-height:1;margin-bottom:6px}
+.hero-pct.alto{color:var(--ok)}.hero-pct.medio{color:var(--warn)}.hero-pct.baixo{color:var(--danger)}
+.hero-sub{font-size:12px;color:var(--text3);font-family:var(--mono)}
+.hero-ico{position:absolute;right:18px;top:16px;font-size:26px;opacity:0.18}
+
 /* OTD CARDS */
-.otd-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.otd-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
 .otd-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;cursor:pointer;transition:transform 0.15s,border-color 0.15s}
 .otd-card:hover{transform:translateY(-2px);border-color:var(--border2)}
 .otd-card.active-filter{border-color:var(--accent);background:rgba(59,127,255,0.05)}
@@ -73,15 +87,25 @@
 .tend-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
 .tend-leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
 
+/* RANKING POR CLIENTE */
+.rank-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:20px}
+.rank-row{display:grid;grid-template-columns:1fr 90px 130px;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)}
+.rank-row:last-child{border-bottom:none}
+.rank-cli{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank-barwrap{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.rank-bar{height:100%;border-radius:3px}
+.rank-num{font-size:13px;font-family:var(--mono);font-weight:500;text-align:right}
+.rank-cnt{font-size:11px;color:var(--text3);font-family:var(--mono);text-align:right}
+
 /* TABELA */
 .table-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .table-hdr-row{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)}
 .table-title{font-size:13px;font-weight:500;color:var(--text)}
 .table-sub{font-size:11px;color:var(--text3);font-family:var(--mono)}
-.tw-head{display:grid;grid-template-columns:120px 120px 1fr 100px 80px 80px 80px 80px 80px;border-bottom:1px solid var(--border);padding:0 16px}
+.tw-head{display:grid;grid-template-columns:120px 120px 1fr 100px 80px 80px 80px 80px;border-bottom:1px solid var(--border);padding:0 16px}
 .th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);padding:9px 6px}
 .tw-body{display:flex;flex-direction:column;max-height:400px;overflow-y:auto}
-.tr{display:grid;grid-template-columns:120px 120px 1fr 100px 80px 80px 80px 80px 80px;padding:0 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s}
+.tr{display:grid;grid-template-columns:120px 120px 1fr 100px 80px 80px 80px 80px;padding:0 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s}
 .tr:last-child{border-bottom:none}.tr:hover{background:var(--bg3)}
 .td{font-size:12px;color:var(--text2);padding:10px 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .otd-chip{font-size:11px;font-family:var(--mono);font-weight:500;padding:3px 8px;border-radius:8px;white-space:nowrap}
@@ -184,6 +208,12 @@
   <span class="flbl">até</span>
   <input type="date" class="fdate" id="df">
   <div class="sep"></div>
+  <div class="seg-tipo" id="seg-tipo">
+    <button data-tipo="V" onclick="setTipo('V')">Vendas</button>
+    <button data-tipo="I" onclick="setTipo('I')">Industrialização</button>
+    <button data-tipo="" onclick="setTipo('')">Todos</button>
+  </div>
+  <div class="sep"></div>
   <select class="fsel" id="fcli"><option value="">Todos os clientes</option></select>
   <button class="btn-g" onclick="limpar()">Limpar</button>
   <div class="cfg-inline">
@@ -206,6 +236,24 @@
     </div>
   </div>
 
+  <!-- OTD GLOBAL (do início ao fim) -->
+  <div class="hero-row">
+    <div class="hero-card destaque">
+      <div class="hero-ico">🎯</div>
+      <div class="hero-lbl">OTD Cliente — entregue no prazo</div>
+      <div class="hero-pct" id="hero-real">—</div>
+      <div class="hero-sub" id="hero-real-sub">—</div>
+    </div>
+    <div class="hero-card">
+      <div class="hero-ico">⏱️</div>
+      <div class="hero-lbl">OTD incluindo atrasos em aberto</div>
+      <div class="hero-pct" id="hero-global">—</div>
+      <div class="hero-sub" id="hero-global-sub">—</div>
+    </div>
+  </div>
+
+  <!-- OTD POR ETAPA (onde furou) -->
+  <div class="tend-title" style="margin-bottom:12px">OTD por etapa — onde o atraso começa</div>
   <!-- OTD CARDS -->
   <div class="otd-row" id="otd-row">
     <div class="otd-card" id="card-plan" onclick="toggleFiltroOTD('plan')">
@@ -235,15 +283,6 @@
       <div class="otd-counts" id="cnt-qual"></div>
       <div class="otd-hint">clique para filtrar</div>
     </div>
-    <div class="otd-card" id="card-est" onclick="toggleFiltroOTD('est')">
-      <div class="ind-ico">📦</div>
-      <div class="otd-etapa">OTD Estoque</div>
-      <div class="otd-pct" id="pct-est">—</div>
-      <div class="otd-sub">Peças que entraram no estoque antes do prazo</div>
-      <div class="otd-bar-wrap"><div class="otd-bar-fill" id="bar-est" style="background:var(--orange)"></div></div>
-      <div class="otd-counts" id="cnt-est"></div>
-      <div class="otd-hint">clique para filtrar</div>
-    </div>
     <div class="otd-card" id="card-exp" onclick="toggleFiltroOTD('exp')">
       <div class="ind-ico">🚚</div>
       <div class="otd-etapa">OTD Expedição</div>
@@ -265,9 +304,14 @@
       <div class="tend-leg-item"><div class="tend-leg-dot" style="background:var(--accent)"></div>Planejamento</div>
       <div class="tend-leg-item"><div class="tend-leg-dot" style="background:var(--ok)"></div>Produção</div>
       <div class="tend-leg-item"><div class="tend-leg-dot" style="background:var(--warn)"></div>Qualidade</div>
-      <div class="tend-leg-item"><div class="tend-leg-dot" style="background:var(--orange)"></div>Estoque</div>
       <div class="tend-leg-item"><div class="tend-leg-dot" style="background:var(--roxo)"></div>Expedição</div>
     </div>
+  </div>
+
+  <!-- RANKING POR CLIENTE -->
+  <div class="rank-section">
+    <div class="tend-title">OTD de entrega por cliente — piores primeiro</div>
+    <div id="rank-body"></div>
   </div>
 
   <!-- TABELA -->
@@ -284,7 +328,6 @@
       <div class="th">Plan.</div>
       <div class="th">Prod.</div>
       <div class="th">Qual.</div>
-      <div class="th">Estoque</div>
       <div class="th">Expedi.</div>
     </div>
     <div class="tw-body" id="tw-body">
@@ -305,6 +348,25 @@
 <script>
 let TODOS = [];
 let filtroOTD = null; // 'plan'|'prod'|'qual'|'est'|'exp'|null
+let filtroTipo = "V"; // 'V'|'I'|'' (Todos) — default Vendas (compromisso com cliente)
+
+// Classifica um grupo pedido+código em V/I usando a regra firmada (getTipo):
+// pega o evento mais recente com classificacao_fiscal/razao_social preenchido.
+function tipoDoGrupo(evs){
+  for(let i=evs.length-1;i>=0;i--){
+    const t=getTipo(evs[i]);
+    if(t) return t.label; // "V" ou "I"
+  }
+  return null;
+}
+
+function setTipo(t){
+  filtroTipo=t;
+  document.querySelectorAll("#seg-tipo button").forEach(b=>{
+    b.classList.toggle("on", b.dataset.tipo===t);
+  });
+  render();
+}
 
 // Datas padrão: mês atual
 const hoje = new Date();
@@ -312,6 +374,7 @@ const iniMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 function fmtD(d){ return d.toISOString().slice(0,10); }
 document.getElementById("di").value = fmtD(iniMes);
 document.getElementById("df").value = fmtD(hoje);
+document.querySelector('#seg-tipo button[data-tipo="V"]').classList.add("on");
 
 async function init(){
   const overlay = document.getElementById("loadingOverlay");
@@ -329,7 +392,7 @@ async function init(){
     let todos=[], offset=0;
     while(true){
       const chunk = await supaFetch(
-        `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,prazo_entrega,operacao_qualidade,operacao_administrativo&data_evento=gte.${diUTC}&data_evento=lte.${dfUTC}&order=id.asc&limit=1000&offset=${offset}`
+        `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,prazo_entrega,operacao_qualidade,operacao_administrativo,classificacao_fiscal,razao_social&data_evento=gte.${diUTC}&data_evento=lte.${dfUTC}&order=id.asc&limit=1000&offset=${offset}`
       );
       if(!Array.isArray(chunk)||chunk.length===0) break;
       todos=todos.concat(chunk);
@@ -388,6 +451,9 @@ function calcularOTDs(dados){
     const todosEvs=TODOS.filter(r=>r.pedido===pedido&&r.codigo_peca===codigo);
     const evs=todosEvs.sort((a,b)=>new Date(a.data_evento)-new Date(b.data_evento));
 
+    // Filtro Vendas/Industrialização por grupo (pula quando não é "Todos")
+    if(filtroTipo && tipoDoGrupo(evs)!==filtroTipo) return;
+
     const cliente=evs[0].cliente||"—";
 
     // Pega prazo de qualquer evento da peça (não só do período)
@@ -445,15 +511,6 @@ function calcularOTDs(dados){
     });
     const qualOK=qualEv?antesDoP(new Date(qualEv.data_evento),prazo):null;
 
-    // OTD ESTOQUE — ENTRADA Administrativo 11.4
-    const estEv=evs.find(r=>{
-      const evt=String(r.evento||"").trim().toUpperCase();
-      const proc=String(r.processo||"").trim().toUpperCase();
-      const sub=r.operacao_administrativo?String(r.operacao_administrativo).trim():"";
-      return evt==="ENTRADA"&&proc.includes("ADMINISTRATIVO")&&sub.includes("11.4");
-    });
-    const estOK=estEv?antesDoP(new Date(estEv.data_evento),prazo):null;
-
     // OTD EXPEDIÇÃO — SAÍDA Administrativo 11.4
     const expEv=evs.find(r=>{
       const evt=String(r.evento||"").trim().toUpperCase();
@@ -483,21 +540,16 @@ function calcularOTDs(dados){
     let qualFinal = cascata ? null : qualOK;
     if(qualOK === false && !cascata) cascata = true;
 
-    // ESTOQUE: só avalia se qualidade foi no prazo
-    let estFinal = cascata ? null : estOK;
-    if(estOK === false && !cascata) cascata = true;
-
-    // EXPEDIÇÃO: só avalia se estoque foi no prazo
+    // EXPEDIÇÃO: só avalia se qualidade foi no prazo
     let expFinal = cascata ? null : expOK;
 
     resultados.push({
       pedido,codigo,cliente,
       prazo:prazoEv.prazo_entrega,
-      planOK, prodOK:prodFinal, qualOK:qualFinal, estOK:estFinal, expOK:expFinal,
+      planOK, prodOK:prodFinal, qualOK:qualFinal, expOK:expFinal,
       planData,
       ultimaSaidaProd:ultimaSaidaProd?ultimaSaidaProd.data_evento:null,
       qualData:qualEv?qualEv.data_evento:null,
-      estData:estEv?estEv.data_evento:null,
       expData:expEv?expEv.data_evento:null,
     });
   });
@@ -530,7 +582,6 @@ const ND_LABELS={
   plan:"sem elaboração",
   prod:"ainda em produção",
   qual:"sem inspeção final",
-  est:"sem entrada no estoque",
   exp:"ainda não expedidas"
 };
 
@@ -547,19 +598,91 @@ function renderCard(id,campo,resultados,cor){
      ${nd>0?`<span class="otd-count nd">— ${nd} ${ND_LABELS[id]||"sem registro"}</span>`:""}`;
 }
 
+// OTD global (do início ao fim): entrega final (Saída ADM 11.4) vs prazo.
+// Dois números: (1) realizado = no prazo ÷ entregues; (2) com atrasos em
+// aberto = no prazo ÷ (entregues + pedidos já vencidos e ainda não entregues).
+function calcOTDGlobal(resultados){
+  const agora=new Date();
+  let entregues=0, noPrazo=0, atrasadosAbertos=0;
+  resultados.forEach(r=>{
+    const prazo=new Date(r.prazo); prazo.setHours(23,59,59,0);
+    if(r.expData){
+      entregues++;
+      if(new Date(r.expData)<=prazo) noPrazo++;
+    } else if(prazo<agora){
+      atrasadosAbertos++;
+    }
+  });
+  const denomG=entregues+atrasadosAbertos;
+  return {
+    entregues, noPrazo, atrasados:entregues-noPrazo, atrasadosAbertos,
+    pctReal:  entregues ? Math.round(noPrazo/entregues*100) : null,
+    pctGlobal: denomG   ? Math.round(noPrazo/denomG*100)    : null
+  };
+}
+
+function renderHero(resultados){
+  const g=calcOTDGlobal(resultados);
+  const real=document.getElementById("hero-real");
+  real.textContent = g.pctReal!==null ? g.pctReal+"%" : "—";
+  real.className="hero-pct "+clsOTD(g.pctReal);
+  document.getElementById("hero-real-sub").textContent =
+    `${g.noPrazo} no prazo · ${g.atrasados} atrasados · de ${g.entregues} entregues`;
+
+  const glob=document.getElementById("hero-global");
+  glob.textContent = g.pctGlobal!==null ? g.pctGlobal+"%" : "—";
+  glob.className="hero-pct "+clsOTD(g.pctGlobal);
+  document.getElementById("hero-global-sub").textContent =
+    g.atrasadosAbertos>0
+      ? `inclui ${g.atrasadosAbertos} pedido(s) vencido(s) ainda não entregue(s)`
+      : `nenhum pedido vencido em aberto`;
+}
+
+// Ranking de OTD de entrega por cliente (piores primeiro).
+// Só entra cliente com ao menos 1 pedido entregue no período/tipo.
+function renderRanking(resultados){
+  const porCli={};
+  resultados.forEach(r=>{ (porCli[r.cliente||"—"]=porCli[r.cliente||"—"]||[]).push(r); });
+  const linhas=Object.entries(porCli)
+    .map(([cli,rs])=>({cli, ...calcOTDGlobal(rs)}))
+    .filter(l=>l.entregues>0)
+    .sort((a,b)=>a.pctReal-b.pctReal || b.atrasados-a.atrasados);
+  const body=document.getElementById("rank-body");
+  if(!linhas.length){ body.innerHTML=`<div style="padding:14px 0;color:var(--text3);font-size:12px">Nenhum pedido entregue no período.</div>`; return; }
+  body.innerHTML=linhas.map(l=>{
+    const cor=corOTD(l.pctReal);
+    return `<div class="rank-row">
+      <div class="rank-cli" title="${esc(l.cli)}">${esc(l.cli)}</div>
+      <div class="rank-barwrap"><div class="rank-bar" style="width:${l.pctReal}%;background:${cor}"></div></div>
+      <div>
+        <div class="rank-num" style="color:${cor}">${l.pctReal}%</div>
+        <div class="rank-cnt">${l.noPrazo}/${l.entregues} no prazo</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
 let _resultados=[];
 
 function render(){
   const dados=dadosFiltrados();
 
-  // Conta peças sem prazo
+  // Conta peças sem prazo (respeitando o filtro V/I, senão as peças do outro
+  // tipo apareceriam como "sem prazo" ao filtrar)
   const grupos={};
   dados.forEach(r=>{
     if(!r.pedido||!r.codigo_peca) return;
     const k=r.pedido+"||"+r.codigo_peca;
     grupos[k]=true;
   });
-  const totalPecas=Object.keys(grupos).length;
+  let totalPecas=0;
+  Object.keys(grupos).forEach(k=>{
+    if(!filtroTipo){ totalPecas++; return; }
+    const [pedido,codigo]=k.split("||");
+    const evs=TODOS.filter(r=>r.pedido===pedido&&r.codigo_peca===codigo)
+                   .sort((a,b)=>new Date(a.data_evento)-new Date(b.data_evento));
+    if(tipoDoGrupo(evs)===filtroTipo) totalPecas++;
+  });
 
   _resultados=calcularOTDs(dados);
 
@@ -575,17 +698,18 @@ function render(){
 
   let exibidos=_resultados;
   if(filtroOTD){
-    const campo={plan:"planOK",prod:"prodOK",qual:"qualOK",est:"estOK",exp:"expOK"}[filtroOTD];
+    const campo={plan:"planOK",prod:"prodOK",qual:"qualOK",exp:"expOK"}[filtroOTD];
     exibidos=_resultados.filter(r=>r[campo]===false);
   }
 
+  renderHero(_resultados);
   renderCard("plan","planOK",_resultados,"var(--accent)");
   renderCard("prod","prodOK",_resultados,"var(--ok)");
   renderCard("qual","qualOK",_resultados,"var(--warn)");
-  renderCard("est","estOK",_resultados,"var(--orange)");
   renderCard("exp","expOK",_resultados,"var(--roxo)");
 
   renderTendencia(dados);
+  renderRanking(_resultados);
   renderTabela(exibidos);
 
   document.getElementById("tbl-sub").textContent=
@@ -609,8 +733,8 @@ function renderTendencia(dados){
   if(!keys.length){document.getElementById("tend-chart").innerHTML=`<div style="padding:20px;color:var(--text3);font-size:12px">Dados insuficientes para tendência.</div>`;return;}
 
   const minDias=parseInt(document.getElementById("cfg-dias").value)||5;
-  const cores={plan:"var(--accent)",prod:"var(--ok)",qual:"var(--warn)",est:"var(--orange)",exp:"var(--roxo)"};
-  const campos={plan:"planOK",prod:"prodOK",qual:"qualOK",est:"estOK",exp:"expOK"};
+  const cores={plan:"var(--accent)",prod:"var(--ok)",qual:"var(--warn)",exp:"var(--roxo)"};
+  const campos={plan:"planOK",prod:"prodOK",qual:"qualOK",exp:"expOK"};
 
   const colunas=keys.map(k=>{
     const res=calcularOTDs(meses[k]);
@@ -648,14 +772,14 @@ function renderTabela(resultados){
   }
   // Ordena: falhas primeiro (mais OTDs com fail)
   resultados.sort((a,b)=>{
-    const fa=[a.planOK,a.prodOK,a.qualOK,a.estOK,a.expOK].filter(v=>v===false).length;
-    const fb=[b.planOK,b.prodOK,b.qualOK,b.estOK,b.expOK].filter(v=>v===false).length;
+    const fa=[a.planOK,a.prodOK,a.qualOK,a.expOK].filter(v=>v===false).length;
+    const fb=[b.planOK,b.prodOK,b.qualOK,b.expOK].filter(v=>v===false).length;
     return fb-fa;
   });
 
   body.innerHTML=resultados.map(r=>{
     const prazoFmt=r.prazo?new Date(r.prazo).toLocaleDateString("pt-BR"):"—";
-    const falhas=[r.planOK,r.prodOK,r.qualOK,r.estOK,r.expOK].filter(v=>v===false).length;
+    const falhas=[r.planOK,r.prodOK,r.qualOK,r.expOK].filter(v=>v===false).length;
     const rowStyle=falhas>=3?"border-left:3px solid var(--danger)":falhas>=1?"border-left:3px solid var(--warn)":"";
     return `<div class="tr" style="${rowStyle}" onclick="abrirDet('${esc(r.pedido)}','${esc(r.codigo)}')">
       <div class="td" style="font-family:var(--mono);font-weight:500;color:var(--text)">${r.codigo}</div>
@@ -665,7 +789,6 @@ function renderTabela(resultados){
       <div class="td">${chip(r.planOK)}</div>
       <div class="td">${chip(r.prodOK)}</div>
       <div class="td">${chip(r.qualOK)}</div>
-      <div class="td">${chip(r.estOK)}</div>
       <div class="td">${chip(r.expOK)}</div>
     </div>`;
   }).join("");

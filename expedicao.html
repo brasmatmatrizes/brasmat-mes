@@ -44,6 +44,7 @@
 .exp-item{display:grid;grid-template-columns:150px 1fr 70px 100px 120px 280px;gap:12px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:11px 14px;margin-bottom:7px}
 .ei-cod{font-size:14px;font-weight:500;font-family:var(--mono);color:var(--text);cursor:pointer}
 .ei-cod:hover .ei-cnum{color:var(--accent)}
+.ei-chk{width:15px;height:15px;cursor:pointer;accent-color:var(--ok);vertical-align:middle;margin-right:7px}
 .ei-tipo{margin-top:4px}
 .ei-qtd{font-size:14px;font-family:var(--mono);color:var(--text);text-align:center;font-weight:500}
 .ei-qcap{display:block;font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.05em;font-weight:400}
@@ -220,6 +221,7 @@
 <script src="status.js"></script>
 <script>
 let ITENS=[], CFG={}, POSMAP={}, POSMAPC={}, TIPO_CACHE={}, FILTRO="todos", FCLI="", FSIT="", FPRAZO_DE="", FPRAZO_ATE="";
+let EXCLUIDOS_IMPRESSAO = new Set();   // ids desmarcados: ficam de fora da impressão (todo item nasce marcado)
 
 function navTo(p){ window.location.href=p; }
 function nomeExib(c){ return (CFG[c]&&CFG[c].nome_fantasia)||c; }
@@ -393,7 +395,7 @@ function linhaItem(it){
   const prazo=prazoD?prazoD.toLocaleDateString("pt-BR"):"—";
   return `<div class="exp-item">
     <div class="ei-cod" onclick="abrirDet('${esc(it.pedido||"")}','${esc(it.codigo_peca||"")}')">
-      <div><span class="ei-cnum">${it.codigo_peca||"—"}</span>${it.critico?'<span class="badge-critico-exp">🔴 CRÍTICO</span>':''}</div>
+      <div><input type="checkbox" class="ei-chk" ${EXCLUIDOS_IMPRESSAO.has(it.id)?"":"checked"} onclick="event.stopPropagation()" onchange="toggleImprimir(${it.id},this.checked)" title="Incluir na impressão"><span class="ei-cnum">${it.codigo_peca||"—"}</span>${it.critico?'<span class="badge-critico-exp">🔴 CRÍTICO</span>':''}</div>
       ${tipoBadgeDe(it)?`<div class="ei-tipo">${tipoBadgeDe(it)}</div>`:""}
     </div>
     <div class="ei-desc"><div class="ei-dtext">${it.descricao?String(it.descricao).replace(/</g,"&lt;"):(it.pedido?"Ped: "+it.pedido:"")}</div>${ultimaOpDe(it)}</div>
@@ -407,6 +409,10 @@ function linhaItem(it){
       <button class="${st==='expedido'?'on-e':''}" onclick="marcar(${it.id},'expedido')">Expedido</button>
     </div>
   </div>`;
+}
+
+function toggleImprimir(id, checked){
+  if(checked) EXCLUIDOS_IMPRESSAO.delete(id); else EXCLUIDOS_IMPRESSAO.add(id);
 }
 
 async function marcar(id, novo){
@@ -440,7 +446,8 @@ function imprimir(){
   if(FCLI) itens=itens.filter(it=>(it.cliente||"—")===FCLI);
   if(FSIT) itens=itens.filter(it=>situacao(it).key===FSIT);
   itens=itens.filter(passaPrazo);
-  if(!itens.length){ alert("Nenhum item para imprimir com os filtros atuais."); return; }
+  itens=itens.filter(it=>!EXCLUIDOS_IMPRESSAO.has(it.id));
+  if(!itens.length){ alert("Nenhum item marcado para imprimir. Marque o checkbox dos itens desejados na lista."); return; }
 
   const grupos={};
   itens.forEach(it=>{ const c=it.cliente||"—"; (grupos[c]=grupos[c]||[]).push(it); });

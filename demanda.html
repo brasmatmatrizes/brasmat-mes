@@ -63,6 +63,26 @@
 .placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:80%;color:var(--text3);gap:12px}
 .ph-ico{font-size:48px;opacity:0.3}.ph-txt{font-size:14px;text-align:center;line-height:1.6;max-width:340px}
 
+/* RESUMO: toggle cliente / item */
+.resumo-toggle{display:flex;background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:3px;gap:2px;flex-shrink:0}
+.resumo-toggle button{border:none;background:transparent;color:var(--text3);font-family:var(--sans);font-size:12px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer}
+.resumo-toggle button.active{background:var(--accent);color:#fff}
+.resumo-toggle button:not(.active):hover{color:var(--text2)}
+.itens-tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
+table.itens-tbl{width:100%;border-collapse:collapse;font-size:12.5px;min-width:760px}
+table.itens-tbl th{text-align:left;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);font-weight:600;padding:10px 12px;background:var(--bg3);border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none}
+table.itens-tbl th:hover{color:var(--text2)}
+table.itens-tbl th .arrow{opacity:0.5;margin-left:3px}
+table.itens-tbl td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle;background:var(--bg2)}
+table.itens-tbl tbody tr{cursor:pointer}
+table.itens-tbl tbody tr:hover td{background:var(--bg3)}
+table.itens-tbl tbody tr:last-child td{border-bottom:none}
+table.itens-tbl tr.critico td:first-child{box-shadow:inset 3px 0 0 #DC2626}
+.itbl-cli{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;white-space:nowrap}
+.itbl-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.itbl-cod{font-family:var(--mono);font-weight:600;color:var(--text)}
+.itbl-sub{font-family:var(--mono);color:var(--text3);font-size:11px}
+
 /* ITEM CARD */
 @keyframes pisca-critico{0%,100%{opacity:1}50%{opacity:0.45}}
 .item-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px}
@@ -362,11 +382,15 @@ async function init(){
   renderResumoClientes();
 }
 
-// Cabeçalho: cards dos clientes que já têm demanda (com qtd de itens)
+// Cabeçalho: cards dos clientes que já têm demanda (com qtd de itens), ou lista de todos os itens juntos
+let RESUMO_VIEW = "cli";              // "cli" | "item"
+let RESUMO_ROWS = [];                 // itens do último render (p/ ordenar sem reconsultar)
+let RESUMO_SORT = {key:"prazo", dir:1};
+
 async function renderResumoClientes(){
   const cont = document.getElementById("content");
   let rows = [];
-  try{ rows = await supaFetch("/rest/v1/demanda_itens?select=cliente,prazo_confirmado,concluido,codigo_peca,pedido&limit=10000"); }catch(e){}
+  try{ rows = await supaFetch("/rest/v1/demanda_itens?select=cliente,prazo_confirmado,concluido,codigo_peca,pedido,os,exp_status,critico&limit=10000"); }catch(e){}
   // mapa de posição (posicao_atual) p/ saber a situação de produção de cada item
   const pmap={}, pmapc={};
   (Array.isArray(POS)?POS:[]).forEach(p=>{
@@ -378,19 +402,26 @@ async function renderResumoClientes(){
     const pr = pmap[(r.codigo_peca||"")+"|"+(r.pedido||"")] || pmapc[r.codigo_peca];
     return pr ? ["aprovada","em_estoque","expedida"].includes(status(pr).s) : false;
   };
-  const map = new Map();
-  (Array.isArray(rows)?rows:[]).forEach(r=>{
-    const c=String(r.cliente||"").trim(); if(!c) return;
-    const o = map.get(c) || {total:0, semConf:0, inspecao:0, processo:0};
-    o.total++;
-    if(!r.concluido && !r.prazo_confirmado) o.semConf++;   // aguardando confirmação de produção
-    if(saiuInspecao(r)) o.inspecao++; else o.processo++;
-    map.set(c, o);
-  });
-  if(!map.size){
+  RESUMO_ROWS = (Array.isArray(rows)?rows:[]).filter(r=>String(r.cliente||"").trim()).map(r=>({...r, _insp:saiuInspecao(r)}));
+  if(!RESUMO_ROWS.length){
     cont.innerHTML = `<div class="placeholder"><div class="ph-ico">📑</div><div class="ph-txt">Nenhuma demanda cadastrada ainda. Selecione um cliente à esquerda para começar.</div></div>`;
     return;
   }
+  const toggle = `<div class="resumo-toggle">
+      <button class="${RESUMO_VIEW==='cli'?'active':''}" onclick="alternarResumo('cli')">Por cliente</button>
+      <button class="${RESUMO_VIEW==='item'?'active':''}" onclick="alternarResumo('item')">Por item</button>
+    </div>`;
+  if(RESUMO_VIEW==="item"){ renderResumoItens(cont, toggle); return; }
+
+  const map = new Map();
+  RESUMO_ROWS.forEach(r=>{
+    const c=String(r.cliente).trim();
+    const o = map.get(c) || {total:0, semConf:0, inspecao:0, processo:0};
+    o.total++;
+    if(!r.concluido && !r.prazo_confirmado) o.semConf++;   // aguardando confirmação de produção
+    if(r._insp) o.inspecao++; else o.processo++;
+    map.set(c, o);
+  });
   const cards = [...map.entries()].sort((a,b)=>nomeExib(a[0]).localeCompare(nomeExib(b[0]),"pt-BR")).map(([c,o])=>{
     const cor = corCliente(c);
     const n = o.total;
@@ -410,8 +441,57 @@ async function renderResumoClientes(){
       <button onclick="abrirCfgCliente('${esc(c)}')" title="Personalizar" style="flex-shrink:0;background:transparent;border:1px solid ${hexRgba(cor,0.5)};border-radius:6px;width:30px;height:30px;cursor:pointer;color:var(--text2);font-size:14px">⚙</button>
     </div>`;
   }).join("");
-  cont.innerHTML = `<div class="chdr"><div><div class="ctitle">Demandas em aberto</div><div class="csub">${map.size} cliente(s) com demanda</div></div></div>
+  cont.innerHTML = `<div class="chdr"><div><div class="ctitle">Demandas em aberto</div><div class="csub">${map.size} cliente(s) com demanda</div></div>${toggle}</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">${cards}</div>`;
+}
+
+function alternarResumo(v){ RESUMO_VIEW = v; renderResumoClientes(); }
+
+function ordenarResumoItens(key){
+  if(RESUMO_SORT.key===key) RESUMO_SORT.dir *= -1; else RESUMO_SORT = {key, dir:1};
+  renderResumoClientes();
+}
+
+// Lista plana com todos os itens de todos os clientes (resumo p/ decisão rápida do gestor)
+function renderResumoItens(cont, toggle){
+  const valor = (r,key)=>{
+    if(key==="cliente") return nomeExib(r.cliente);
+    if(key==="codigo") return r.codigo_peca||"";
+    if(key==="prazo") return r.concluido ? "" : (r.prazo_confirmado ? r.prazo_confirmado.split("-").join("") : "9999999999"); // sem prazo vai por último
+    if(key==="situacao") return r.concluido ? "0" : (r._insp ? "1" : "2");
+    return "";
+  };
+  const linhas = [...RESUMO_ROWS].sort((a,b)=>{
+    const va=valor(a,RESUMO_SORT.key), vb=valor(b,RESUMO_SORT.key);
+    return va<vb ? -1*RESUMO_SORT.dir : va>vb ? 1*RESUMO_SORT.dir : 0;
+  });
+  const arrow = k => RESUMO_SORT.key===k ? (RESUMO_SORT.dir===1?"▲":"▼") : "⇅";
+  const rowsHtml = linhas.map(r=>{
+    const cor = corCliente(r.cliente);
+    const ped = [r.pedido?("#"+r.pedido):"", r.os?("OS "+r.os):""].filter(Boolean).join(" · ");
+    const prazoHtml = r.concluido ? `<span class="badge-critico" style="animation:none;background:rgba(45,191,126,0.12);color:var(--ok);border-color:rgba(45,191,126,0.4)">✓ concluído</span>`
+      : r.prazo_confirmado ? r.prazo_confirmado.split("-").reverse().join("/")
+      : `<span style="color:var(--warn);font-family:var(--mono);font-size:11px">⏳ aguardando</span>`;
+    const sitHtml = r.concluido ? "" : r._insp
+      ? `<span style="color:var(--ok);font-family:var(--mono);font-size:11px">✅ saiu da inspeção</span>`
+      : `<span style="color:var(--accent);font-family:var(--mono);font-size:11px">⚙ em processo</span>`;
+    const expHtml = r.exp_status==="expedido" ? ` <span style="font-family:var(--mono);font-size:11px;color:var(--ok)">· 🚚 expedido</span>`
+      : r.exp_status==="separado" ? ` <span style="font-family:var(--mono);font-size:11px;color:var(--warn)">· 📦 separado</span>` : "";
+    const criticoTag = r.critico ? `<span class="badge-critico" style="margin-left:6px">🔴 CRÍTICO</span>` : "";
+    return `<tr class="${r.critico?'critico':''}" onclick="abrirClienteDemanda('${esc(r.cliente)}')">
+      <td><span class="itbl-cli"><span class="itbl-dot" style="background:${cor}"></span>${nomeExib(r.cliente)}</span></td>
+      <td><span class="itbl-cod">${escHtml(r.codigo_peca)}</span>${criticoTag}${ped?`<div class="itbl-sub">${escHtml(ped)}</div>`:""}</td>
+      <td>${prazoHtml}</td>
+      <td>${sitHtml}${expHtml}</td>
+    </tr>`;
+  }).join("");
+  cont.innerHTML = `<div class="chdr"><div><div class="ctitle">Demandas em aberto</div><div class="csub">${RESUMO_ROWS.length} item(ns) em ${new Set(RESUMO_ROWS.map(r=>r.cliente)).size} cliente(s)</div></div>${toggle}</div>
+    <div class="itens-tbl-wrap"><table class="itens-tbl"><thead><tr>
+      <th onclick="ordenarResumoItens('cliente')">Cliente <span class="arrow">${arrow('cliente')}</span></th>
+      <th onclick="ordenarResumoItens('codigo')">Código / Pedido <span class="arrow">${arrow('codigo')}</span></th>
+      <th onclick="ordenarResumoItens('prazo')">Prazo confirmado <span class="arrow">${arrow('prazo')}</span></th>
+      <th onclick="ordenarResumoItens('situacao')">Situação <span class="arrow">${arrow('situacao')}</span></th>
+    </tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
 }
 
 function abrirClienteDemanda(c){

@@ -1233,6 +1233,9 @@ function iniciarRealtime(){
 }
 iniciarRealtime();
 
+// Clicar em "Demanda Cliente" no menu enquanto já está aqui dentro de um card/cliente volta pro resumo
+document.querySelector('.nav .nb.active[data-href="demanda.html"]')?.addEventListener("click", voltarResumo);
+
 init();
 </script>
 </body>

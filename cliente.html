@@ -24,7 +24,8 @@
 .shell{display:grid;grid-template-columns:340px 1fr;height:calc(100vh - 56px);overflow:hidden}
 
 /* SIDEBAR */
-.sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px;gap:12px;overflow:hidden}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px;gap:12px;overflow-y:auto}
+.sb-divider{height:1px;background:var(--border);flex-shrink:0;margin:2px 0}
 .sb-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px}
 .sb-desc{font-size:11px;color:var(--text3);line-height:1.5}
 .lbl{font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text2);font-family:var(--mono)}
@@ -188,6 +189,17 @@
     <div class="hint">Cole qualquer formato — o sistema extrai os códigos automaticamente (CFA, CF, H, G seguidos de números)</div>
     <button class="btn-buscar" id="btn-buscar" onclick="buscar()">🔍 Localizar peças</button>
     <button class="btn-limpar" onclick="limpar()">Limpar</button>
+
+    <div class="sb-divider"></div>
+
+    <div>
+      <div class="sb-title">Consulta por lista de OS</div>
+      <div class="sb-desc">Cole uma lista só com números de OS (um por linha). O sistema localiza as peças de cada OS.</div>
+    </div>
+    <div class="lbl">lista de os</div>
+    <textarea class="textarea" id="os-input" style="flex:none;height:100px" placeholder="Cole aqui só os números de OS, um por linha.&#10;&#10;Exemplo:&#10;19572&#10;19459&#10;19457"></textarea>
+    <button class="btn-buscar" id="btn-buscar-os" onclick="buscarPorOS()">🔍 Localizar por OS</button>
+    <button class="btn-limpar" onclick="limparOS()">Limpar</button>
   </div>
 
   <!-- CONTENT -->
@@ -326,6 +338,114 @@ async function buscar(){
   renderResultados(resultados);
   document.getElementById("btn-buscar").disabled = false;
   document.getElementById("slbl").textContent = `${resultados.length} peça(s) consultadas · ${new Date().toLocaleTimeString("pt-BR")}`;
+}
+
+// Extrai números de OS de uma lista colada (um por linha, ignora duplicados)
+function extrairOS(texto){
+  const vistos = new Set();
+  const oss = [];
+  texto.split('\n').forEach(linha=>{
+    const m = linha.trim().match(/\d+/);
+    if(!m) return;
+    const os = m[0];
+    if(vistos.has(os)) return;
+    vistos.add(os);
+    oss.push(os);
+  });
+  return oss;
+}
+
+async function buscarPorOS(){
+  const texto = document.getElementById("os-input").value.trim();
+  if(!texto){ alert("Cole a lista de OS primeiro."); return; }
+
+  const oss = extrairOS(texto);
+  if(!oss.length){ alert("Nenhum número de OS encontrado na lista."); return; }
+
+  document.getElementById("btn-buscar-os").disabled = true;
+  document.getElementById("slbl").textContent = "buscando...";
+  document.getElementById("content").innerHTML =
+    `<div class="loading"><div class="spinner"></div>localizando ${oss.length} OS...</div>`;
+
+  const listaOS = oss.map(o=>encodeURIComponent(o)).join(",");
+
+  // Busca todas de uma vez na posicao_atual pelo campo os
+  let encontrados = [];
+  try{
+    encontrados = await supaFetch(`/rest/v1/posicao_atual?select=*&os=in.(${listaOS})&limit=1000`);
+    if(!Array.isArray(encontrados)) encontrados = [];
+  }catch(e){ encontrados = []; }
+
+  // completa progresso e tipo (V/I) de cada uma, igual à busca por código
+  await Promise.all(encontrados.map(async melhor=>{
+    try{
+      const prog = await supaFetch(
+        `/rest/v1/producao_eventos?select=sequencial_operacao,quantidade_operacoes&codigo_peca=eq.${encodeURIComponent(melhor.codigo_peca||"")}&order=id.desc&limit=1`
+      );
+      if(Array.isArray(prog)&&prog.length>0){
+        melhor.sequencial_operacao  = prog[0].sequencial_operacao;
+        melhor.quantidade_operacoes = prog[0].quantidade_operacoes;
+      }
+      const tipoPed = melhor.pedido ? `&pedido=eq.${encodeURIComponent(melhor.pedido)}` : "";
+      const tipo = await supaFetch(
+        `/rest/v1/producao_eventos?select=razao_social,classificacao_fiscal&codigo_peca=eq.${encodeURIComponent(melhor.codigo_peca||"")}${tipoPed}&or=(razao_social.not.is.null,classificacao_fiscal.not.is.null)&order=id.desc&limit=1`
+      );
+      if(Array.isArray(tipo)&&tipo.length>0){
+        melhor.razao_social         = tipo[0].razao_social;
+        melhor.classificacao_fiscal = tipo[0].classificacao_fiscal;
+      }
+    }catch(e){}
+  }));
+
+  const porOS = {};
+  encontrados.forEach(d=>{ const k=String(d.os||"").trim(); (porOS[k]=porOS[k]||[]).push(d); });
+
+  // OS não achadas na posição atual — tenta no histórico completo (peça já expedida/arquivada)
+  const osFaltando = oss.filter(o=>!porOS[o] || !porOS[o].length);
+  const histPorOS = {};
+  if(osFaltando.length){
+    try{
+      const listaFaltando = osFaltando.map(o=>encodeURIComponent(o)).join(",");
+      const historico = await supaFetch(
+        `/rest/v1/producao_eventos?select=id,os,pedido,codigo_peca,processo,evento,data_evento,cliente,sequencial_operacao,quantidade_operacoes,razao_social,classificacao_fiscal&os=in.(${listaFaltando})&order=id.desc&limit=1000`
+      );
+      (Array.isArray(historico)?historico:[]).forEach(d=>{
+        const k=String(d.os||"").trim();
+        if(!histPorOS[k]) histPorOS[k]=d;   // já vem order=id.desc — o primeiro é o mais recente
+      });
+    }catch(e){}
+  }
+
+  const resultados = oss.map(os=>{
+    const lista = porOS[os];
+    if(lista && lista.length){
+      const melhor = lista[0];
+      const stMelhor = status(melhor);
+      const statusFinal = stMelhor.s==="expedida" ? "expedida"
+                        : (stMelhor.s==="aprovada"||stMelhor.s==="em_estoque") ? "finalizada"
+                        : "encontrada";
+      return {codigoOriginal:os, codigoBusca:os, osCliente:os, pedidoCliente:null, descricaoCliente:null,
+              status:statusFinal, dados:melhor, alternativas:lista.length>1?lista:[]};
+    }
+    const dExp = histPorOS[os];
+    if(dExp){
+      return {codigoOriginal:os, codigoBusca:os, osCliente:os, pedidoCliente:null, descricaoCliente:null,
+              status:"expedida", dados:dExp, alternativas:[]};
+    }
+    return {codigoOriginal:"OS "+os, codigoBusca:os, osCliente:os, pedidoCliente:null, descricaoCliente:null,
+            status:"nao_encontrada", dados:null, alternativas:[]};
+  });
+
+  await carregarDemandaSet();
+  renderResultados(resultados);
+  document.getElementById("btn-buscar-os").disabled = false;
+  document.getElementById("slbl").textContent = `${resultados.length} OS consultada(s) · ${new Date().toLocaleTimeString("pt-BR")}`;
+}
+
+function limparOS(){
+  document.getElementById("os-input").value = "";
+  document.getElementById("content").innerHTML = `<div class="placeholder"><div class="ph-ico">📋</div><div class="ph-txt">Cole a lista de OS na área à esquerda e clique em "Localizar por OS".</div></div>`;
+  document.getElementById("slbl").textContent = "pronto";
 }
 
 function renderResultados(resultados){
@@ -509,6 +629,7 @@ function renderCard(r){
           </div>
           ${r.descricaoCliente?`<div class="peca-desc">${r.descricaoCliente}</div>`:""}
           ${r.pedidoCliente?`<div class="peca-pedido-cli">Pedido cliente: ${r.pedidoCliente} · Sistema: ${d.pedido||"—"}</div>`:""}
+          ${r.osCliente?`<div class="peca-pedido-cli">OS buscada: ${r.osCliente}</div>`:""}
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
           <span class="status-pill" style="background:${st.cor}22;color:${st.cor};border-color:${st.cor}44">${st.ico} ${st.label}</span>
@@ -543,6 +664,7 @@ function renderCard(r){
           </div>
           ${r.descricaoCliente?`<div class="peca-desc">${r.descricaoCliente}</div>`:""}
           ${r.pedidoCliente?`<div class="peca-pedido-cli">Pedido cliente: ${r.pedidoCliente} · Sistema: ${d.pedido||"—"}</div>`:""}
+          ${r.osCliente?`<div class="peca-pedido-cli">OS buscada: ${r.osCliente}</div>`:""}
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
           <span class="status-pill" style="background:rgba(45,191,126,0.15);color:var(--ok);border-color:rgba(45,191,126,0.4)">${st.ico} ${st.label}</span>
@@ -574,6 +696,7 @@ function renderCard(r){
           </div>
           ${r.descricaoCliente?`<div class="peca-desc">${r.descricaoCliente}</div>`:""}
           ${r.pedidoCliente?`<div class="peca-pedido-cli">Pedido cliente: ${r.pedidoCliente} · Sistema: ${pedidoSist}</div>`:""}
+          ${r.osCliente?`<div class="peca-pedido-cli">OS buscada: ${r.osCliente}</div>`:""}
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
           <span class="status-pill" style="background:rgba(45,191,126,0.12);color:var(--ok);border-color:rgba(45,191,126,0.3)">🚚 Concluída / Expedida</span>

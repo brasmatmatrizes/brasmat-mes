@@ -1070,6 +1070,99 @@ function renderSeqPanel(){
 }
 
 // ---------- Render ----------
+// Impressão A4 da sequência atual do cliente (código, pedido, OS, prazo confirmado)
+function imprimirSequencia(){
+  const itens = ITENS.filter(it=>{
+    if(FILTRO_NPRONTO && itemPronto(it)) return false;
+    if(FILTRO_SEMPRAZO && !itemSemPrazo(it)) return false;
+    if(FILTRO_SEMDESENHO && !itemSemDesenho(it)) return false;
+    if(FILTRO_SEMROTEIRO && !itemSemRoteiro(it)) return false;
+    if(FILTRO_TIPO && itemTipo(it)!==FILTRO_TIPO) return false;
+    return true;
+  });
+  if(!itens.length){ alert("Nenhum item para imprimir com os filtros atuais."); return; }
+
+  const agora = new Date().toLocaleString("pt-BR");
+  const linhas = itens.map(it=>{
+    const seq = ITENS.indexOf(it)+1;   // posição real na sequência (mesmo com filtro ativo)
+    const prazoD = it.prazo_confirmado ? new Date(it.prazo_confirmado+"T00:00:00") : null;
+    const prazo = prazoD ? prazoD.toLocaleDateString("pt-BR") : "—";
+    return `<tr${it.critico?' class="crit"':''}>
+      <td class="num">${seq}ª</td>
+      <td class="cod">${escHtml(it.codigo_peca||"—")}${it.critico?' <b>CRÍTICO</b>':''}</td>
+      <td class="mono">${escHtml(it.pedido||"—")}</td>
+      <td class="mono">${escHtml(it.os||"—")}</td>
+      <td class="dt">${prazo}</td>
+    </tr>`;
+  }).join("");
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>Lista de Sequência — ${escHtml(nomeExib(CLIENTE))}</title>
+  <style id="page-style">@page{size:A4 portrait;margin:14mm}</style>
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;font-size:12px;background:#525659}
+    .page{background:#fff;max-width:760px;margin:16px auto;padding:22px 26px;box-shadow:0 2px 14px rgba(0,0,0,0.4)}
+    .top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:14px}
+    .ttl{font-size:18px;font-weight:700;letter-spacing:0.5px}
+    .sub{font-size:12px;color:#444;margin-top:3px}
+    .meta{font-size:10px;color:#555;text-align:right;line-height:1.5}
+    table{width:100%;border-collapse:collapse}
+    th,td{border:1px solid #c8ccd4;padding:6px 9px;text-align:left;vertical-align:top}
+    th{background:#e9ecf1;font-size:10px;text-transform:uppercase;letter-spacing:0.03em}
+    td.num{text-align:center;font-weight:700;width:9%}
+    td.cod{font-family:'Courier New',monospace;font-weight:700}
+    td.mono{font-family:'Courier New',monospace}
+    td.dt{white-space:nowrap;width:18%}
+    tr.crit td{background:#fdeaea}
+    tr.crit td.cod b{color:#c00}
+    tbody tr:nth-child(even) td{background:#fafbfc}
+    tbody tr.crit:nth-child(even) td{background:#fce0e0}
+    .foot{margin-top:14px;font-size:9px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:6px}
+    .bar{position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;gap:8px;align-items:center;background:#1F2433;padding:10px 14px;border-bottom:1px solid #333}
+    .bar button{font-size:13px;padding:7px 16px;border-radius:7px;border:1px solid #3A4560;background:#2A3045;color:#C4CBDA;cursor:pointer}
+    .bar button.on{background:#3B7FFF;border-color:#3B7FFF;color:#fff;font-weight:600}
+    .bar .fechar{background:#3a2530;border-color:#5a2f3f;color:#f0a8b8}
+    .bar .imp{margin-left:auto;background:#2DBF7E;border-color:#2DBF7E;color:#06281A;font-weight:700}
+    @media print{
+      body{background:#fff}
+      .page{max-width:none;margin:0;padding:0;box-shadow:none}
+      .noprint{display:none!important}
+    }
+  </style></head><body>
+    <div class="bar noprint">
+      <span style="color:#8E9AB0;font-size:12px">Orientação:</span>
+      <button id="o-p" class="on" onclick="setOrient('portrait')">Retrato</button>
+      <button id="o-l" onclick="setOrient('landscape')">Paisagem</button>
+      <button class="fechar" onclick="window.close()">✕ Fechar</button>
+      <button class="imp" onclick="window.print()">🖨️ Imprimir</button>
+    </div>
+    <div class="page">
+    <div class="top">
+      <div><div class="ttl">BRASMAT — Lista de Sequência</div><div class="sub">Cliente: ${escHtml(nomeExib(CLIENTE))} &nbsp;·&nbsp; ${itens.length} ${itens.length===1?"item":"itens"}</div></div>
+      <div class="meta">Emitido em<br>${escHtml(agora)}</div>
+    </div>
+    <table>
+      <thead><tr><th>Seq.</th><th>Código</th><th>Pedido</th><th>OS</th><th>Prazo confirmado</th></tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>
+    <div class="foot">BRASMAT MES — documento gerado automaticamente</div>
+    </div>
+    <script>
+      function setOrient(o){
+        document.getElementById("page-style").textContent="@page{size:A4 "+o+";margin:14mm}";
+        document.getElementById("o-p").classList.toggle("on",o==="portrait");
+        document.getElementById("o-l").classList.toggle("on",o==="landscape");
+      }
+    <\/script>
+  </body></html>`;
+
+  const win = window.open("", "_blank");
+  if(!win){ alert("Permita pop-ups para imprimir."); return; }
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+}
+
 function render(){
   const c = document.getElementById("content");
   renderSeqPanel();
@@ -1171,7 +1264,7 @@ function render(){
     ? `<div class="placeholder" style="height:50%"><div class="ph-ico">🟠</div><div class="ph-txt">Nenhum item de Industrialização nesta demanda.</div></div>` : "";
   c.innerHTML = `<div class="chdr">
       <div><div class="ctitle">${nomeExib(CLIENTE)}</div><div class="csub">${ITENS.length} ${ITENS.length===1?"item":"itens"} na demanda${FILTRO_NPRONTO?` · ${nNaoPronto} não pronto(s)`:""}${FILTRO_SEMPRAZO?` · ${nSemPrazo} sem prazo`:""}${FILTRO_SEMDESENHO?` · ${nSemDesenho} sem desenho`:""}${FILTRO_SEMROTEIRO?` · ${nSemRoteiro} sem roteiro`:""}</div></div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">${btnFiltro}${btnSemPrazo}${btnSemDesenho}${btnSemRoteiro}${btnV}${btnI}<button class="btn-rm" onclick="voltarResumo()">← voltar</button></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${btnFiltro}${btnSemPrazo}${btnSemDesenho}${btnSemRoteiro}${btnV}${btnI}<button class="btn-rm" onclick="imprimirSequencia()" title="Imprimir a sequência (código, pedido, OS e prazo confirmado)">🖨️ Imprimir sequência</button><button class="btn-rm" onclick="voltarResumo()">← voltar</button></div>
     </div>${vazioFiltro}${cards}`;
 }
 

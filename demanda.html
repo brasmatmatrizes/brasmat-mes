@@ -652,7 +652,7 @@ function ordenarPorPrazo(){
     return pa<pb ? -1 : pa>pb ? 1 : 0;
   });
   render();
-  agendarSalvar();
+  marcarOrdemSuja();
 }
 
 // Busca tipo (V/I) e progresso da peça — MESMO cálculo da linha do tempo
@@ -798,7 +798,7 @@ function moverItem(i, dir){
   if(j < 0 || j >= ITENS.length) return;
   const tmp = ITENS[i]; ITENS[i] = ITENS[j]; ITENS[j] = tmp;
   render();
-  agendarSalvar();
+  marcarOrdemSuja();
 }
 
 // ---------- Arrastar para reordenar ----------
@@ -830,7 +830,7 @@ function dragDrop(e,i){
   ITENS.splice(i,0,it);
   DRAG_FROM = null;
   render();
-  agendarSalvar();
+  marcarOrdemSuja();
 }
 
 function removerItem(i){
@@ -844,23 +844,23 @@ function removerItem(i){
   if(it.id) REMOVIDOS.push(it.id);
   ITENS.splice(i,1);
   render();
-  agendarSalvar();
+  marcarOrdemSuja();   // reindexa a ordem dos itens que sobraram
 }
 
 // ---------- Edição de campos ----------
-function setCampo(i, campo, valor){ if(ITENS[i]){ ITENS[i][campo] = valor || null; renderSeqPanel(); agendarSalvar(); } }
+function setCampo(i, campo, valor){ if(ITENS[i]){ ITENS[i][campo] = valor || null; renderSeqPanel(); marcarSujo(ITENS[i], campo); } }
 
 function toggleCritico(i, checked){
   if(!ITENS[i]) return;
   ITENS[i].critico = !!checked;
   render();
-  agendarSalvar();
+  marcarSujo(ITENS[i], 'critico');
 }
 function toggleConcluido(i, checked){
   if(!ITENS[i]) return;
   ITENS[i].concluido = !!checked;
   render();
-  agendarSalvar();
+  marcarSujo(ITENS[i], 'concluido');
 }
 
 // ---------- Upload de PDF ----------
@@ -893,7 +893,7 @@ async function uploadArquivoFile(i, tipo, file){
     const url = await supaUpload(path, file);
     it[campo] = url;
     render();
-    agendarSalvar();
+    marcarSujo(it, campo);
     flash("PDF enviado");
     if(oldUrl && oldUrl !== url) supaDeleteArquivo(oldUrl);   // apaga o PDF antigo (troca)
   }catch(e){
@@ -933,7 +933,7 @@ async function removerArquivo(i, tipo){
   const url = it[campo];
   it[campo] = null;
   render();
-  agendarSalvar();
+  marcarSujo(it, campo);
   await supaDeleteArquivo(url);   // remove o arquivo físico do bucket
 }
 
@@ -942,6 +942,24 @@ let _saveTimer = null;
 let _saving = false;
 let _saveAgain = false;
 let _saveFailCount = 0;
+
+// Marca só a(s) coluna(s) que este usuário alterou naquele item — evita reescrever a linha inteira
+function marcarSujo(it, ...cols){
+  if(!it) return;
+  if(!it._dirty) it._dirty = new Set();
+  cols.forEach(c=>it._dirty.add(c));
+  agendarSalvar();
+}
+// Reordenar muda a posição de vários itens de uma vez → marca 'ordem' em todos
+function marcarOrdemSuja(){
+  ITENS.forEach(it=>{ if(!it._dirty) it._dirty = new Set(); it._dirty.add('ordem'); });
+  agendarSalvar();
+}
+function valorColuna(it, col){
+  if(col==='concluido' || col==='critico') return !!it[col];
+  if(col==='ordem') return (it.ordem==null ? null : it.ordem);
+  return it[col] || null;
+}
 
 function agendarSalvar(){
   if(!CLIENTE) return;
@@ -957,42 +975,59 @@ async function salvar(){
   _saving = true;
   const msg = document.getElementById("saved-msg");
   if(msg){ msg.style.color = "var(--text3)"; msg.textContent = "salvando…"; }
+  let houveFalha = false;
   try{
-    // Deleta removidos
-    for(const id of REMOVIDOS){
-      await fetch(`${SUPA_URL}/rest/v1/demanda_itens?id=eq.${id}`, {
+    // 1) Deleta removidos
+    for(const id of REMOVIDOS.slice()){
+      const r = await fetch(`${SUPA_URL}/rest/v1/demanda_itens?id=eq.${id}`, {
         method:"DELETE", headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY }
       });
+      if(!r.ok) throw new Error("delete falhou ("+r.status+")");
+      const k = REMOVIDOS.indexOf(id); if(k>=0) REMOVIDOS.splice(k,1);
     }
-    REMOVIDOS = [];
-    ITENS.forEach((it,idx)=>it.ordem=idx);   // posição atual = ordem
-    // Insere/atualiza
+    // 2) ordem = posição atual (só é gravada nos itens marcados como sujos)
+    ITENS.forEach((it,idx)=>{ it.ordem = idx; });
+    // 3) Novos → insere a linha inteira; existentes → PATCH SÓ das colunas que este usuário mexeu
     for(const it of ITENS){
-      const payload = {
-        cliente:CLIENTE, codigo_peca:it.codigo_peca, pedido:it.pedido||null, os:it.os||null,
-        descricao:it.descricao||null,
-        data_desejada:it.data_desejada||null, prazo_confirmado:it.prazo_confirmado||null, observacao:it.observacao||null, ordem:it.ordem,
-        desenho_url:it.desenho_url||null, fluxo_url:it.fluxo_url||null,
-        concluido:!!it.concluido, critico:!!it.critico
-      };
-      if(it.id){
-        const r = await fetch(`${SUPA_URL}/rest/v1/demanda_itens?id=eq.${it.id}`, {
-          method:"PATCH",
-          headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer:"return=minimal" },
-          body:JSON.stringify(payload)
-        });
-        if(!r.ok) throw new Error("patch falhou ("+r.status+"): "+await r.text());
-      }else{
-        const r = await fetch(`${SUPA_URL}/rest/v1/demanda_itens`, {
-          method:"POST",
-          headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer:"return=representation" },
-          body:JSON.stringify(payload)
-        });
-        if(!r.ok) throw new Error("post falhou ("+r.status+"): "+await r.text());
-        const data = await r.json();
-        if(Array.isArray(data)&&data[0]){ it.id = data[0].id; it._novo=false; }
+      if(!it.id){
+        const payload = {
+          cliente:CLIENTE, codigo_peca:it.codigo_peca, pedido:it.pedido||null, os:it.os||null,
+          descricao:it.descricao||null, data_desejada:it.data_desejada||null,
+          prazo_confirmado:it.prazo_confirmado||null, observacao:it.observacao||null, ordem:it.ordem,
+          desenho_url:it.desenho_url||null, fluxo_url:it.fluxo_url||null,
+          concluido:!!it.concluido, critico:!!it.critico
+        };
+        try{
+          const r = await fetch(`${SUPA_URL}/rest/v1/demanda_itens`, {
+            method:"POST",
+            headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer:"return=representation" },
+            body:JSON.stringify(payload)
+          });
+          if(!r.ok) throw new Error("post falhou ("+r.status+"): "+await r.text());
+          const data = await r.json();
+          if(Array.isArray(data)&&data[0]){ it.id = data[0].id; it._novo=false; }
+          it._dirty = null;
+        }catch(e){ console.error("Falha ao inserir item:", e); houveFalha = true; }
+      } else if(it._dirty && it._dirty.size){
+        const cols = [...it._dirty];
+        const payload = {};
+        cols.forEach(c=>{ payload[c] = valorColuna(it, c); });
+        it._dirty.clear();   // limpa otimista; se falhar, remarca abaixo
+        try{
+          const r = await fetch(`${SUPA_URL}/rest/v1/demanda_itens?id=eq.${it.id}`, {
+            method:"PATCH",
+            headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer:"return=minimal" },
+            body:JSON.stringify(payload)
+          });
+          if(!r.ok) throw new Error("patch falhou ("+r.status+"): "+await r.text());
+        }catch(e){
+          console.error("Falha ao salvar item:", e);
+          cols.forEach(c=> it._dirty.add(c));   // remarca p/ tentar de novo
+          houveFalha = true;
+        }
       }
     }
+    if(houveFalha) throw new Error("uma ou mais gravações falharam");
     if(msg){ msg.style.color = "var(--ok)"; msg.textContent = "✓ salvo automaticamente"; }
     _saveFailCount = 0;
   }catch(e){
@@ -1315,12 +1350,77 @@ function refreshApontamentos(){
     render();
   }, 2000);
 }
+// Realtime da própria demanda (demanda_itens): reflete AO VIVO o que outra pessoa alterou,
+// mesclando só os campos que ESTE usuário não está editando/gravando naquele instante.
+// (ordem não entra no merge ao vivo — reordenação de outro aparece no próximo carregamento,
+//  sem embaralhar a tela de quem está trabalhando; o salvamento por-campo não a sobrescreve.)
+let _rtDemTimer = null;
+const COLS_MERGE_DEMANDA = ['pedido','os','descricao','data_desejada','prazo_confirmado','observacao','desenho_url','fluxo_url','concluido','critico'];
+function normalizarRowDemanda(r){
+  const existe = !!r.pedido || POS.some(p=>String(p.codigo_peca||"").toUpperCase()===String(r.codigo_peca||"").toUpperCase());
+  return {...r, pedido:r.pedido||"", os:r.os||"", _novo:!existe};
+}
+function agendarRenderRealtime(){
+  clearTimeout(_rtDemTimer);
+  _rtDemTimer = setTimeout(()=>{
+    // não re-renderiza (perderia foco/digitação) enquanto o usuário edita um campo
+    const ae = document.activeElement, cont = document.getElementById("content");
+    if(ae && cont && cont.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName)){ agendarRenderRealtime(); return; }
+    render();
+  }, 700);
+}
+function onDemandaChange(payload){
+  const ev = payload.eventType;
+  const nova = payload.new || {};
+  const velha = payload.old || {};
+  // Fora de um cliente (tela de resumo): só atualiza as contagens
+  if(!CLIENTE){ clearTimeout(_rtDemTimer); _rtDemTimer = setTimeout(renderResumoClientes, 1500); return; }
+
+  if(ev==='DELETE'){
+    const idx = ITENS.findIndex(it=>it.id===velha.id);
+    if(idx>=0){ ITENS.splice(idx,1); agendarRenderRealtime(); }
+    return;
+  }
+  if(ev==='INSERT'){
+    if(nova.cliente!==CLIENTE) return;
+    // item que ESTE usuário acabou de criar (ainda sem id local) → só adota o id, não duplica
+    const mine = ITENS.find(it=>!it.id && String(it.codigo_peca)===String(nova.codigo_peca) && String(it.pedido||"")===String(nova.pedido||""));
+    if(mine){ mine.id = nova.id; return; }
+    if(ITENS.some(it=>it.id===nova.id)) return;   // eco do próprio insert já com id
+    const item = normalizarRowDemanda(nova);
+    ITENS.push(item);
+    if(item._novo) agendarRenderRealtime(); else enriquecerItem(item).then(agendarRenderRealtime);
+    return;
+  }
+  if(ev==='UPDATE'){
+    const idx = ITENS.findIndex(it=>it.id===nova.id);
+    if(nova.cliente!==CLIENTE){ if(idx>=0){ ITENS.splice(idx,1); agendarRenderRealtime(); } return; }  // saiu p/ outro cliente
+    if(idx<0){   // entrou neste cliente (ou ainda não carregado)
+      const item = normalizarRowDemanda(nova);
+      ITENS.push(item);
+      if(item._novo) agendarRenderRealtime(); else enriquecerItem(item).then(agendarRenderRealtime);
+      return;
+    }
+    const it = ITENS[idx];
+    let mudou = false;
+    COLS_MERGE_DEMANDA.forEach(c=>{
+      if(it._dirty && it._dirty.has(c)) return;   // este usuário tem alteração não salva nessa coluna → mantém a dele
+      let nv = nova[c];
+      if(nv===undefined) return;
+      if(c==='concluido' || c==='critico') nv = !!nv;
+      if((it[c]??null) !== (nv??null)){ it[c] = nv; mudou = true; }
+    });
+    if(mudou) agendarRenderRealtime();
+  }
+}
+
 function iniciarRealtime(){
   try{
     if(!window.supabase) return;
     const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
     sb.channel("demanda-apont")
       .on("postgres_changes", { event:"*", schema:"public", table:"producao_eventos" }, refreshApontamentos)
+      .on("postgres_changes", { event:"*", schema:"public", table:"demanda_itens" }, onDemandaChange)
       .subscribe();
   }catch(e){}
 }

@@ -60,6 +60,7 @@ O menu de navegação (`.nav` no topbar) deve conter as 14 páginas, em **todas*
 - **Edições cirúrgicas**: mexer só no que foi pedido. Não refatorar, renomear ou "melhorar" o entorno sem pedir. O usuário preza muito o que já funciona.
 - **Commit + push a cada alteração** concluída (o usuário acompanha pelo deploy). Mensagens de commit em inglês.
 - **Mostrar/explicar antes** de fazer mudanças estruturais ou investigações; ao corrigir divergência de dados, mostrar a evidência antes.
+- **Nunca mutar dado real em teste sem snapshot completo**: para testar, preferir leitura ou servidor local sem gravar. Se precisar mesmo escrever no Supabase real (PATCH/POST/DELETE em tabela de produção ou no bucket), **antes** capturar a linha inteira (`select=*` daquele id) e guardar; restaurar **exatamente a partir desse snapshot**, nunca por suposição/memória/fetch parcial; reconferir com `select=*`. Sem PITR no plano gratuito — se apagar, não volta.
 - **Design system**: usar as variáveis CSS de `:root` (`--bg`, `--accent`, `--ok`, `--warn`, `--danger`, `--mono`, etc.) — idênticas em todas as páginas. Manter o padrão visual existente.
 - Idioma com o usuário: **português**.
 

@@ -68,6 +68,8 @@
 .resumo-toggle button{border:none;background:transparent;color:var(--text3);font-family:var(--sans);font-size:12px;font-weight:500;padding:7px 14px;border-radius:7px;cursor:pointer}
 .resumo-toggle button.active{background:var(--accent);color:#fff}
 .resumo-toggle button:not(.active):hover{color:var(--text2)}
+.resumo-fcli{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--text);font-family:var(--sans);outline:none;cursor:pointer;flex-shrink:0;max-width:260px}
+.resumo-fcli:focus{border-color:var(--accent)}
 .itens-tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:10px}
 table.itens-tbl{width:100%;border-collapse:collapse;font-size:12.5px;min-width:760px}
 table.itens-tbl th{text-align:left;font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);font-weight:600;padding:10px 12px;background:var(--bg3);border-bottom:1px solid var(--border);cursor:pointer;white-space:nowrap;user-select:none}
@@ -388,6 +390,7 @@ async function init(){
 let RESUMO_VIEW = "cli";              // "cli" | "item"
 let RESUMO_ROWS = [];                 // itens do último render (p/ ordenar sem reconsultar)
 let RESUMO_SORT = {key:"prazo", dir:1};
+let RESUMO_FILTRO_CLI = "";           // filtro por cliente na visão "Por item" ("" = todos)
 
 async function renderResumoClientes(){
   const cont = document.getElementById("content");
@@ -454,6 +457,8 @@ function ordenarResumoItens(key){
   renderResumoClientes();
 }
 
+function filtrarResumoItens(c){ RESUMO_FILTRO_CLI = c; renderResumoClientes(); }
+
 // Lista plana com todos os itens de todos os clientes (resumo p/ decisão rápida do gestor)
 function renderResumoItens(cont, toggle){
   const valor = (r,key)=>{
@@ -463,12 +468,22 @@ function renderResumoItens(cont, toggle){
     if(key==="situacao") return r.concluido ? "0" : (r._insp ? "1" : "2");
     return "";
   };
-  const linhas = [...RESUMO_ROWS].sort((a,b)=>{
+  // se o cliente do filtro sumiu (ex.: última demanda dele foi resolvida), volta p/ todos
+  if(RESUMO_FILTRO_CLI && !RESUMO_ROWS.some(r=>r.cliente===RESUMO_FILTRO_CLI)) RESUMO_FILTRO_CLI = "";
+  const base = RESUMO_FILTRO_CLI ? RESUMO_ROWS.filter(r=>r.cliente===RESUMO_FILTRO_CLI) : RESUMO_ROWS;
+  const linhas = [...base].sort((a,b)=>{
     const va=valor(a,RESUMO_SORT.key), vb=valor(b,RESUMO_SORT.key);
     return va<vb ? -1*RESUMO_SORT.dir : va>vb ? 1*RESUMO_SORT.dir : 0;
   });
   const arrow = k => RESUMO_SORT.key===k ? (RESUMO_SORT.dir===1?"▲":"▼") : "⇅";
-  const rowsHtml = linhas.map(r=>{
+  // dropdown sempre lista TODOS os clientes com demanda (independente do filtro atual)
+  const clientes = [...new Set(RESUMO_ROWS.map(r=>r.cliente))].sort((a,b)=>nomeExib(a).localeCompare(nomeExib(b),"pt-BR"));
+  const optsCli = `<option value="">Todos os clientes</option>` +
+    clientes.map(c=>`<option value="${escHtml(c)}" ${c===RESUMO_FILTRO_CLI?"selected":""}>${escHtml(nomeExib(c))}</option>`).join("");
+  const filtroCli = `<select class="resumo-fcli" onchange="filtrarResumoItens(this.value)" title="Filtrar por cliente">${optsCli}</select>`;
+  const rowsHtml = !linhas.length
+    ? `<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:24px;font-size:12px">Nenhum item para este filtro.</td></tr>`
+    : linhas.map(r=>{
     const cor = corCliente(r.cliente);
     const ped = [r.pedido?("#"+r.pedido):"", r.os?("OS "+r.os):""].filter(Boolean).join(" · ");
     const prazoHtml = r.concluido ? `<span class="badge-critico" style="animation:none;background:rgba(45,191,126,0.12);color:var(--ok);border-color:rgba(45,191,126,0.4)">✓ concluído</span>`
@@ -487,7 +502,10 @@ function renderResumoItens(cont, toggle){
       <td>${sitHtml}${expHtml}</td>
     </tr>`;
   }).join("");
-  cont.innerHTML = `<div class="chdr"><div><div class="ctitle">Demandas em aberto</div><div class="csub">${RESUMO_ROWS.length} item(ns) em ${new Set(RESUMO_ROWS.map(r=>r.cliente)).size} cliente(s)</div></div>${toggle}</div>
+  const csub = RESUMO_FILTRO_CLI
+    ? `${base.length} item(ns) · ${escHtml(nomeExib(RESUMO_FILTRO_CLI))}`
+    : `${base.length} item(ns) em ${new Set(base.map(r=>r.cliente)).size} cliente(s)`;
+  cont.innerHTML = `<div class="chdr"><div><div class="ctitle">Demandas em aberto</div><div class="csub">${csub}</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">${filtroCli}${toggle}</div></div>
     <div class="itens-tbl-wrap"><table class="itens-tbl"><thead><tr>
       <th onclick="ordenarResumoItens('cliente')">Cliente <span class="arrow">${arrow('cliente')}</span></th>
       <th onclick="ordenarResumoItens('codigo')">Código / Pedido <span class="arrow">${arrow('codigo')}</span></th>

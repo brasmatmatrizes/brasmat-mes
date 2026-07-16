@@ -116,6 +116,8 @@ table.itens-tbl tr.critico td:first-child{box-shadow:inset 3px 0 0 #DC2626}
 .item-card.seq-target{animation:seq-flash 0.6s ease-in-out 2}
 .item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
 .item-cod{font-size:15px;font-weight:500;color:var(--text);font-family:var(--mono)}
+.btn-copy-cod{background:transparent;border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:11px;color:var(--text3);cursor:pointer;line-height:1.4;flex-shrink:0}
+.btn-copy-cod:hover{border-color:var(--accent);color:var(--accent)}
 .item-desc{font-size:12px;color:var(--text3);margin-top:2px}
 .item-badge-new{font-size:9px;font-family:var(--mono);font-weight:600;padding:2px 7px;border-radius:6px;background:rgba(245,166,35,0.15);color:var(--warn);border:1px solid rgba(245,166,35,0.4);margin-left:6px;vertical-align:middle}
 .btn-rm{background:transparent;border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--text3);cursor:pointer;flex-shrink:0}
@@ -848,6 +850,25 @@ function removerItem(i){
 }
 
 // ---------- Edição de campos ----------
+function copiarCodigo(ev, codigo){
+  ev.stopPropagation();   // não abrir a linha do tempo ao copiar
+  if(!codigo) return;
+  const ok = ()=>flash("✓ código copiado");
+  const fallback = ()=>{   // contexto sem API de clipboard: usa textarea temporário
+    try{
+      const ta = document.createElement("textarea");
+      ta.value = codigo; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      const done = document.execCommand("copy");
+      document.body.removeChild(ta);
+      done ? ok() : flash("não foi possível copiar");
+    }catch(e){ flash("não foi possível copiar"); }
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(codigo).then(ok).catch(fallback);
+  }else{ fallback(); }
+}
+
 function setCampo(i, campo, valor){ if(ITENS[i]){ ITENS[i][campo] = valor || null; renderSeqPanel(); marcarSujo(ITENS[i], campo); } }
 
 function toggleCritico(i, checked){
@@ -1233,7 +1254,7 @@ function render(){
         <div class="drag-handle" draggable="true" ondragstart="dragStart(event,${i})" ondragend="dragEnd(event)" title="Arraste para reordenar">⠿</div>
         <div class="seq-num-badge" title="Sequência">${i+1}ª</div>
         <div ${clickAttr}>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="item-cod">${escHtml(it.codigo_peca)}${novo}</div>${renderTipoBadge(it)}${concBadge}${expBadge}${criticoBadge}</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><div class="item-cod">${escHtml(it.codigo_peca)}${novo}</div><button class="btn-copy-cod" onclick="copiarCodigo(event,'${esc(it.codigo_peca||"")}')" title="Copiar código">📋</button>${renderTipoBadge(it)}${concBadge}${expBadge}${criticoBadge}</div>
           ${subLine}${tlHint}
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0">

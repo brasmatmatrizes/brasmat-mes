@@ -1,6 +1,6 @@
 ---
 name: arquiteto-modulo
-description: Playbook para criar um módulo novo no BRASMAT MES (nova página + novas tabelas Supabase), do desenho do schema ao deploy. Use SEMPRE que o usuário pedir uma "tela nova", "página nova", "módulo novo", "cadastro novo" ou qualquer funcionalidade que exija tabela nova no banco — ex.: roteiros de processo, estoque, orçamento, inspeção. Garante que todo módulo nasça no mesmo padrão do que já funciona (design system, nav, RLS, realtime, regressão).
+description: Playbook para criar um módulo novo no BRASMAT MES (nova página + novas tabelas Supabase), do desenho do schema ao deploy. Use SEMPRE que o usuário pedir uma "tela nova", "página nova", "módulo novo", "cadastro novo" ou qualquer funcionalidade que exija tabela nova no banco — ex.: roteiros de processo, estoque, orçamento, inspeção. Garante que todo módulo nasça no mesmo padrão do que já funciona (design system, nav, RLS, realtime, regressão). NÃO usar para mudança que não é módulo novo (indicador, ajuste de tela existente, coluna avulsa em tabela já existente sem tela nova) — nesses casos use `strategic-thinker` → `solution-architect` → `builder`.
 ---
 
 # Arquiteto de módulo (BRASMAT MES)
@@ -9,6 +9,20 @@ Esta skill existe porque o sistema vai crescer de 13 páginas para um ERP+MES co
 (ver roadmap na memória do projeto). Cada módulo novo precisa nascer **igual ao que já
 funciona** — não inventar padrão novo. O usuário não é programador: mostrar o desenho
 do módulo (tabelas + tela) e obter aprovação **antes** de criar qualquer coisa.
+
+## Caso trivial
+
+Se for só uma coluna nova ou uma tabelinha auxiliar pequena, sem tela nova — aplique só o passo 2 (schema) direto, sem rodar o playbook inteiro (não precisa do checklist completo de nav/regressão/backup pra isso).
+
+## Exemplos
+
+**Deve disparar esta skill:**
+- "Quero um cadastro novo de estoque."
+- "Preciso de uma tela pra roteiros de processo."
+
+**NÃO deve disparar (vai direto para outro lugar):**
+- "Adiciona um indicador de tempo parado." (sem tabela nova) → `strategic-thinker`.
+- "Muda a ordem das colunas dessa tabela." → edição direta.
 
 ## Ordem de trabalho
 

@@ -1,6 +1,6 @@
 ---
 name: descoberta-modulo
-description: Conduz a conversa de descoberta de um módulo novo do BRASMAT MES — entrevista o usuário (dono da Brasmat, não-programador) sobre como o processo funciona hoje na prática, ajuda ele a pensar no que importa, prioriza o que implementar primeiro e transforma as respostas em especificação escrita. Use SEMPRE que o usuário disser "vamos pensar no módulo de...", "quero te explicar como funciona...", "me ajuda a decidir o que implementar", "vamos estudar o orçamento/roteiro/estoque/inspeção", ou quando for iniciar qualquer módulo da Fase 2/3 do roadmap sem especificação pronta.
+description: Conduz a conversa de descoberta de um módulo novo do BRASMAT MES — entrevista o usuário (dono da Brasmat, não-programador) sobre como o processo funciona hoje na prática, ajuda ele a pensar no que importa, prioriza o que implementar primeiro e transforma as respostas em especificação escrita. Use SEMPRE que o usuário disser "vamos pensar no módulo de...", "quero te explicar como funciona...", "me ajuda a decidir o que implementar", "vamos estudar o orçamento/roteiro/estoque/inspeção", ou quando for iniciar qualquer módulo da Fase 2/3 do roadmap sem especificação pronta. NÃO usar quando a mudança não envolve tabela/domínio de negócio novo (ajuste em módulo existente, indicador novo sobre dado que já existe, mudança de UX) — nesses casos use a `strategic-thinker`.
 ---
 
 # Descoberta de módulo (BRASMAT MES)
@@ -74,6 +74,20 @@ Ao final da descoberta, montar com ele uma tabela simples: para cada parte do m�
 **primeiro pedaço utilizável** (MVP): a menor versão que ele já usaria na semana seguinte —
 nunca o módulo inteiro de uma vez. O usuário preza o que funciona; entregar pequeno e
 funcionando vale mais que grande e pela metade.
+
+## Caso trivial
+
+Se o que parece módulo novo, no fim das contas, é só uma tela nova sobre dado que **já existe** (sem tabela nova) — encaminhe direto para a `strategic-thinker`, sem rodar a entrevista completa.
+
+## Exemplos
+
+**Deve disparar esta skill:**
+- "Vamos pensar no módulo de orçamento."
+- "Quero te explicar como funciona a separação de material no almoxarifado."
+
+**NÃO deve disparar (vai direto para outro lugar):**
+- "Quero um indicador novo de OTD por operador." (dado já existe) → `strategic-thinker`.
+- "Preciso de uma tela pra ver os apontamentos de hoje." (sem tabela nova) → `strategic-thinker`.
 
 ## Saída — especificação do módulo
 

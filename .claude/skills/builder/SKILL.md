@@ -56,6 +56,20 @@ Confirme que tudo segue exatamente a arquitetura: cada etapa do plano tem seu re
 
 ---
 
+# Caso trivial
+
+Se o plano recebido já é de uma etapa só, sem ambiguidade, não adicione checklist ou relatório desproporcional ao tamanho da mudança — implemente e relate em poucas linhas.
+
+# Exemplos
+
+**Deve disparar esta skill:**
+- "O plano da solution-architect foi aprovado, pode implementar."
+- "Executa a etapa 2 do plano."
+
+**NÃO deve disparar (volta uma etapa):**
+- "Isso mudou desde que o plano foi feito, o que eu faço?" → não decidir sozinho, voltar para `solution-architect`.
+- Pedido sem plano aprovado nenhum → começar por `strategic-thinker`.
+
 # Entrega
 
 A cada etapa concluída e validada: **commit + push** (mensagem em inglês), confirmando ao usuário que o push foi feito — ele acompanha pelo deploy do Vercel (e lembra do Ctrl+F5). Nos pontos de verificação marcados no plano, **pare e mostre** antes de seguir.

@@ -1,6 +1,6 @@
 ---
 name: solution-architect
-description: Arquiteto oficial do BRASMAT MES — transforma a análise estratégica em uma solução técnica completa (arquitetura, componentes, impactos, plano de etapas), sem implementar nada. É a segunda etapa do pipeline analisar → planejar → implementar: recebe a saída da skill strategic-thinker validada pelo usuário e produz o projeto técnico que a skill builder vai executar. Use SEMPRE que já houver uma estratégia/análise definida e o usuário quiser desenhar COMO fazer antes de codar ("como estruturar isso", "qual a melhor arquitetura", "monta o plano técnico", "que tabelas/telas isso exige"), ou logo após a strategic-thinker ser validada. NÃO usar para escrever código, SQL ou telas — isso é da builder — nem para ajustes triviais já definidos.
+description: Arquiteto oficial do BRASMAT MES — transforma a análise estratégica em uma solução técnica completa (arquitetura, componentes, impactos, plano de etapas), sem implementar nada. É a segunda etapa do pipeline analisar → planejar → implementar: recebe a saída da skill strategic-thinker validada pelo usuário e produz o projeto técnico que a skill builder vai executar. Use SEMPRE que já houver uma estratégia/análise definida e o usuário quiser desenhar COMO fazer antes de codar ("como estruturar isso", "qual a melhor arquitetura", "monta o plano técnico", "que tabelas/telas isso exige"), ou logo após a strategic-thinker ser validada. NÃO usar para escrever código, SQL ou telas — isso é da builder — nem para ajustes triviais já definidos. Se a análise validada é sobre módulo novo com tabela (veio da `descoberta-modulo`), o plano técnico é feito dentro da própria `arquiteto-modulo` — não duplique aqui.
 ---
 
 # Solution Architect
@@ -37,13 +37,14 @@ Toda solução precisa caber no que o projeto É — detalhes no CLAUDE.md do re
 - **Deploy**: push no `main` → Vercel. Sem staging.
 - **Padrões firmados**: RLS permissiva + grant nas tabelas novas, realtime + fallback 60s, lookup sempre por pedido+código, paginação (a API corta em 1000 linhas), filtro no servidor, escHtml, debounce em salvamento.
 
+⚠️ **Exceção ao processo abaixo:** se a análise recebida é sobre módulo novo com tabela nova (o caso que passou pela `descoberta-modulo`), não desenhe a arquitetura aqui — a `arquiteto-modulo` já é o projeto técnico fim a fim pra esse caso. Leia a especificação e encaminhe direto pra ela.
+
 # Skills especializadas a consultar
 
 Não redescubra o que o projeto já padronizou. Conforme o caso, **leia e incorpore ao plano** as regras destas skills:
 
 | Situação do projeto | Skill de referência |
 |---|---|
-| Página/módulo novo com tabela nova | `arquiteto-modulo` |
 | Desenho de tabelas, colunas, chaves, índices | `modelagem-dados-mes` |
 | Tela usada por operador/almoxarifado (tablet, luva, em pé) | `ux-operador` |
 | Indicador/dashboard novo ou alterado | `kpi-definicoes` (e `padrao-dashboards-profissionais` como referência visual: qualidade.html) |
@@ -116,6 +117,22 @@ Apresentar o plano em português claro; termos técnicos só com explicação cu
 
 ## Revisão Final
 (o que foi considerado e descartado, e por quê)
+
+---
+
+# Caso trivial
+
+Se, ao validar a arquitetura existente, ficar claro que nenhuma tabela/página nova é necessária (o que já existe resolve com um ajuste pequeno), diga isso e pare — não force um "plano técnico" de 7 seções para uma mudança de uma linha.
+
+# Exemplos
+
+**Deve disparar esta skill:**
+- "Já validei a estratégia do indicador de atrasos, monta o plano técnico."
+- "Como estruturar isso: nova coluna + ajuste na tela de prazos?"
+
+**NÃO deve disparar (vai direto para outro lugar):**
+- "É o módulo de estoque, já passou pela descoberta." → `arquiteto-modulo`.
+- "Muda o texto desse botão." → edição direta.
 
 ---
 

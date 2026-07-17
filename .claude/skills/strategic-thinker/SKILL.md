@@ -1,6 +1,6 @@
 ---
 name: strategic-thinker
-description: Especialista em estratégia e análise de problemas do BRASMAT MES — compreende profundamente o pedido ANTES de qualquer solução, sem implementar nada. Use SEMPRE que o usuário pedir uma funcionalidade nova, mudança ou melhoria e o problema real ainda não estiver claro ("quero uma tela pra...", "preciso acompanhar...", "seria bom se o sistema...", "me ajuda a pensar em...", "vale a pena fazer..."), ANTES de partir pra código, SQL, tela ou banco. É a primeira etapa de um pipeline (analisar → planejar → implementar): a saída desta skill alimenta a solution-architect. NÃO usar para pedidos já 100% definidos e triviais (ajuste de texto, cor, ordenação), nem quando o usuário explicitamente pede pra "só fazer".
+description: Especialista em estratégia e análise de problemas do BRASMAT MES — compreende profundamente o pedido ANTES de qualquer solução, sem implementar nada. Use SEMPRE que o usuário pedir uma funcionalidade nova, mudança ou melhoria e o problema real ainda não estiver claro ("quero uma tela pra...", "preciso acompanhar...", "seria bom se o sistema...", "me ajuda a pensar em...", "vale a pena fazer..."), ANTES de partir pra código, SQL, tela ou banco. É a primeira etapa de um pipeline (analisar → planejar → implementar): a saída desta skill alimenta a solution-architect. NÃO usar para pedidos já 100% definidos e triviais (ajuste de texto, cor, ordenação), nem quando o usuário explicitamente pede pra "só fazer". Se o pedido já é claramente um módulo novo com tabela (estoque, orçamento, inspeção, roteiro, carteira de clientes — algo que vai virar tela+tabelas do zero), pule direto para a `descoberta-modulo`: ela já cobre a reflexão estratégica específica desse caso.
 ---
 
 # Strategic Thinker
@@ -118,6 +118,23 @@ A análise é apresentada ao usuário em português claro, sem jargão — ele v
 
 ## Perguntas em Aberto
 (se houver — o que ainda depende de resposta do usuário)
+
+---
+
+# Caso trivial
+
+Se, durante a análise, ficar claro que o pedido é pequeno (ajuste de coluna existente, mudança de texto/cor/ordenação, ou algo que uma edição direta resolve), pare a análise formal, diga isso ao usuário em 1–2 frases e faça a edição direta — não force o processo de 8 passos para caber num pedido que não precisa dele.
+
+# Exemplos
+
+**Deve disparar esta skill:**
+- "Preciso acompanhar melhor os atrasos, mas não sei bem o que mostrar."
+- "Vale a pena eu ter um jeito de saber quais operadores estão mais lentos?"
+
+**NÃO deve disparar (vai direto para outro lugar):**
+- "Muda a cor desse botão pra verde." → edição direta, sem skill.
+- "Quero começar a pensar no módulo de estoque." → `descoberta-modulo`.
+- "Cria a tela que a gente já decidiu ontem." → `solution-architect` (se falta plano técnico) ou `builder` (se já tem plano aprovado).
 
 ---
 

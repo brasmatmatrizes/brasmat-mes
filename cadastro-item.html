@@ -116,11 +116,11 @@
 
   <!-- FORMULÁRIO -->
   <div class="ed-hdr">
-    <div class="page-sub" style="font-size:11px" id="formHint">Registre a peça (o comercial cadastra aqui; a Engenharia usa no Roteiro).</div>
+    <div class="page-sub" style="font-size:11px" id="formHint">Registre a peça. Obrigatório: <b>Código</b> + pelo menos <b>Pedido</b> ou <b>OS</b>.</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
       <div class="ed-f"><span class="ed-l">Código*</span><input class="ed-inp" id="novoCod" style="width:150px"></div>
-      <div class="ed-f"><span class="ed-l">Pedido*</span><input class="ed-inp" id="novoPed" style="width:120px"></div>
-      <div class="ed-f"><span class="ed-l">OS*</span><input class="ed-inp" id="novoOs" style="width:90px"></div>
+      <div class="ed-f"><span class="ed-l">Pedido</span><input class="ed-inp" id="novoPed" style="width:120px"></div>
+      <div class="ed-f"><span class="ed-l">OS</span><input class="ed-inp" id="novoOs" style="width:90px"></div>
       <div class="ed-f"><span class="ed-l">Qtd solicitada</span><input class="ed-inp" id="novoQtd" style="width:70px"></div>
       <div class="ed-f"><span class="ed-l">Tipo</span>
         <select class="ed-inp" id="novoTipo" style="width:150px">
@@ -250,7 +250,7 @@ function cancelarEdicao(){
   limparForm();
   document.getElementById("btnSalvar").textContent = "+ Cadastrar item";
   document.getElementById("btnCancelar").style.display = "none";
-  document.getElementById("formHint").textContent = "Registre a peça (o comercial cadastra aqui; a Engenharia usa no Roteiro).";
+  document.getElementById("formHint").innerHTML = "Registre a peça. Obrigatório: <b>Código</b> + pelo menos <b>Pedido</b> ou <b>OS</b>.";
   document.getElementById("novoCod").focus();
 }
 
@@ -292,8 +292,11 @@ async function verificarDuplicado(codigo, pedido, os, excluirId){
 async function salvarItem(){
   const d = lerForm();
   if(!d.codigo_peca){ toast("Informe o código da peça"); return; }
-  if(!d.pedido){ toast("Informe o pedido"); return; }
-  if(!d.os){ toast("Informe a OS"); return; }
+  if(!d.pedido && !d.os){ toast("Além do código, informe pelo menos o Pedido ou a OS"); return; }
+  if(!d.pedido || !d.os){
+    const falta = !d.pedido ? "o Pedido" : "a OS";
+    if(!confirm(`Está faltando ${falta}. Cadastrar assim mesmo?`)) return;
+  }
   const dup = await verificarDuplicado(d.codigo_peca, d.pedido, d.os, EDIT_ID);
   if(dup){ toast(dup); return; }
   try{

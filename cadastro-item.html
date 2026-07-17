@@ -119,8 +119,8 @@
     <div class="page-sub" style="font-size:11px" id="formHint">Registre a peça (o comercial cadastra aqui; a Engenharia usa no Roteiro).</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
       <div class="ed-f"><span class="ed-l">Código*</span><input class="ed-inp" id="novoCod" style="width:150px"></div>
-      <div class="ed-f"><span class="ed-l">Pedido</span><input class="ed-inp" id="novoPed" style="width:120px"></div>
-      <div class="ed-f"><span class="ed-l">OS</span><input class="ed-inp" id="novoOs" style="width:90px"></div>
+      <div class="ed-f"><span class="ed-l">Pedido*</span><input class="ed-inp" id="novoPed" style="width:120px"></div>
+      <div class="ed-f"><span class="ed-l">OS*</span><input class="ed-inp" id="novoOs" style="width:90px"></div>
       <div class="ed-f"><span class="ed-l">Qtd solicitada</span><input class="ed-inp" id="novoQtd" style="width:70px"></div>
       <div class="ed-f"><span class="ed-l">Tipo</span>
         <select class="ed-inp" id="novoTipo" style="width:150px">
@@ -231,7 +231,7 @@ function lerForm(){
   return {
     codigo_peca: document.getElementById("novoCod").value.trim().toUpperCase(),
     pedido: document.getElementById("novoPed").value.trim(),
-    os: document.getElementById("novoOs").value.trim() || null,
+    os: document.getElementById("novoOs").value.trim(),
     quantidade: document.getElementById("novoQtd").value.trim() || null,
     razao_social: tipo.razao_social || null,
     classificacao_fiscal: tipo.classificacao_fiscal || null,
@@ -270,9 +270,32 @@ function editarItem(id){
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
+// verifica duplicidade em TODA a base: itens (novo cadastro) + producao_eventos (base antiga/Forms)
+async function verificarDuplicado(codigo, pedido, os, excluirId){
+  const enc = encodeURIComponent;
+  const filtro = `codigo_peca=eq.${enc(codigo)}&pedido=eq.${enc(pedido)}&os=eq.${enc(os)}`;
+  try{
+    const emItens = await supaFetch(`/rest/v1/itens?select=id&${filtro}&limit=2`);
+    if(Array.isArray(emItens) && emItens.some(r=>r.id!==excluirId))
+      return "Já existe um item cadastrado com esse código + pedido + OS.";
+    if(!excluirId){ // só no cadastro novo — não bloquear edição de item que já passou pelo Forms
+      const emBase = await supaFetch(`/rest/v1/producao_eventos?select=id&${filtro}&limit=1`);
+      if(Array.isArray(emBase) && emBase.length)
+        return "Esse item já existe na base do sistema (veio pelo Forms). Não precisa cadastrar de novo.";
+    }
+  }catch(e){
+    return "Não consegui verificar duplicidade agora: "+e.message;
+  }
+  return null;
+}
+
 async function salvarItem(){
   const d = lerForm();
   if(!d.codigo_peca){ toast("Informe o código da peça"); return; }
+  if(!d.pedido){ toast("Informe o pedido"); return; }
+  if(!d.os){ toast("Informe a OS"); return; }
+  const dup = await verificarDuplicado(d.codigo_peca, d.pedido, d.os, EDIT_ID);
+  if(dup){ toast(dup); return; }
   try{
     if(EDIT_ID){
       d.updated_at = new Date().toISOString();

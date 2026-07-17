@@ -38,10 +38,10 @@ const NAV = [
     ],
   },
   {
-    group: "Engenharia",
+    group: "Cadastro",
     items: [
-      { page: "engenharia.html", label: "Item existente", mobile: "Existente" },
-      { page: "engenharia.html?modo=novo", label: "Item novo", mobile: "Novo" },
+      { page: "cadastro-item.html", label: "Item", mobile: "Item" },
+      { page: "engenharia.html", label: "Roteiro", mobile: "Roteiro" },
     ],
   },
 ];

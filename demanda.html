@@ -395,7 +395,7 @@ let RESUMO_FILTRO_CLI = "";           // filtro por cliente na visão "Por item"
 async function renderResumoClientes(){
   const cont = document.getElementById("content");
   let rows = [];
-  try{ rows = await supaFetch("/rest/v1/demanda_itens?select=cliente,prazo_confirmado,concluido,codigo_peca,pedido,os,exp_status,critico&limit=10000"); }catch(e){}
+  try{ rows = await supaFetch("/rest/v1/demanda_itens?select=cliente,data_desejada,prazo_confirmado,concluido,codigo_peca,pedido,os,exp_status,critico&limit=10000"); }catch(e){}
   // mapa de posição (posicao_atual) p/ saber a situação de produção de cada item
   const pmap={}, pmapc={};
   (Array.isArray(POS)?POS:[]).forEach(p=>{
@@ -464,6 +464,7 @@ function renderResumoItens(cont, toggle){
   const valor = (r,key)=>{
     if(key==="cliente") return nomeExib(r.cliente);
     if(key==="codigo") return r.codigo_peca||"";
+    if(key==="solicitado") return r.data_desejada ? r.data_desejada.split("-").join("") : "9999999999"; // sem data vai por último
     if(key==="prazo") return r.concluido ? "" : (r.prazo_confirmado ? r.prazo_confirmado.split("-").join("") : "9999999999"); // sem prazo vai por último
     if(key==="situacao") return r.concluido ? "0" : (r._insp ? "1" : "2");
     return "";
@@ -482,10 +483,12 @@ function renderResumoItens(cont, toggle){
     clientes.map(c=>`<option value="${escHtml(c)}" ${c===RESUMO_FILTRO_CLI?"selected":""}>${escHtml(nomeExib(c))}</option>`).join("");
   const filtroCli = `<select class="resumo-fcli" onchange="filtrarResumoItens(this.value)" title="Filtrar por cliente">${optsCli}</select>`;
   const rowsHtml = !linhas.length
-    ? `<tr><td colspan="4" style="text-align:center;color:var(--text3);padding:24px;font-size:12px">Nenhum item para este filtro.</td></tr>`
+    ? `<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:24px;font-size:12px">Nenhum item para este filtro.</td></tr>`
     : linhas.map(r=>{
     const cor = corCliente(r.cliente);
     const ped = [r.pedido?("#"+r.pedido):"", r.os?("OS "+r.os):""].filter(Boolean).join(" · ");
+    const solicHtml = r.data_desejada ? r.data_desejada.split("-").reverse().join("/")
+      : `<span style="color:var(--text3);font-family:var(--mono);font-size:11px">—</span>`;
     const prazoHtml = r.concluido ? `<span class="badge-critico" style="animation:none;background:rgba(45,191,126,0.12);color:var(--ok);border-color:rgba(45,191,126,0.4)">✓ concluído</span>`
       : r.prazo_confirmado ? r.prazo_confirmado.split("-").reverse().join("/")
       : `<span style="color:var(--warn);font-family:var(--mono);font-size:11px">⏳ aguardando</span>`;
@@ -498,6 +501,7 @@ function renderResumoItens(cont, toggle){
     return `<tr class="${r.critico?'critico':''}" onclick="abrirClienteDemanda('${esc(r.cliente)}')">
       <td><span class="itbl-cli"><span class="itbl-dot" style="background:${cor}"></span>${nomeExib(r.cliente)}</span></td>
       <td><span class="itbl-cod">${escHtml(r.codigo_peca)}</span>${criticoTag}${ped?`<div class="itbl-sub">${escHtml(ped)}</div>`:""}</td>
+      <td>${solicHtml}</td>
       <td>${prazoHtml}</td>
       <td>${sitHtml}${expHtml}</td>
     </tr>`;
@@ -509,6 +513,7 @@ function renderResumoItens(cont, toggle){
     <div class="itens-tbl-wrap"><table class="itens-tbl"><thead><tr>
       <th onclick="ordenarResumoItens('cliente')">Cliente <span class="arrow">${arrow('cliente')}</span></th>
       <th onclick="ordenarResumoItens('codigo')">Código / Pedido <span class="arrow">${arrow('codigo')}</span></th>
+      <th onclick="ordenarResumoItens('solicitado')">Data desejada (cliente) <span class="arrow">${arrow('solicitado')}</span></th>
       <th onclick="ordenarResumoItens('prazo')">Prazo confirmado <span class="arrow">${arrow('prazo')}</span></th>
       <th onclick="ordenarResumoItens('situacao')">Situação <span class="arrow">${arrow('situacao')}</span></th>
     </tr></thead><tbody>${rowsHtml}</tbody></table></div>`;

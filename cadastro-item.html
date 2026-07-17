@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRASMAT MES — Cadastro Item</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="design.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:9px;color:var(--text3);font-family:var(--mono)}
+.nav{display:flex;gap:4px}
+.nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
+.tr-right{display:flex;align-items:center;gap:8px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-lbl{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+.content{overflow-y:auto;height:calc(100vh - 56px);padding:20px 24px}
+.page-hdr{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.page-title{font-size:19px;font-weight:500;color:var(--text);letter-spacing:0.01em}
+.page-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+.btn-g{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;height:32px;font-family:var(--sans)}
+.btn-g:hover{border-color:var(--border2);color:var(--text)}
+.btn-acc{background:var(--accent);border:1px solid var(--accent);color:#fff}
+.btn-acc:hover{opacity:0.9;color:#fff}
+
+/* FORM (idêntico ao painel "Item novo") */
+.ed-hdr{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;flex-direction:column;align-items:stretch;gap:10px}
+.ed-f{display:flex;flex-direction:column;gap:3px}
+.ed-l{font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em}
+.ed-inp{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;color:var(--text);outline:none;font-family:var(--mono)}
+.ed-inp:focus{border-color:var(--accent)}
+
+/* LISTA DE ITENS */
+.it-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.it-tbl th{text-align:left;font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:0.07em;padding:0 10px 8px;border-bottom:1px solid var(--border)}
+.it-tbl td{padding:9px 10px;border-bottom:1px solid var(--border);font-family:var(--mono);color:var(--text2);white-space:nowrap}
+.it-tbl tr:hover td{background:var(--bg2)}
+.it-cod{color:var(--text);font-weight:500}
+.badge{font-size:9px;font-family:var(--mono);padding:2px 7px;border-radius:999px;font-weight:500}
+.badge-V{background:rgba(59,127,255,0.16);color:var(--accent)}
+.badge-I{background:rgba(249,115,22,0.16);color:var(--orange)}
+.it-act{display:flex;gap:6px}
+.lnk{font-size:11px;font-family:var(--mono);color:var(--text3);cursor:pointer;background:none;border:none;padding:2px 4px}
+.lnk:hover{color:var(--text)}
+.lnk-del:hover{color:var(--danger)}
+.empty{color:var(--text3);font-family:var(--mono);font-size:12px;padding:20px 4px}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);color:var(--text);padding:9px 18px;border-radius:9px;font-size:12px;font-family:var(--mono);z-index:300;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.5)}
+</style>
+</head>
+<body>
+
+<div style="display:grid;grid-template-rows:56px 1fr;height:100vh">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand"><div class="bm">BM</div><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="nav">
+    <button class="nb" data-href="index.html" onclick="navTo('index.html')">Buscar Peça</button>
+    <div class="nav-group">
+      <button class="nb nb-group">Cliente ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="demanda.html" onclick="navTo('demanda.html')">Demanda Cliente</button>
+        <button class="nb" data-href="cliente.html" onclick="navTo('cliente.html')">Consulta Cliente</button>
+        <button class="nb" data-href="expedicao.html" onclick="navTo('expedicao.html')">Expedição</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nb nb-group">Produção ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="kanban.html" onclick="navTo('kanban.html')">Kanban</button>
+        <button class="nb" data-href="op-kanban.html" onclick="navTo('op-kanban.html')">Painel</button>
+        <button class="nb" data-href="apontamentos.html" onclick="navTo('apontamentos.html')">Apontamentos</button>
+        <button class="nb" data-href="paradas.html" onclick="navTo('paradas.html')">Peças paradas</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nb nb-group">Indicadores ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="prazos.html" onclick="navTo('prazos.html')">Prazos</button>
+        <button class="nb" data-href="otd.html" onclick="navTo('otd.html')">OTD</button>
+        <button class="nb" data-href="ordens.html" onclick="navTo('ordens.html')">Ordens em Aberto</button>
+        <button class="nb" data-href="operadores.html" onclick="navTo('operadores.html')">Performance</button>
+        <button class="nb" data-href="qualidade.html" onclick="navTo('qualidade.html')">Qualidade</button>
+      </div>
+    </div>
+    <div class="nav-group group-active">
+      <button class="nb nb-group active">Cadastro ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb active" data-href="cadastro-item.html">Item</button>
+        <button class="nb" data-href="engenharia.html" onclick="navTo('engenharia.html')">Roteiro</button>
+      </div>
+    </div>
+  </div>
+  <div class="tr-right">
+    <div class="sync-dot"></div>
+    <span class="sync-lbl" id="slbl">carregando...</span>
+  </div>
+</div>
+
+<!-- CONTEÚDO -->
+<div class="content" id="content">
+
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Cadastro de Item</div>
+      <div class="page-sub" id="pageSub">—</div>
+    </div>
+  </div>
+
+  <!-- FORMULÁRIO -->
+  <div class="ed-hdr">
+    <div class="page-sub" style="font-size:11px" id="formHint">Registre a peça (o comercial cadastra aqui; a Engenharia usa no Roteiro).</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="ed-f"><span class="ed-l">Código*</span><input class="ed-inp" id="novoCod" style="width:150px"></div>
+      <div class="ed-f"><span class="ed-l">Pedido</span><input class="ed-inp" id="novoPed" style="width:120px"></div>
+      <div class="ed-f"><span class="ed-l">OS</span><input class="ed-inp" id="novoOs" style="width:90px"></div>
+      <div class="ed-f"><span class="ed-l">Qtd solicitada</span><input class="ed-inp" id="novoQtd" style="width:70px"></div>
+      <div class="ed-f"><span class="ed-l">Tipo</span>
+        <select class="ed-inp" id="novoTipo" style="width:150px">
+          <option value="V">Vendas (Brasmat)</option>
+          <option value="I">Industrialização (Mota)</option>
+        </select>
+      </div>
+      <div class="ed-f" style="flex:1;min-width:220px"><span class="ed-l">Cliente</span>
+        <select class="ed-inp" id="novoCli" style="width:100%"></select>
+      </div>
+      <div class="ed-f"><span class="ed-l">Prazo de entrega</span><input type="date" class="ed-inp" id="novoPrazo" style="width:150px"></div>
+      <button class="btn-g btn-acc" id="btnSalvar" onclick="salvarItem()">+ Cadastrar item</button>
+      <button class="btn-g" id="btnCancelar" onclick="cancelarEdicao()" style="display:none">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- LISTA -->
+  <div id="lista"><div class="empty">carregando...</div></div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="status.js"></script>
+<script>
+function navTo(p){ location.href = p; }
+
+// tipo V/I → Razão Social + Classificação Fiscal (mesma regra do roteiro)
+const TIPO_MAP = {
+  V: { razao_social:"Brasmat", classificacao_fiscal:"Vendas" },
+  I: { razao_social:"Mota",    classificacao_fiscal:"Industrialização" }
+};
+
+let CLIENTES = [];   // roteiro_clientes (dropdown do Forms)
+let ITENS = [];      // itens cadastrados
+let EDIT_ID = null;  // id do item em edição (null = novo)
+
+async function supaWrite(path, method, body, prefer){
+  const r = await fetch(SUPA_URL + path, {
+    method,
+    headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer: prefer||"return=representation" },
+    body: body!==undefined ? JSON.stringify(body) : undefined
+  });
+  if(r.status===204) return null;
+  const j = await r.json().catch(()=>null);
+  if(!r.ok) throw new Error((j&&j.message)||("HTTP "+r.status));
+  return j;
+}
+
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  clearTimeout(t._tm); t._tm = setTimeout(()=>{ t.style.display="none"; }, 2200);
+}
+function setSync(s){ document.getElementById("slbl").textContent = s; }
+
+function preencherSelectClientes(sel){
+  if(!sel) return;
+  sel.innerHTML = '<option value="">—</option>' +
+    CLIENTES.map(c=>`<option value="${escHtml(c.nome)}">${escHtml(c.nome)}</option>`).join("");
+}
+
+// V/I a partir de razao_social/classificacao_fiscal gravados
+function tipoDoItem(it){
+  const cf = String(it.classificacao_fiscal||"").toLowerCase();
+  if(cf.includes("vend")) return "V";
+  if(cf.includes("indust")) return "I";
+  const rs = String(it.razao_social||"").toLowerCase();
+  if(rs.includes("brasmat")) return "V";
+  if(rs.includes("mota")) return "I";
+  return "";
+}
+
+function fmtData(v){
+  if(!v) return "";
+  const d = new Date(String(v).slice(0,10)+"T00:00:00");
+  return isNaN(d) ? "" : d.toLocaleDateString("pt-BR");
+}
+
+function renderLista(){
+  const el = document.getElementById("lista");
+  document.getElementById("pageSub").textContent = ITENS.length + " item(ns) cadastrado(s)";
+  if(!ITENS.length){ el.innerHTML = '<div class="empty">Nenhum item cadastrado ainda.</div>'; return; }
+  const linhas = ITENS.map(it=>{
+    const t = tipoDoItem(it);
+    const badge = t ? `<span class="badge badge-${t}">${t}</span>` : "";
+    return `<tr>
+      <td class="it-cod">${escHtml(it.codigo_peca||"")}</td>
+      <td>${escHtml(it.pedido||"")}</td>
+      <td>${escHtml(it.os||"")}</td>
+      <td>${escHtml(it.quantidade||"")}</td>
+      <td>${badge}</td>
+      <td style="white-space:normal">${escHtml(it.cliente||"")}</td>
+      <td>${fmtData(it.prazo_entrega)}</td>
+      <td class="it-act">
+        <button class="lnk" onclick="editarItem(${it.id})">Editar</button>
+        <button class="lnk lnk-del" onclick="excluirItem(${it.id})">Excluir</button>
+      </td>
+    </tr>`;
+  }).join("");
+  el.innerHTML = `<table class="it-tbl">
+    <thead><tr><th>Código</th><th>Pedido</th><th>OS</th><th>Qtd</th><th>Tipo</th><th>Cliente</th><th>Prazo</th><th></th></tr></thead>
+    <tbody>${linhas}</tbody></table>`;
+}
+
+function lerForm(){
+  const tipo = TIPO_MAP[document.getElementById("novoTipo").value] || {};
+  return {
+    codigo_peca: document.getElementById("novoCod").value.trim().toUpperCase(),
+    pedido: document.getElementById("novoPed").value.trim(),
+    os: document.getElementById("novoOs").value.trim() || null,
+    quantidade: document.getElementById("novoQtd").value.trim() || null,
+    razao_social: tipo.razao_social || null,
+    classificacao_fiscal: tipo.classificacao_fiscal || null,
+    cliente: document.getElementById("novoCli").value.trim() || null,
+    prazo_entrega: document.getElementById("novoPrazo").value.trim() || null
+  };
+}
+
+function limparForm(){
+  ["novoCod","novoPed","novoOs","novoQtd","novoCli","novoPrazo"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("novoTipo").value = "V";
+}
+
+function cancelarEdicao(){
+  EDIT_ID = null;
+  limparForm();
+  document.getElementById("btnSalvar").textContent = "+ Cadastrar item";
+  document.getElementById("btnCancelar").style.display = "none";
+  document.getElementById("formHint").textContent = "Registre a peça (o comercial cadastra aqui; a Engenharia usa no Roteiro).";
+  document.getElementById("novoCod").focus();
+}
+
+function editarItem(id){
+  const it = ITENS.find(x=>x.id===id); if(!it) return;
+  EDIT_ID = id;
+  document.getElementById("novoCod").value = it.codigo_peca || "";
+  document.getElementById("novoPed").value = it.pedido || "";
+  document.getElementById("novoOs").value = it.os || "";
+  document.getElementById("novoQtd").value = it.quantidade || "";
+  document.getElementById("novoTipo").value = tipoDoItem(it) || "V";
+  document.getElementById("novoCli").value = it.cliente || "";
+  document.getElementById("novoPrazo").value = it.prazo_entrega ? String(it.prazo_entrega).slice(0,10) : "";
+  document.getElementById("btnSalvar").textContent = "Salvar alteração";
+  document.getElementById("btnCancelar").style.display = "";
+  document.getElementById("formHint").textContent = "Editando "+(it.codigo_peca||"item")+" — altere e salve.";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+async function salvarItem(){
+  const d = lerForm();
+  if(!d.codigo_peca){ toast("Informe o código da peça"); return; }
+  try{
+    if(EDIT_ID){
+      d.updated_at = new Date().toISOString();
+      const upd = await supaWrite(`/rest/v1/itens?id=eq.${EDIT_ID}`,"PATCH",d);
+      const row = Array.isArray(upd)?upd[0]:upd;
+      const i = ITENS.findIndex(x=>x.id===EDIT_ID);
+      if(i>=0 && row) ITENS[i] = row;
+      toast("Item atualizado");
+      cancelarEdicao();
+    }else{
+      const novo = await supaWrite("/rest/v1/itens","POST",d);
+      const row = Array.isArray(novo)?novo[0]:novo;
+      if(row) ITENS.unshift(row);
+      toast("Item cadastrado");
+      limparForm();
+      document.getElementById("novoCod").focus();
+    }
+    renderLista();
+  }catch(e){
+    toast(String(e.message).includes("duplicate") ? "Já existe um item com esse pedido+código" : "Erro ao salvar: "+e.message);
+  }
+}
+
+async function excluirItem(id){
+  const it = ITENS.find(x=>x.id===id); if(!it) return;
+  if(!confirm(`Excluir o item ${it.codigo_peca||""}${it.pedido?(" / "+it.pedido):""}?`)) return;
+  try{
+    await supaWrite(`/rest/v1/itens?id=eq.${id}`,"DELETE",undefined,"return=minimal");
+    ITENS = ITENS.filter(x=>x.id!==id);
+    if(EDIT_ID===id) cancelarEdicao();
+    renderLista();
+    toast("Item excluído");
+  }catch(e){ toast("Erro ao excluir: "+e.message); }
+}
+
+async function init(){
+  setSync("carregando...");
+  const [clis, itens] = await Promise.all([
+    supaFetch("/rest/v1/roteiro_clientes?select=id,nome,ordem&order=ordem&limit=500"),
+    supaFetch("/rest/v1/itens?select=*&order=created_at.desc&limit=1000")
+  ]);
+  CLIENTES = Array.isArray(clis) ? clis : [];
+  ITENS = Array.isArray(itens) ? itens : [];
+  preencherSelectClientes(document.getElementById("novoCli"));
+  renderLista();
+  setSync("atualizado " + new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));
+}
+init();
+</script>
+</body>
+</html>

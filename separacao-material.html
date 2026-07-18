@@ -415,13 +415,16 @@ function abrirCriarLote(itemId){
   document.getElementById("buscaInput").value="";
   const item = ITENS_CAD.find(i=>i.id===itemId);
   if(!item) return;
-  const nLotesExistentes = LOTES.filter(l=>l.item_id===itemId).length;
+  const lotesDoItem = LOTES.filter(l=>l.item_id===itemId);
+  const nLotesExistentes = lotesDoItem.length;
   const proximoNumero = nLotesExistentes+1;
+  const qtdAlocada = lotesDoItem.reduce((s,l)=>s+(parseInt(l.quantidade,10)||0),0);
+  const qtdRestante = (parseInt(item.quantidade,10)||0) - qtdAlocada;
   document.getElementById("spTitle").textContent = "Novo lote — "+item.codigo_peca;
   document.getElementById("spSub").textContent = "Pedido: "+(item.pedido||"—")+" · OS: "+(item.os||"—")+(nLotesExistentes?(" · já tem "+nLotesExistentes+" lote(s)"):"");
   document.getElementById("spBody").innerHTML = `
     <div class="sp-f"><span class="sp-l">Lote nº (automático)</span><div class="sp-static">${proximoNumero}${nLotesExistentes?(" de "+(nLotesExistentes+1)+" — item dividido em lotes"):""}</div></div>
-    <div class="sp-f"><span class="sp-l">Quantidade deste lote</span><input class="sp-inp" id="novoLoteQtd" value="${escHtml(item.quantidade||"")}" style="width:110px"></div>
+    <div class="sp-f"><span class="sp-l">Quantidade deste lote${nLotesExistentes?" (restante: "+qtdRestante+" de "+(parseInt(item.quantidade,10)||0)+" pç)":""}</span><input class="sp-inp" id="novoLoteQtd" value="${escHtml(qtdRestante>0?String(qtdRestante):"")}" style="width:110px"></div>
     <div class="sp-f">
       <span class="sp-l">Núcleo (obrigatório)</span>
       <select class="sp-inp" id="novoNucleoTipo" style="width:180px" onchange="atualizarSituacao('nucleo')">

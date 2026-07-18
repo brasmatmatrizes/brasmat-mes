@@ -564,14 +564,70 @@ async function abrirComponente(compId){
 
   const excluirLoteBtn = (lote && outrosComps.length)
     ? `<button class="btn-g" style="color:var(--danger);border-color:var(--danger)" onclick="excluirLoteInteiro(${lote.id})">🗑 Excluir lote inteiro (${outrosComps.length+1} cartões)</button>` : "";
+  const adicionarHtml = lote ? renderAdicionarComponente(lote.id) : "";
 
   document.getElementById("spBody").innerHTML = `
     <div class="comp-block"><div class="sp-l" style="margin-bottom:6px">Histórico</div><div class="mat-hist">${histHtml}</div></div>
     ${outrosHtml}
+    ${adicionarHtml}
     <button class="btn-g" style="color:var(--danger);border-color:var(--danger)" onclick="excluirComponente(${compId})">🗑 Excluir esse cartão</button>
     ${excluirLoteBtn}
   `;
   abrirPainel();
+}
+
+// posições (núcleo/carcaça/luva) que esse lote ainda não tem cartão
+function posicoesFaltantes(loteId){
+  const existentes = new Set(COMPONENTES.filter(c=>c.lote_id===loteId).map(c=>c.posicao));
+  return ["nucleo","carcaca","luva"].filter(p=>!existentes.has(p));
+}
+
+// bloco "+ adicionar componente" — conserta lote que ficou sem núcleo/carcaça/luva (ex.: excluído por engano)
+function renderAdicionarComponente(loteId){
+  const faltantes = posicoesFaltantes(loteId);
+  if(!faltantes.length) return "";
+  const blocos = faltantes.map(pos=>{
+    const label = POS_LABEL[pos];
+    const tipoSelect = pos==="nucleo"
+      ? `<select class="sp-inp" id="addTipo_${loteId}_${pos}" style="width:180px;margin-bottom:6px" onchange="atualizarSituacaoAdd(${loteId},'${pos}')">
+          <option value="">Material — selecione</option>
+          <option value="metal_duro">Metal Duro</option>
+          <option value="aco">Aço</option>
+        </select>` : "";
+    const situacaoOpts = pos==="nucleo" ? `<option value="0">Aguardando (nada feito ainda)</option>` : opcoesSituacaoHtml("aco");
+    return `<div style="margin-bottom:10px">
+      <div class="sp-l" style="margin-bottom:5px">+ ${label}${pos!=="nucleo"?" (Aço)":""}</div>
+      ${tipoSelect}
+      <select class="sp-inp" id="addSit_${loteId}_${pos}" style="width:220px;margin-bottom:6px">${situacaoOpts}</select>
+      <button class="btn-g" onclick="salvarComponenteAdicional(${loteId},'${pos}')">+ Adicionar ${label}</button>
+    </div>`;
+  }).join("");
+  return `<div class="comp-block"><div class="sp-l" style="margin-bottom:8px">Adicionar componente faltante</div>${blocos}</div>`;
+}
+
+// atualiza o select de "situação atual" quando o material do núcleo (na seção de adicionar) muda
+function atualizarSituacaoAdd(loteId, posicao){
+  const tipo = document.getElementById(`addTipo_${loteId}_${posicao}`).value;
+  document.getElementById(`addSit_${loteId}_${posicao}`).innerHTML = tipo
+    ? opcoesSituacaoHtml(tipo) : `<option value="0">Aguardando (nada feito ainda)</option>`;
+}
+
+async function salvarComponenteAdicional(loteId, posicao){
+  const tipoMaterial = posicao==="nucleo" ? document.getElementById(`addTipo_${loteId}_${posicao}`).value : "aco";
+  if(posicao==="nucleo" && !tipoMaterial){ toast("Selecione o material do núcleo", "erro"); return; }
+  const situacao = parseInt(document.getElementById(`addSit_${loteId}_${posicao}`).value,10) || 0;
+  try{
+    const novo = await supaWrite("/rest/v1/material_lote_componentes","POST",{ lote_id: loteId, posicao, tipo_material: tipoMaterial });
+    const row = Array.isArray(novo)?novo[0]:novo;
+    if(row) COMPONENTES.push(row);
+    if(situacao > 0 && row){
+      const col = ESTAGIOS.find(e=>e.ordem===situacao);
+      if(col) await registrarEvento(row, col);
+    }
+    renderBoard();
+    toast("Componente adicionado");
+    if(row) abrirComponente(row.id); else fecharPainel();
+  }catch(e){ toast(e.message.includes("duplicate") ? "Esse lote já tem esse componente" : "Erro ao adicionar: "+e.message, "erro"); }
 }
 
 // exclui o lote inteiro (todos os componentes de uma vez) — cascade apaga componentes+eventos junto

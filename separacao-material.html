@@ -39,6 +39,7 @@
 .badge-pill{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:999px}
 
 .board-wrap{height:calc(100vh - 108px);padding:14px 20px;display:flex;gap:12px;overflow-x:auto}
+.board-empty{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text3);font-size:13px;text-align:center;gap:2px}
 .col{width:250px;min-width:250px;display:flex;flex-direction:column;height:100%;flex-shrink:0}
 .col.aguardando{width:220px;min-width:220px}
 .col-hdr{background:var(--bg2);border:1px solid var(--border);border-radius:10px 10px 0 0;padding:9px 12px;display:flex;align-items:center;gap:8px;flex-shrink:0}
@@ -59,9 +60,10 @@
 .mc-pos.carcaca{background:rgba(124,58,237,.15);color:var(--roxo)}
 .mc-pos.luva{background:rgba(249,115,22,.15);color:var(--orange)}
 .mc-meta{font-size:9.5px;color:var(--text3);font-family:var(--mono);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mc-bottom{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.mc-bottom{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap}
 .mc-mat{font-size:9.5px;font-family:var(--mono);color:var(--text2)}
-.mc-dias{font-size:9px;font-family:var(--mono);color:var(--text3)}
+.mc-qtd{font-size:9px;font-family:var(--mono);color:var(--text3);background:var(--bg3);border-radius:999px;padding:1px 6px}
+.mc-dias{font-size:9px;font-family:var(--mono);color:var(--text3);margin-left:auto}
 .mc-dias.atraso{color:var(--warn)}
 .mc-completo{margin-top:6px;font-size:9.5px;font-family:var(--mono);color:var(--ok);background:rgba(45,191,126,.12);border-radius:6px;padding:3px 6px;text-align:center}
 .mc-aguardando{margin-top:6px;font-size:9.5px;font-family:var(--mono);color:var(--warn);background:rgba(245,166,35,.12);border-radius:6px;padding:3px 6px;text-align:center}
@@ -267,6 +269,14 @@ function renderBoard(){
   const cols = colunas();
   const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
   const wrap = document.getElementById("boardWrap");
+  if(!COMPONENTES.length){
+    wrap.innerHTML = `<div class="board-empty">
+      <div style="font-size:24px;margin-bottom:8px">📦</div>
+      <div>Nenhum lote criado ainda.</div>
+      <div style="margin-top:4px">Busque um item no campo acima e clique nele para criar o primeiro lote.</div>
+    </div>`;
+    return;
+  }
   wrap.innerHTML = cols.map(col=>{
     let comps = COMPONENTES.filter(c=>ordemAtual(c.id)===col.ordem);
     let concluidosCount = 0;
@@ -297,8 +307,8 @@ function renderCard(comp){
   const cod = item ? item.codigo_peca : "(?)";
   const dias = diasParado(comp.id);
   const diasHtml = dias===null ? "" : `<span class="mc-dias${dias>=3?' atraso':''}">${dias===0?"hoje":dias+"d parado"}</span>`;
-  const nLotesDoItem = item ? LOTES.filter(l=>l.item_id===item.id).length : 1;
-  const loteTag = nLotesDoItem>1 ? ` · lote ${lote.lote_numero}` : "";
+  const lotesDoItem = item ? LOTES.filter(l=>l.item_id===item.id) : [];
+  const loteTag = lotesDoItem.length>1 ? ` · lote ${lote.lote_numero} de ${lotesDoItem.length}` : "";
   const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
   const estaNoPronto = ordemAtual(comp.id)>=maxOrdem;
   const completo = estaNoPronto && loteCompleto(comp.lote_id);
@@ -310,7 +320,7 @@ function renderCard(comp){
       onclick="abrirComponente(${comp.id})">
     <div class="mc-top"><div class="mc-cod">${escHtml(cod)}</div><span class="mc-pos ${comp.posicao}">${POS_LABEL[comp.posicao]}</span></div>
     <div class="mc-meta">${item?("Pedido "+escHtml(item.pedido||"—")+" · OS "+escHtml(item.os||"—")):""}${loteTag}</div>
-    <div class="mc-bottom"><span class="mc-mat">${MATERIAL_LABEL[comp.tipo_material]}</span>${diasHtml}</div>
+    <div class="mc-bottom"><span class="mc-mat">${MATERIAL_LABEL[comp.tipo_material]}</span><span class="mc-qtd">${lote?lote.quantidade:"—"} pç</span>${diasHtml}</div>
     ${aguardandoHtml}
     ${completo ? '<div class="mc-completo">✓ kit completo</div>' : ''}
   </div>`;

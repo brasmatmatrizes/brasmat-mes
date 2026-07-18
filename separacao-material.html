@@ -711,6 +711,26 @@ async function init(){
   setSync("atualizado " + new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));
 }
 init();
+
+// fallback: sem realtime nesta página (PCP é o único ator) — recarrega itens/lotes/componentes a cada 60s,
+// pra pegar item novo cadastrado em outra aba/pessoa sem precisar de F5. ESTAGIOS não muda, não recarrega.
+async function atualizarAuto(){
+  try{
+    const [itensCad, lotes, componentes, ultimos] = await Promise.all([
+      supaFetch("/rest/v1/itens?select=*&order=created_at.desc&limit=2000"),
+      supaFetch("/rest/v1/material_lotes?select=*&order=created_at.desc&limit=1000"),
+      supaFetch("/rest/v1/material_lote_componentes?select=*&limit=2000"),
+      supaFetch("/rest/v1/material_ultimo_evento?select=*&limit=5000")
+    ]);
+    if(Array.isArray(itensCad)) ITENS_CAD = itensCad;
+    if(Array.isArray(lotes)) LOTES = lotes;
+    if(Array.isArray(componentes)) COMPONENTES = componentes;
+    if(Array.isArray(ultimos)) ULTIMOS = ultimos;
+    renderBoard();
+    setSync("atualizado " + new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));
+  }catch(e){ /* falha silenciosa — tenta de novo no próximo ciclo */ }
+}
+setInterval(atualizarAuto, 60000);
 </script>
 </body>
 </html>

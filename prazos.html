@@ -259,16 +259,19 @@ async function init(){
 
   // Filtra só peças EM PRODUÇÃO com prazo definido
   // Exclui: expedidas, em estoque, aprovadas (já prontas)
+  let prazoInvalido = 0;
   POS = POS.filter(r=>{
     const st = status(r).s;
     if(["expedida","em_estoque","aprovada"].includes(st)) return false;
     if(!r.prazo_entrega || String(r.prazo_entrega).trim()==="") return false;
+    if(isNaN(new Date(r.prazo_entrega).getTime())){ prazoInvalido++; return false; }
     return true;
   });
 
   popularFiltros();
   render();
-  document.getElementById("slbl").textContent = `${POS.length} peças com prazo · ${new Date().toLocaleTimeString("pt-BR")}`;
+  document.getElementById("slbl").textContent = `${POS.length} peças com prazo · ${new Date().toLocaleTimeString("pt-BR")}`
+    + (prazoInvalido ? ` · ${prazoInvalido} ignorada(s) por prazo inválido` : "");
 }
 
 function diasRestantes(row){

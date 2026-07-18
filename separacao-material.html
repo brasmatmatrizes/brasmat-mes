@@ -563,7 +563,13 @@ async function excluirComponente(compId){
   const lote = loteDoComponente(comp);
   const item = lote ? itemDoLote(lote) : null;
   const label = (item?item.codigo_peca:"componente") + " — " + POS_LABEL[comp.posicao];
-  if(!confirm(`Excluir o cartão "${label}"? O histórico dele também será apagado.`)) return;
+  const irmaosRestantes = lote ? COMPONENTES.filter(c=>c.lote_id===lote.id && c.id!==compId) : [];
+  let msg = `Excluir o cartão "${label}"? O histórico dele também será apagado.`;
+  if(comp.posicao==="nucleo" && irmaosRestantes.length){
+    const outrosNomes = irmaosRestantes.map(c=>POS_LABEL[c.posicao]).join(" e ");
+    msg = `⚠ Este lote vai ficar SEM NÚCLEO registrado (continua com ${outrosNomes}). Toda peça normalmente tem um núcleo — se foi engano no cadastro, considere excluir o lote inteiro em vez de só o núcleo. Excluir mesmo assim o cartão "${label}"?`;
+  }
+  if(!confirm(msg)) return;
   try{
     await supaWrite(`/rest/v1/material_lote_componentes?id=eq.${compId}`,"DELETE",undefined,"return=minimal");
     COMPONENTES = COMPONENTES.filter(c=>c.id!==compId);

@@ -52,6 +52,7 @@
 .empty{color:var(--text3);font-family:var(--mono);font-size:12px;padding:20px 4px}
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);color:var(--text);padding:9px 18px;border-radius:9px;font-size:12px;font-family:var(--mono);z-index:300;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.5)}
+.toast-erro{border:2px solid var(--danger);color:var(--danger);font-size:14px;font-weight:600;padding:13px 22px;box-shadow:0 8px 28px rgba(240,69,69,0.4)}
 </style>
 </head>
 <body>
@@ -116,22 +117,23 @@
 
   <!-- FORMULÁRIO -->
   <div class="ed-hdr">
-    <div class="page-sub" style="font-size:11px" id="formHint">Registre a peça. Obrigatório: <b>Código</b> + pelo menos <b>Pedido</b> ou <b>OS</b>.</div>
+    <div class="page-sub" style="font-size:11px" id="formHint">Registre a peça. Obrigatório: <b>Código</b>, <b>Tipo</b>, <b>Quantidade</b>, <b>Cliente</b>, <b>Prazo</b> — e pelo menos <b>Pedido</b> ou <b>OS</b>.</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
       <div class="ed-f"><span class="ed-l">Código*</span><input class="ed-inp" id="novoCod" style="width:150px"></div>
       <div class="ed-f"><span class="ed-l">Pedido</span><input class="ed-inp" id="novoPed" style="width:120px"></div>
       <div class="ed-f"><span class="ed-l">OS</span><input class="ed-inp" id="novoOs" style="width:90px"></div>
-      <div class="ed-f"><span class="ed-l">Qtd solicitada</span><input class="ed-inp" id="novoQtd" style="width:70px"></div>
-      <div class="ed-f"><span class="ed-l">Tipo</span>
+      <div class="ed-f"><span class="ed-l">Qtd solicitada*</span><input class="ed-inp" id="novoQtd" style="width:70px"></div>
+      <div class="ed-f"><span class="ed-l">Tipo*</span>
         <select class="ed-inp" id="novoTipo" style="width:150px">
+          <option value="" selected>—</option>
           <option value="V">Vendas (Brasmat)</option>
           <option value="I">Industrialização (Mota)</option>
         </select>
       </div>
-      <div class="ed-f" style="flex:1;min-width:220px"><span class="ed-l">Cliente</span>
+      <div class="ed-f" style="flex:1;min-width:220px"><span class="ed-l">Cliente*</span>
         <select class="ed-inp" id="novoCli" style="width:100%"></select>
       </div>
-      <div class="ed-f"><span class="ed-l">Prazo de entrega</span><input type="date" class="ed-inp" id="novoPrazo" style="width:150px"></div>
+      <div class="ed-f"><span class="ed-l">Prazo de entrega*</span><input type="date" class="ed-inp" id="novoPrazo" style="width:150px"></div>
       <button class="btn-g btn-acc" id="btnSalvar" onclick="salvarItem()">+ Cadastrar item</button>
       <button class="btn-g" id="btnCancelar" onclick="cancelarEdicao()" style="display:none">Cancelar</button>
     </div>
@@ -170,10 +172,13 @@ async function supaWrite(path, method, body, prefer){
   return j;
 }
 
-function toast(msg){
+function toast(msg, tipo){
   const t = document.getElementById("toast");
-  t.textContent = msg; t.style.display = "block";
-  clearTimeout(t._tm); t._tm = setTimeout(()=>{ t.style.display="none"; }, 2200);
+  t.textContent = msg;
+  t.className = "toast" + (tipo==="erro" ? " toast-erro" : "");
+  t.style.display = "block";
+  clearTimeout(t._tm);
+  t._tm = setTimeout(()=>{ t.style.display="none"; }, tipo==="erro" ? 4800 : 2200);
 }
 function setSync(s){ document.getElementById("slbl").textContent = s; }
 
@@ -241,8 +246,7 @@ function lerForm(){
 }
 
 function limparForm(){
-  ["novoCod","novoPed","novoOs","novoQtd","novoCli","novoPrazo"].forEach(id=>document.getElementById(id).value="");
-  document.getElementById("novoTipo").value = "V";
+  ["novoCod","novoPed","novoOs","novoQtd","novoTipo","novoCli","novoPrazo"].forEach(id=>document.getElementById(id).value="");
 }
 
 function cancelarEdicao(){
@@ -250,18 +254,38 @@ function cancelarEdicao(){
   limparForm();
   document.getElementById("btnSalvar").textContent = "+ Cadastrar item";
   document.getElementById("btnCancelar").style.display = "none";
-  document.getElementById("formHint").innerHTML = "Registre a peça. Obrigatório: <b>Código</b> + pelo menos <b>Pedido</b> ou <b>OS</b>.";
+  document.getElementById("formHint").innerHTML = "Registre a peça. Obrigatório: <b>Código</b>, <b>Tipo</b>, <b>Quantidade</b>, <b>Cliente</b>, <b>Prazo</b> — e pelo menos <b>Pedido</b> ou <b>OS</b>.";
   document.getElementById("novoCod").focus();
 }
 
-function editarItem(id){
+// já houve apontamento real no Forms para esse código+pedido+OS? (produção já começou)
+async function existeApontamento(codigo, pedido, os){
+  const enc = encodeURIComponent;
+  const r = await supaFetch(`/rest/v1/producao_eventos?select=id&codigo_peca=eq.${enc(codigo)}&pedido=eq.${enc(pedido)}&os=eq.${enc(os)}&limit=1`);
+  return Array.isArray(r) && r.length>0;
+}
+// já existe roteiro (onde o QR Code é gerado) para esse código+pedido?
+async function existeRoteiro(codigo, pedido){
+  const enc = encodeURIComponent;
+  const r = await supaFetch(`/rest/v1/roteiros?select=id&codigo_peca=eq.${enc(codigo)}&pedido=eq.${enc(pedido)}&limit=1`);
+  return Array.isArray(r) && r.length>0;
+}
+
+async function editarItem(id){
   const it = ITENS.find(x=>x.id===id); if(!it) return;
+  if(await existeApontamento(it.codigo_peca, it.pedido, it.os)){
+    toast("Não é possível alterar — este item já teve apontamento no Forms.", "erro");
+    return;
+  }
+  if(await existeRoteiro(it.codigo_peca, it.pedido)){
+    if(!confirm("Este item já tem roteiro/QR Code gerado, mas ainda não houve apontamento no Forms. Pode alterar, mas o QR pode precisar ser substituído. Continuar?")) return;
+  }
   EDIT_ID = id;
   document.getElementById("novoCod").value = it.codigo_peca || "";
   document.getElementById("novoPed").value = it.pedido || "";
   document.getElementById("novoOs").value = it.os || "";
   document.getElementById("novoQtd").value = it.quantidade || "";
-  document.getElementById("novoTipo").value = tipoDoItem(it) || "V";
+  document.getElementById("novoTipo").value = tipoDoItem(it) || "";
   document.getElementById("novoCli").value = it.cliente || "";
   document.getElementById("novoPrazo").value = it.prazo_entrega ? String(it.prazo_entrega).slice(0,10) : "";
   document.getElementById("btnSalvar").textContent = "Salvar alteração";
@@ -291,14 +315,18 @@ async function verificarDuplicado(codigo, pedido, os, excluirId){
 
 async function salvarItem(){
   const d = lerForm();
-  if(!d.codigo_peca){ toast("Informe o código da peça"); return; }
-  if(!d.pedido && !d.os){ toast("Além do código, informe pelo menos o Pedido ou a OS"); return; }
+  if(!d.codigo_peca){ toast("Informe o código da peça", "erro"); return; }
+  if(!document.getElementById("novoTipo").value){ toast("Selecione o Tipo (Vendas ou Industrialização)", "erro"); return; }
+  if(!d.quantidade){ toast("Informe a quantidade solicitada", "erro"); return; }
+  if(!d.cliente){ toast("Selecione o Cliente", "erro"); return; }
+  if(!d.prazo_entrega){ toast("Informe o prazo de entrega", "erro"); return; }
+  if(!d.pedido && !d.os){ toast("Além do código, informe pelo menos o Pedido ou a OS", "erro"); return; }
   if(!d.pedido || !d.os){
     const falta = !d.pedido ? "o Pedido" : "a OS";
     if(!confirm(`Está faltando ${falta}. Cadastrar assim mesmo?`)) return;
   }
   const dup = await verificarDuplicado(d.codigo_peca, d.pedido, d.os, EDIT_ID);
-  if(dup){ toast(dup); return; }
+  if(dup){ toast(dup, "erro"); return; }
   try{
     if(EDIT_ID){
       d.updated_at = new Date().toISOString();
@@ -318,20 +346,28 @@ async function salvarItem(){
     }
     renderLista();
   }catch(e){
-    toast(String(e.message).includes("duplicate") ? "Já existe um item com esse pedido+código" : "Erro ao salvar: "+e.message);
+    toast(String(e.message).includes("duplicate") ? "Já existe um item com esse pedido+código" : "Erro ao salvar: "+e.message, "erro");
   }
 }
 
 async function excluirItem(id){
   const it = ITENS.find(x=>x.id===id); if(!it) return;
-  if(!confirm(`Excluir o item ${it.codigo_peca||""}${it.pedido?(" / "+it.pedido):""}?`)) return;
+  if(await existeApontamento(it.codigo_peca, it.pedido, it.os)){
+    toast("Não é possível excluir — este item já teve apontamento no Forms.", "erro");
+    return;
+  }
+  const temRoteiro = await existeRoteiro(it.codigo_peca, it.pedido);
+  const msg = temRoteiro
+    ? `Este item já tem roteiro/QR Code gerado. Excluir mesmo assim ${it.codigo_peca||""}${it.pedido?(" / "+it.pedido):""}?`
+    : `Excluir o item ${it.codigo_peca||""}${it.pedido?(" / "+it.pedido):""}?`;
+  if(!confirm(msg)) return;
   try{
     await supaWrite(`/rest/v1/itens?id=eq.${id}`,"DELETE",undefined,"return=minimal");
     ITENS = ITENS.filter(x=>x.id!==id);
     if(EDIT_ID===id) cancelarEdicao();
     renderLista();
     toast("Item excluído");
-  }catch(e){ toast("Erro ao excluir: "+e.message); }
+  }catch(e){ toast("Erro ao excluir: "+e.message, "erro"); }
 }
 
 async function init(){

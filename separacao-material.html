@@ -65,6 +65,9 @@
 .mc-qtd{font-size:9px;font-family:var(--mono);color:var(--text3);background:var(--bg3);border-radius:999px;padding:1px 6px}
 .mc-dias{font-size:9px;font-family:var(--mono);color:var(--text3);margin-left:auto}
 .mc-dias.atraso{color:var(--warn)}
+.mc-prazo{font-size:9px;font-family:var(--mono);color:var(--text3)}
+.mc-prazo.hoje{color:var(--warn);font-weight:700}
+.mc-prazo.atrasado{color:var(--danger);font-weight:700}
 .mc-completo{margin-top:6px;font-size:9.5px;font-family:var(--mono);color:var(--ok);background:rgba(45,191,126,.12);border-radius:6px;padding:3px 6px;text-align:center}
 .mc-aguardando{margin-top:6px;font-size:9.5px;font-family:var(--mono);color:var(--warn);background:rgba(245,166,35,.12);border-radius:6px;padding:3px 6px;text-align:center}
 
@@ -315,12 +318,20 @@ function renderCard(comp){
   const pendentes = estaNoPronto && !completo && lote ? pendentesDoLote(comp.lote_id, comp.id) : [];
   const aguardandoHtml = pendentes.length
     ? `<div class="mc-aguardando">pronto — aguardando ${pendentes.map(p=>POS_LABEL[p.posicao]).join(", ")}</div>` : "";
+  let prazoHtml = "";
+  if(item && item.prazo_entrega && !completo){
+    const hoje = new Date();
+    const hojeISO = hoje.getFullYear()+"-"+String(hoje.getMonth()+1).padStart(2,"0")+"-"+String(hoje.getDate()).padStart(2,"0");
+    const pz = String(item.prazo_entrega).slice(0,10);
+    const cls = pz<hojeISO ? " atrasado" : (pz===hojeISO ? " hoje" : "");
+    prazoHtml = `<span class="mc-prazo${cls}">📅 ${new Date(pz+"T00:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}</span>`;
+  }
   return `<div class="mat-card" draggable="true" data-comp-id="${comp.id}"
       ondragstart="onDragStart(event,${comp.id},'${comp.tipo_material}')" ondragend="onDragEnd(event)"
       onclick="abrirComponente(${comp.id})">
     <div class="mc-top"><div class="mc-cod">${escHtml(cod)}</div><span class="mc-pos ${comp.posicao}">${POS_LABEL[comp.posicao]}</span></div>
     <div class="mc-meta">${item?("Pedido "+escHtml(item.pedido||"—")+" · OS "+escHtml(item.os||"—")):""}${loteTag}</div>
-    <div class="mc-bottom"><span class="mc-mat">${MATERIAL_LABEL[comp.tipo_material]}</span><span class="mc-qtd">${lote?lote.quantidade:"—"} pç</span>${diasHtml}</div>
+    <div class="mc-bottom"><span class="mc-mat">${MATERIAL_LABEL[comp.tipo_material]}</span><span class="mc-qtd">${lote?lote.quantidade:"—"} pç</span>${prazoHtml}${diasHtml}</div>
     ${aguardandoHtml}
     ${completo ? '<div class="mc-completo">✓ kit completo</div>' : ''}
   </div>`;

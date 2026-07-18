@@ -271,6 +271,11 @@ async function existeRoteiro(codigo, pedido){
   const r = await supaFetch(`/rest/v1/roteiros?select=id&codigo_peca=eq.${enc(codigo)}&pedido=eq.${enc(pedido)}&limit=1`);
   return Array.isArray(r) && r.length>0;
 }
+// já existe separação de material (Cadastro Separação) pra esse item? (material_lotes tem item_id, FK direta)
+async function existeMaterial(itemId){
+  const r = await supaFetch(`/rest/v1/material_lotes?select=id&item_id=eq.${itemId}&limit=1`);
+  return Array.isArray(r) && r.length>0;
+}
 
 async function editarItem(id){
   const it = ITENS.find(x=>x.id===id); if(!it) return;
@@ -358,8 +363,12 @@ async function excluirItem(id){
     return;
   }
   const temRoteiro = await existeRoteiro(it.codigo_peca, it.pedido);
-  const msg = temRoteiro
-    ? `Este item já tem roteiro/QR Code gerado. Excluir mesmo assim ${it.codigo_peca||""}${it.pedido?(" / "+it.pedido):""}?`
+  const temMaterial = await existeMaterial(id);
+  const avisos = [];
+  if(temRoteiro) avisos.push("já tem roteiro/QR Code gerado");
+  if(temMaterial) avisos.push("já tem separação de material em andamento (lotes/componentes e todo o histórico serão apagados junto)");
+  const msg = avisos.length
+    ? `Este item ${avisos.join(" e ")}. Excluir mesmo assim ${it.codigo_peca||""}${it.pedido?(" / "+it.pedido):""}?`
     : `Excluir o item ${it.codigo_peca||""}${it.pedido?(" / "+it.pedido):""}?`;
   if(!confirm(msg)) return;
   try{

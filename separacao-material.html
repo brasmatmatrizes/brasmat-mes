@@ -562,12 +562,37 @@ async function abrirComponente(compId){
       return `<div class="mat-hist-item"><span>${POS_LABEL[c.posicao]} (${MATERIAL_LABEL[c.tipo_material]})</span><span>${u?escHtml(u.estagio_descricao):"Aguardando"}</span></div>`;
     }).join("") + `</div>` : "";
 
+  const excluirLoteBtn = (lote && outrosComps.length)
+    ? `<button class="btn-g" style="color:var(--danger);border-color:var(--danger)" onclick="excluirLoteInteiro(${lote.id})">🗑 Excluir lote inteiro (${outrosComps.length+1} cartões)</button>` : "";
+
   document.getElementById("spBody").innerHTML = `
     <div class="comp-block"><div class="sp-l" style="margin-bottom:6px">Histórico</div><div class="mat-hist">${histHtml}</div></div>
     ${outrosHtml}
     <button class="btn-g" style="color:var(--danger);border-color:var(--danger)" onclick="excluirComponente(${compId})">🗑 Excluir esse cartão</button>
+    ${excluirLoteBtn}
   `;
   abrirPainel();
+}
+
+// exclui o lote inteiro (todos os componentes de uma vez) — cascade apaga componentes+eventos junto
+async function excluirLoteInteiro(loteId){
+  const lote = LOTES.find(l=>l.id===loteId);
+  if(!lote) return;
+  const item = itemDoLote(lote);
+  const comps = COMPONENTES.filter(c=>c.lote_id===loteId);
+  const posicoes = comps.map(c=>POS_LABEL[c.posicao]).join(" + ");
+  const label = (item?item.codigo_peca:"item") + " — lote " + lote.lote_numero;
+  if(!confirm(`Excluir o lote inteiro "${label}" (${posicoes})? Isso apaga os ${comps.length} cartões e todo o histórico deles.`)) return;
+  try{
+    await supaWrite(`/rest/v1/material_lotes?id=eq.${loteId}`,"DELETE",undefined,"return=minimal");
+    const compIds = comps.map(c=>c.id);
+    COMPONENTES = COMPONENTES.filter(c=>c.lote_id!==loteId);
+    ULTIMOS = ULTIMOS.filter(u=>!compIds.includes(u.componente_id));
+    LOTES = LOTES.filter(l=>l.id!==loteId);
+    fecharPainel();
+    renderBoard();
+    toast("Lote excluído");
+  }catch(e){ toast("Erro ao excluir: "+e.message, "erro"); }
 }
 
 // exclui um componente (cartão) — se era o único do lote, exclui o lote junto (evita lote "fantasma" vazio)

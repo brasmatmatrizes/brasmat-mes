@@ -64,6 +64,7 @@
 .mc-dias{font-size:9px;font-family:var(--mono);color:var(--text3)}
 .mc-dias.atraso{color:var(--warn)}
 .mc-completo{margin-top:6px;font-size:9.5px;font-family:var(--mono);color:var(--ok);background:rgba(45,191,126,.12);border-radius:6px;padding:3px 6px;text-align:center}
+.mc-aguardando{margin-top:6px;font-size:9.5px;font-family:var(--mono);color:var(--warn);background:rgba(245,166,35,.12);border-radius:6px;padding:3px 6px;text-align:center}
 
 .loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
 .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
@@ -249,19 +250,42 @@ function loteCompleto(loteId){
   const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
   return comps.every(c=>ordemAtual(c.id)>=maxOrdem);
 }
+// outras peças do mesmo lote que ainda não chegaram no Pronto (pra avisar "aguardando X")
+function pendentesDoLote(loteId, exceptCompId){
+  const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
+  return COMPONENTES.filter(c=>c.lote_id===loteId && c.id!==exceptCompId && ordemAtual(c.id)<maxOrdem);
+}
+
+let _mostrarConcluidos = false;
+function toggleConcluidos(){
+  _mostrarConcluidos = !_mostrarConcluidos;
+  renderBoard();
+}
 
 // ---- BOARD ----
 function renderBoard(){
   const cols = colunas();
+  const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
   const wrap = document.getElementById("boardWrap");
   wrap.innerHTML = cols.map(col=>{
-    const comps = COMPONENTES.filter(c=>ordemAtual(c.id)===col.ordem);
+    let comps = COMPONENTES.filter(c=>ordemAtual(c.id)===col.ordem);
+    let concluidosCount = 0;
+    // coluna Pronto: cartão cujo lote já está 100% completo "sai" da vista por padrão (kit já pode ir pro Roteiro)
+    if(col.ordem===maxOrdem && !col.virtual){
+      const pendentes = comps.filter(c=>!loteCompleto(c.lote_id));
+      const concluidos = comps.filter(c=>loteCompleto(c.lote_id));
+      concluidosCount = concluidos.length;
+      comps = _mostrarConcluidos ? comps : pendentes;
+    }
     const body = comps.length
       ? comps.map(c=>renderCard(c)).join("")
       : '<div class="col-empty">vazio</div>';
-    const cor = col.virtual ? "var(--text3)" : (col.ordem>=Math.max(...ESTAGIOS.map(e=>e.ordem),0) ? "var(--ok)" : "var(--warn)");
+    const toggleHtml = concluidosCount
+      ? `<button class="col-cnt" style="cursor:pointer;background:rgba(45,191,126,.15);color:var(--ok);border:none" onclick="toggleConcluidos()">${_mostrarConcluidos?'ocultar':'✓'} ${concluidosCount} concluído(s)</button>`
+      : "";
+    const cor = col.virtual ? "var(--text3)" : (col.ordem>=maxOrdem ? "var(--ok)" : "var(--warn)");
     return `<div class="col${col.virtual?' aguardando':''}" data-ordem="${col.ordem}">
-      <div class="col-hdr"><div class="col-stripe" style="background:${cor}"></div><div class="col-name">${escHtml(col.descricao)}</div><div class="col-cnt">${comps.length}</div></div>
+      <div class="col-hdr"><div class="col-stripe" style="background:${cor}"></div><div class="col-name">${escHtml(col.descricao)}</div><div class="col-cnt">${comps.length}</div>${toggleHtml}</div>
       <div class="col-body" data-ordem="${col.ordem}" ondragover="onDragOver(event,${col.ordem})" ondragleave="onDragLeave(event)" ondrop="onDrop(event,${col.ordem})">${body}</div>
     </div>`;
   }).join("");
@@ -275,14 +299,20 @@ function renderCard(comp){
   const diasHtml = dias===null ? "" : `<span class="mc-dias${dias>=3?' atraso':''}">${dias===0?"hoje":dias+"d parado"}</span>`;
   const nLotesDoItem = item ? LOTES.filter(l=>l.item_id===item.id).length : 1;
   const loteTag = nLotesDoItem>1 ? ` · lote ${lote.lote_numero}` : "";
-  const completo = loteCompleto(comp.lote_id) && ordemAtual(comp.id)>=Math.max(...ESTAGIOS.map(e=>e.ordem),0);
+  const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
+  const estaNoPronto = ordemAtual(comp.id)>=maxOrdem;
+  const completo = estaNoPronto && loteCompleto(comp.lote_id);
+  const pendentes = estaNoPronto && !completo && lote ? pendentesDoLote(comp.lote_id, comp.id) : [];
+  const aguardandoHtml = pendentes.length
+    ? `<div class="mc-aguardando">pronto — aguardando ${pendentes.map(p=>POS_LABEL[p.posicao]).join(", ")}</div>` : "";
   return `<div class="mat-card" draggable="true" data-comp-id="${comp.id}"
       ondragstart="onDragStart(event,${comp.id},'${comp.tipo_material}')" ondragend="onDragEnd(event)"
       onclick="abrirComponente(${comp.id})">
     <div class="mc-top"><div class="mc-cod">${escHtml(cod)}</div><span class="mc-pos ${comp.posicao}">${POS_LABEL[comp.posicao]}</span></div>
     <div class="mc-meta">${item?("Pedido "+escHtml(item.pedido||"—")+" · OS "+escHtml(item.os||"—")):""}${loteTag}</div>
     <div class="mc-bottom"><span class="mc-mat">${MATERIAL_LABEL[comp.tipo_material]}</span>${diasHtml}</div>
-    ${completo && loteCompleto(comp.lote_id) ? '<div class="mc-completo">✓ kit completo</div>' : ''}
+    ${aguardandoHtml}
+    ${completo ? '<div class="mc-completo">✓ kit completo</div>' : ''}
   </div>`;
 }
 

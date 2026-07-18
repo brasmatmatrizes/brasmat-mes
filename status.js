@@ -168,6 +168,26 @@ async function buscarTotalRoteiro(pedido, codigo){
   return 0;
 }
 
+// Resumo dos lotes de um item na Separação de Material — agrupa por lote (não por componente),
+// pra deixar claro quando um item tem mais de 1 lote e quais já estão prontos.
+// Recebe os arrays já carregados pela página chamadora (sem fetch próprio).
+function materialResumoItem(itemId, dados){
+  const lotesDoItem = (dados.lotes||[]).filter(l=>l.item_id===itemId);
+  if(!lotesDoItem.length) return null;
+  const maxOrdem = Math.max(...(dados.estagios||[]).map(e=>e.ordem), 0);
+  const ordemDoComponente = compId=>{
+    const u = (dados.ultimos||[]).find(x=>x.componente_id===compId);
+    return u ? u.estagio_ordem : 0;
+  };
+  const detalhe = lotesDoItem.map(l=>{
+    const comps = (dados.componentes||[]).filter(c=>c.lote_id===l.id);
+    const completo = comps.length>0 && comps.every(c=>ordemDoComponente(c.id)>=maxOrdem);
+    return { numero: l.lote_numero, completo };
+  }).sort((a,b)=>a.numero-b.numero);
+  const prontos = detalhe.filter(d=>d.completo).length;
+  return { total: detalhe.length, prontos, completo: prontos===detalhe.length, detalhe };
+}
+
 function calcProgresso(eventos){
   const ultimo = eventos[eventos.length-1];
   const total  = parseInt(ultimo.quantidade_operacoes)||0;

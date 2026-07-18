@@ -70,6 +70,9 @@
 .mc-prazo.atrasado{color:var(--danger);font-weight:700}
 .mc-completo{margin-top:6px;font-size:9.5px;font-family:var(--mono);color:var(--ok);background:rgba(45,191,126,.12);border-radius:6px;padding:3px 6px;text-align:center}
 .mc-aguardando{margin-top:6px;font-size:9.5px;font-family:var(--mono);color:var(--warn);background:rgba(245,166,35,.12);border-radius:6px;padding:3px 6px;text-align:center}
+.mc-lotes{margin-top:6px;font-size:9.5px;font-family:var(--mono);border-radius:6px;padding:3px 6px;text-align:center}
+.mc-lotes.ok{color:var(--ok);background:rgba(45,191,126,.12)}
+.mc-lotes.warn{color:var(--warn);background:rgba(245,166,35,.12)}
 
 .loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
 .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
@@ -308,8 +311,11 @@ function renderCard(comp){
   const cod = item ? item.codigo_peca : "(?)";
   const dias = diasParado(comp.id);
   const diasHtml = dias===null ? "" : `<span class="mc-dias${dias>=3?' atraso':''}">${dias===0?"hoje":dias+"d parado"}</span>`;
-  const lotesDoItem = item ? LOTES.filter(l=>l.item_id===item.id) : [];
-  const loteTag = lotesDoItem.length>1 ? ` · lote ${lote.lote_numero} de ${lotesDoItem.length}` : "";
+  const resumoItem = item ? materialResumoItem(item.id, {lotes:LOTES, componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS}) : null;
+  const loteTag = resumoItem && resumoItem.total>1 ? ` · lote ${lote.lote_numero}` : "";
+  const lotesResumoHtml = resumoItem && resumoItem.total>1
+    ? `<div class="mc-lotes ${resumoItem.completo?'ok':'warn'}">${resumoItem.completo ? `✓ todos os ${resumoItem.total} lotes prontos` : `⚠ ${resumoItem.prontos} de ${resumoItem.total} lotes prontos`}</div>`
+    : "";
   const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
   const estaNoPronto = ordemAtual(comp.id)>=maxOrdem;
   const completo = estaNoPronto && loteCompleto(comp.lote_id);
@@ -332,6 +338,7 @@ function renderCard(comp){
     <div class="mc-bottom"><span class="mc-mat">${MATERIAL_LABEL[comp.tipo_material]}</span><span class="mc-qtd">${lote?lote.quantidade:"—"} pç</span>${prazoHtml}${diasHtml}</div>
     ${aguardandoHtml}
     ${completo ? '<div class="mc-completo">✓ kit completo</div>' : ''}
+    ${lotesResumoHtml}
   </div>`;
 }
 
@@ -558,6 +565,12 @@ async function abrirComponente(compId){
       return `<div class="mat-hist-item"><span>${POS_LABEL[c.posicao]} (${MATERIAL_LABEL[c.tipo_material]})</span><span>${u?escHtml(u.estagio_descricao):"Aguardando"}</span></div>`;
     }).join("") + `</div>` : "";
 
+  const resumoItem = item ? materialResumoItem(item.id, {lotes:LOTES, componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS}) : null;
+  const outrosLotesHtml = resumoItem && resumoItem.total>1 ? `<div class="sp-f"><span class="sp-l">Outros lotes deste item</span>` +
+    resumoItem.detalhe.filter(d=>!lote || d.numero!==lote.lote_numero).map(d=>
+      `<div class="mat-hist-item"><span>Lote ${d.numero}</span><span>${d.completo?"✓ Pronto":"em andamento"}</span></div>`
+    ).join("") + `</div>` : "";
+
   const excluirLoteBtn = (lote && outrosComps.length)
     ? `<button class="btn-g" style="color:var(--danger);border-color:var(--danger)" onclick="excluirLoteInteiro(${lote.id})">🗑 Excluir lote inteiro (${outrosComps.length+1} cartões)</button>` : "";
   const adicionarHtml = lote ? renderAdicionarComponente(lote.id) : "";
@@ -565,6 +578,7 @@ async function abrirComponente(compId){
   document.getElementById("spBody").innerHTML = `
     <div class="comp-block"><div class="sp-l" style="margin-bottom:6px">Histórico</div><div class="mat-hist">${histHtml}</div></div>
     ${outrosHtml}
+    ${outrosLotesHtml}
     ${adicionarHtml}
     <button class="btn-g" style="color:var(--danger);border-color:var(--danger)" onclick="excluirComponente(${compId})">🗑 Excluir esse cartão</button>
     ${excluirLoteBtn}

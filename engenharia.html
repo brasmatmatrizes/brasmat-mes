@@ -402,21 +402,6 @@ function toast(msg){
 }
 function setSync(s){ document.getElementById("slbl").textContent = s; }
 
-// status resumido do material de um item (Separação de Material): null = sem lote criado,
-// 'completo' = todos os componentes de todos os lotes chegaram na última coluna, 'andamento' = falta algo
-function statusMaterialItem(itemId){
-  const lotes = MAT_LOTES.filter(l=>l.item_id===itemId);
-  if(!lotes.length) return null;
-  const maxOrdem = Math.max(...MAT_ESTAGIOS.map(e=>e.ordem), 0);
-  const comps = MAT_COMPONENTES.filter(c=>lotes.some(l=>l.id===c.lote_id));
-  if(!comps.length) return null;
-  const tudoPronto = comps.every(c=>{
-    const u = MAT_ULTIMOS.find(x=>x.componente_id===c.id);
-    return !!u && u.estagio_ordem>=maxOrdem;
-  });
-  return tudoPronto ? "completo" : "andamento";
-}
-
 // ordena códigos "5.10" numericamente
 function cmpCod(a,b){
   const pa = String(a).split("."), pb = String(b).split(".");
@@ -540,10 +525,10 @@ function buscarSugg(q){
       const os = String(r.os||"").trim(), qtd = String(r.quantidade||"").trim();
       const jaTem = ROTS.find(x=>x.codigo_peca===cod && x.pedido===ped);
       const tag = jaTem ? '<span class="rot-cnt" style="background:rgba(45,191,126,0.15);color:var(--ok)">✓ já tem roteiro</span>' : '<span class="rot-cnt">+ criar roteiro</span>';
-      const matSt = statusMaterialItem(r.id);
-      const matTag = matSt==="completo" ? '<span class="rot-cnt" style="background:rgba(45,191,126,0.15);color:var(--ok)">material pronto</span>'
-        : matSt==="andamento" ? '<span class="rot-cnt" style="background:rgba(245,166,35,0.15);color:var(--warn)">material em separação</span>'
-        : '<span class="rot-cnt" style="background:var(--bg4);color:var(--text3)">sem lote de material</span>';
+      const matResumo = materialResumoItem(r.id, {lotes:MAT_LOTES, componentes:MAT_COMPONENTES, ultimos:MAT_ULTIMOS, estagios:MAT_ESTAGIOS});
+      const matTag = !matResumo ? '<span class="rot-cnt" style="background:var(--bg4);color:var(--text3)">sem lote de material</span>'
+        : matResumo.completo ? `<span class="rot-cnt" style="background:rgba(45,191,126,0.15);color:var(--ok)">material pronto${matResumo.total>1?` (${matResumo.total} lotes)`:''}</span>`
+        : `<span class="rot-cnt" style="background:rgba(245,166,35,0.15);color:var(--warn)">${matResumo.prontos}/${matResumo.total} lotes prontos</span>`;
       return `<div class="sugg-item" onclick="selPeca('${esc(cod)}','${esc(ped)}')">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
           <div class="sugg-cod">${escHtml(cod)}</div>${tag}
@@ -611,12 +596,11 @@ async function abrirRoteiro(id){
   // sinal (aviso, não bloqueia) do status do material em Separação de Material
   // match por código+pedido (identidade do roteiro — unique(pedido,codigo_peca) — não inclui OS)
   const itemDoRot = ITENS_CAD.find(i=>i.codigo_peca===R.codigo_peca && i.pedido===R.pedido);
-  const matSt = itemDoRot ? statusMaterialItem(itemDoRot.id) : null;
-  document.getElementById("edMatSt").innerHTML = matSt==="completo"
-    ? '<span class="rot-cnt" style="background:rgba(45,191,126,0.15);color:var(--ok)">✓ material pronto</span>'
-    : matSt==="andamento"
-    ? '<span class="rot-cnt" style="background:rgba(245,166,35,0.15);color:var(--warn)">⏳ material em separação — <a href="separacao-material.html" style="color:inherit">ver</a></span>'
-    : '';
+  const matResumoRot = itemDoRot ? materialResumoItem(itemDoRot.id, {lotes:MAT_LOTES, componentes:MAT_COMPONENTES, ultimos:MAT_ULTIMOS, estagios:MAT_ESTAGIOS}) : null;
+  document.getElementById("edMatSt").innerHTML = !matResumoRot ? ''
+    : matResumoRot.completo
+    ? `<span class="rot-cnt" style="background:rgba(45,191,126,0.15);color:var(--ok)">✓ material pronto${matResumoRot.total>1?` (${matResumoRot.total} lotes)`:''}</span>`
+    : `<span class="rot-cnt" style="background:rgba(245,166,35,0.15);color:var(--warn)">⏳ material em separação — ${matResumoRot.prontos} de ${matResumoRot.total} lotes prontos — <a href="separacao-material.html" style="color:inherit">ver</a></span>`;
 
   SUB_ATUAL = "";
   renderSubChips();

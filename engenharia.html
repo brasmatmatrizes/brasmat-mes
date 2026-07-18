@@ -267,19 +267,12 @@
 
     <div class="ed-hdr">
       <div class="ed-f"><span class="ed-l">Pedido</span><span class="ed-v" id="edPedido">—</span></div>
-      <div class="ed-f"><span class="ed-l">OS</span><input class="ed-inp" id="edOs" oninput="salvarHdrDeb()"></div>
-      <div class="ed-f"><span class="ed-l">Qtd</span><input class="ed-inp" id="edQtd" style="width:60px" oninput="salvarHdrDeb()"></div>
-      <div class="ed-f"><span class="ed-l">Tipo</span>
-        <select class="ed-inp" id="edTipoSel" style="width:150px" onchange="salvarHdrDeb()">
-          <option value="">—</option>
-          <option value="V">Vendas (Brasmat)</option>
-          <option value="I">Industrialização (Mota)</option>
-        </select>
-      </div>
-      <div class="ed-f" style="flex:1;min-width:220px"><span class="ed-l">Cliente</span>
-        <select class="ed-inp" id="edCli" style="width:100%" onchange="salvarHdrDeb()"></select>
-      </div>
-      <div class="ed-f"><span class="ed-l">Prazo de entrega</span><input type="date" class="ed-inp fdate" id="edPrazo" style="width:150px" onchange="salvarHdrDeb()"></div>
+      <div class="ed-f"><span class="ed-l">OS</span><span class="ed-v" id="edOs">—</span></div>
+      <div class="ed-f"><span class="ed-l">Qtd</span><span class="ed-v" id="edQtd">—</span></div>
+      <div class="ed-f"><span class="ed-l">Tipo</span><span class="ed-v" id="edTipoSel">—</span></div>
+      <div class="ed-f" style="flex:1;min-width:220px"><span class="ed-l">Cliente</span><span class="ed-v" id="edCli">—</span></div>
+      <div class="ed-f"><span class="ed-l">Prazo de entrega</span><span class="ed-v" id="edPrazo">—</span></div>
+      <div class="page-sub" style="flex-basis:100%;font-size:10px">Dados da peça vêm do Cadastro Item — para corrigir, altere lá.</div>
       <div class="ed-f" style="flex:1;min-width:200px"><span class="ed-l">Orientações e observações (sai no impresso)</span><input class="ed-inp" id="edObs" style="width:100%" oninput="salvarHdrDeb()"></div>
       <details style="flex-basis:100%;font-size:11px;color:var(--text3)">
         <summary style="cursor:pointer;font-family:var(--mono)">Link do Forms manual (opcional — só se quiser sobrescrever o QR automático)</summary>
@@ -363,19 +356,12 @@ const FORM_ENTRY = {
   cliente:              "650904313",
   prazo:                "1378517438"
 };
-// tipo V/I → valores exatos das opções do Forms (Razão Social + Classificação Fiscal)
-const TIPO_MAP = {
-  V: { razao_social:"Brasmat", classificacao_fiscal:"Vendas" },
-  I: { razao_social:"Mota",    classificacao_fiscal:"Industrialização" }
-};
-
 // ---- estado ----
 let POS = [];        // posicao_atual (só p/ exibição de roteiros legados no editor)
 let ITENS_CAD = [];  // itens cadastrados (Cadastro Item) — fonte da busca do roteiro
 let OPS = [];        // roteiro_operacoes (catálogo completo)
 let FAMS = [];       // roteiro_familias (ordem dos grupos da paleta)
 let SUBS = [];       // roteiro_subcomponentes
-let CLIENTES = [];   // roteiro_clientes (lista do dropdown do Forms)
 let ROTS = [];       // lista de roteiros
 let R = null;        // roteiro aberto (cabeçalho)
 let ITENS = [];      // itens do roteiro aberto
@@ -416,24 +402,6 @@ function cmpCod(a,b){
   return (parseInt(pa[0])||0)-(parseInt(pb[0])||0) || (parseInt(pa[1])||0)-(parseInt(pb[1])||0);
 }
 
-// popula um <select> de cliente com as opções do Forms (roteiro_clientes)
-function preencherSelectClientes(sel){
-  if(!sel) return;
-  sel.innerHTML = '<option value="">—</option>' +
-    CLIENTES.map(c=>`<option value="${escHtml(c.nome)}">${escHtml(c.nome)}</option>`).join("");
-}
-
-// tipo V/I a partir de classificacao_fiscal/razao_social gravados (mesma regra do getTipo)
-function tipoDoRoteiro(rot){
-  const cf = String(rot.classificacao_fiscal||"").toLowerCase();
-  if(cf.includes("vend")) return "V";
-  if(cf.includes("indust")) return "I";
-  const rs = String(rot.razao_social||"").toLowerCase();
-  if(rs.includes("brasmat")) return "V";
-  if(rs.includes("mota")) return "I";
-  return "";
-}
-
 // monta o link do Forms pré-preenchido com os dados do roteiro (QR do impresso)
 function montarLinkForms(rot, nOps){
   const p = [];
@@ -450,14 +418,19 @@ function montarLinkForms(rot, nOps){
   return FORM_BASE + "&" + p.join("&");
 }
 
+// prazo_entrega é date puro — evita o bug de fuso do fmtDt (que assume timestamptz)
+function fmtDataPrazo(v){
+  const d = new Date(String(v).slice(0,10)+"T00:00:00");
+  return isNaN(d) ? "—" : d.toLocaleDateString("pt-BR");
+}
+
 // ---- init ----
 async function init(){
   setSync("carregando...");
-  const [ops, fams, subs, clis, rots, pos, itensCad] = await Promise.all([
+  const [ops, fams, subs, rots, pos, itensCad] = await Promise.all([
     supaFetch("/rest/v1/roteiro_operacoes?select=id,codigo,descricao,familia,ativo&order=codigo&limit=1000"),
     supaFetch("/rest/v1/roteiro_familias?select=id,nome,ordem&order=ordem&limit=100"),
     supaFetch("/rest/v1/roteiro_subcomponentes?select=id,nome,ordem&order=ordem&limit=100"),
-    supaFetch("/rest/v1/roteiro_clientes?select=id,nome,ordem&order=ordem&limit=500"),
     supaFetch("/rest/v1/roteiros?select=*,roteiro_itens(count)&order=updated_at.desc&limit=300"),
     buscarPosicao(),   // paginado — posicao_atual já passa de 1000 linhas, o limit sozinho é truncado pela API
     supaFetch("/rest/v1/itens?select=*&order=created_at.desc&limit=2000")
@@ -465,7 +438,6 @@ async function init(){
   OPS  = Array.isArray(ops)  ? ops.sort((a,b)=>cmpCod(a.codigo,b.codigo)) : [];
   FAMS = Array.isArray(fams) ? fams : [];
   SUBS = Array.isArray(subs) ? subs : [];
-  CLIENTES = Array.isArray(clis) ? clis : [];
   ROTS = Array.isArray(rots) ? rots : [];
   POS  = Array.isArray(pos)  ? pos  : [];
   ITENS_CAD = Array.isArray(itensCad) ? itensCad : [];
@@ -473,8 +445,6 @@ async function init(){
   document.getElementById("homeSub").textContent =
     ROTS.length + " roteiro(s) · catálogo com " + OPS.filter(o=>o.ativo).length + " operações";
   setSync("atualizado " + new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));
-
-  preencherSelectClientes(document.getElementById("edCli"));
 
   const q = new URLSearchParams(location.search);
 
@@ -589,11 +559,11 @@ async function abrirRoteiro(id){
   document.getElementById("viewEditor").style.display="block";
   document.getElementById("edCod").textContent = R.codigo_peca;
   document.getElementById("edPedido").textContent = R.pedido||"—";
-  document.getElementById("edOs").value = R.os||"";
-  document.getElementById("edQtd").value = R.quantidade||"";
-  document.getElementById("edTipoSel").value = tipoDoRoteiro(R);
-  document.getElementById("edCli").value = R.cliente||"";
-  document.getElementById("edPrazo").value = R.prazo_entrega ? String(R.prazo_entrega).slice(0,10) : "";
+  document.getElementById("edOs").textContent = R.os||"—";
+  document.getElementById("edQtd").textContent = R.quantidade||"—";
+  document.getElementById("edTipoSel").textContent = R.classificacao_fiscal ? `${R.classificacao_fiscal} (${R.razao_social||""})` : "—";
+  document.getElementById("edCli").textContent = R.cliente ? String(R.cliente).replace(/^\d+_/,"") : "—";
+  document.getElementById("edPrazo").textContent = R.prazo_entrega ? fmtDataPrazo(R.prazo_entrega) : "—";
   document.getElementById("edFormsLink").value = R.forms_link||"";
   document.getElementById("edObs").value = R.observacao||"";
   const posRow = POS.find(r=>String(r.codigo_peca||"").trim()===R.codigo_peca && String(r.pedido||"").trim()===R.pedido);
@@ -774,23 +744,15 @@ function salvarHdrDeb(){
   clearTimeout(_hdrTimer);
   _hdrTimer = setTimeout(salvarHdr, 700);
 }
+// só Observações e o link manual do Forms são editáveis aqui — os dados da peça
+// (OS/qtd/tipo/cliente/prazo) vêm estáticos do Cadastro Item, sem salvamento
 async function salvarHdr(){
   if(!R) return;
-  R.os = document.getElementById("edOs").value.trim();
-  R.quantidade = document.getElementById("edQtd").value.trim();
-  R.cliente = document.getElementById("edCli").value.trim();
-  R.prazo_entrega = document.getElementById("edPrazo").value.trim();
-  const tipo = TIPO_MAP[document.getElementById("edTipoSel").value] || {razao_social:null, classificacao_fiscal:null};
-  R.razao_social = tipo.razao_social;
-  R.classificacao_fiscal = tipo.classificacao_fiscal;
   R.forms_link = document.getElementById("edFormsLink").value.trim();
   R.observacao = document.getElementById("edObs").value;
-  document.getElementById("edSub").textContent = R.cliente ? String(R.cliente).replace(/^\d+_/,"") : "—";
   try{
     await supaWrite(`/rest/v1/roteiros?id=eq.${R.id}`,"PATCH",
-      {os:R.os, quantidade:R.quantidade, cliente:R.cliente||null, prazo_entrega:R.prazo_entrega||null,
-       razao_social:R.razao_social, classificacao_fiscal:R.classificacao_fiscal,
-       forms_link:R.forms_link, observacao:R.observacao, updated_at:new Date().toISOString()},"return=minimal");
+      {forms_link:R.forms_link, observacao:R.observacao, updated_at:new Date().toISOString()},"return=minimal");
     setSync("salvo "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));
   }catch(e){ toast("Erro ao salvar: "+e.message); }
 }

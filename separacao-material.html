@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRASMAT MES — Separação de Material</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="design.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:9px;color:var(--text3);font-family:var(--mono)}
+.nav{display:flex;gap:4px}
+.nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
+.tr-right{display:flex;align-items:center;gap:8px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-lbl{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+.toolbar{height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;padding:0 20px;flex-shrink:0}
+.tt{font-size:13px;font-weight:500;color:var(--text);white-space:nowrap}
+.btn-g{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;height:32px;font-family:var(--sans)}
+.btn-g:hover{border-color:var(--border2);color:var(--text)}
+.btn-acc{background:var(--accent);border:1px solid var(--accent);color:#fff}
+.btn-acc:hover{opacity:0.9;color:#fff}
+.search-wrap{position:relative;flex:1;max-width:420px}
+.search-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--text);outline:none;font-family:var(--mono)}
+.search-input:focus{border-color:var(--accent)}
+.sugg{position:absolute;top:100%;left:0;right:0;margin-top:6px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;z-index:80;max-height:340px;overflow-y:auto;box-shadow:0 12px 30px rgba(0,0,0,0.5);display:none}
+.sugg-item{padding:9px 13px;cursor:pointer;border-bottom:1px solid var(--border)}
+.sugg-item:last-child{border-bottom:none}
+.sugg-item:hover{background:var(--bg3)}
+.sugg-cod{font-family:var(--mono);font-size:13px;color:var(--text);font-weight:500}
+.sugg-desc{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+
+.board-wrap{height:calc(100vh - 108px);padding:16px 20px;display:flex;gap:14px;overflow-x:auto}
+.col{width:340px;min-width:340px;display:flex;flex-direction:column;height:100%;flex-shrink:0}
+.col-hdr{background:var(--bg2);border:1px solid var(--border);border-radius:10px 10px 0 0;padding:10px 14px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.col-stripe{width:3px;height:16px;border-radius:2px;flex-shrink:0}
+.col-name{font-size:12px;font-weight:500;color:var(--text);flex:1}
+.col-cnt{font-size:11px;font-family:var(--mono);padding:1px 8px;border-radius:10px;background:var(--bg3);color:var(--text2)}
+.col-body{background:var(--bg3);border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;flex:1;overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:8px}
+.col-empty{font-size:11px;color:var(--text3);text-align:center;padding:24px 6px;font-family:var(--mono)}
+
+.lote-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 13px;cursor:pointer;transition:transform .1s,box-shadow .1s}
+.lote-card:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(0,0,0,.3)}
+.lc-top{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
+.lc-cod{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text)}
+.lc-qtd{font-size:10px;font-family:var(--mono);padding:2px 7px;border-radius:999px;background:rgba(59,127,255,.15);color:var(--accent)}
+.lc-meta{font-size:10px;color:var(--text3);font-family:var(--mono);margin-bottom:8px}
+.lc-mats{display:flex;flex-direction:column;gap:4px}
+.lc-mat{display:flex;align-items:center;gap:6px;font-size:10.5px;font-family:var(--mono)}
+.lc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.lc-dot.pronto{background:var(--ok)}.lc-dot.andamento{background:var(--warn)}.lc-dot.aguardando{background:var(--text3)}
+.lc-mat-lbl{color:var(--text2);flex-shrink:0;min-width:66px}
+.lc-mat-st{color:var(--text3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* PAINEL LATERAL (detalhe do lote / criar lote) */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150;display:none}
+.overlay.open{display:block}
+.side-panel{position:fixed;top:0;right:0;bottom:0;width:440px;max-width:94vw;background:var(--bg2);border-left:1px solid var(--border2);z-index:160;transform:translateX(100%);transition:transform .2s;display:flex;flex-direction:column}
+.side-panel.open{transform:translateX(0)}
+.sp-hdr{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.sp-title{font-size:15px;font-weight:500}
+.sp-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:3px}
+.sp-close{background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1}
+.sp-close:hover{color:var(--text)}
+.sp-body{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:18px}
+.sp-f{display:flex;flex-direction:column;gap:4px}
+.sp-l{font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em}
+.sp-inp{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;color:var(--text);outline:none;font-family:var(--mono)}
+.sp-inp:focus{border-color:var(--accent)}
+.mat-block{border:1px solid var(--border);border-radius:10px;padding:12px 13px;background:var(--bg3)}
+.mat-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.mat-nome{font-size:12px;font-weight:500;color:var(--text)}
+.mat-status{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:999px}
+.mat-status.pronto{background:rgba(45,191,126,.15);color:var(--ok)}
+.mat-status.andamento{background:rgba(245,166,35,.15);color:var(--warn)}
+.mat-status.aguardando{background:var(--bg4);color:var(--text3)}
+.mat-acoes{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.mat-sel{flex:1;min-width:120px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:11px;color:var(--text);font-family:var(--mono)}
+.mat-hist{margin-top:9px;display:flex;flex-direction:column;gap:3px}
+.mat-hist-item{font-size:10px;font-family:var(--mono);color:var(--text3);display:flex;justify-content:space-between;gap:6px}
+.chk-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);color:var(--text);padding:9px 18px;border-radius:9px;font-size:12px;font-family:var(--mono);z-index:300;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+</style>
+</head>
+<body>
+
+<div style="display:grid;grid-template-rows:56px 52px 1fr;height:100vh">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand"><div class="bm">BM</div><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="nav">
+    <button class="nb" data-href="index.html" onclick="navTo('index.html')">Buscar Peça</button>
+    <div class="nav-group">
+      <button class="nb nb-group">Cliente ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="demanda.html" onclick="navTo('demanda.html')">Demanda Cliente</button>
+        <button class="nb" data-href="cliente.html" onclick="navTo('cliente.html')">Consulta Cliente</button>
+        <button class="nb" data-href="expedicao.html" onclick="navTo('expedicao.html')">Expedição</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nb nb-group">Produção ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="kanban.html" onclick="navTo('kanban.html')">Kanban</button>
+        <button class="nb" data-href="op-kanban.html" onclick="navTo('op-kanban.html')">Painel</button>
+        <button class="nb" data-href="apontamentos.html" onclick="navTo('apontamentos.html')">Apontamentos</button>
+        <button class="nb" data-href="paradas.html" onclick="navTo('paradas.html')">Peças paradas</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nb nb-group">Indicadores ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="prazos.html" onclick="navTo('prazos.html')">Prazos</button>
+        <button class="nb" data-href="otd.html" onclick="navTo('otd.html')">OTD</button>
+        <button class="nb" data-href="ordens.html" onclick="navTo('ordens.html')">Ordens em Aberto</button>
+        <button class="nb" data-href="operadores.html" onclick="navTo('operadores.html')">Performance</button>
+        <button class="nb" data-href="qualidade.html" onclick="navTo('qualidade.html')">Qualidade</button>
+      </div>
+    </div>
+    <div class="nav-group group-active">
+      <button class="nb nb-group active">Cadastro ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="cadastro-item.html" onclick="navTo('cadastro-item.html')">Item</button>
+        <button class="nb active" data-href="separacao-material.html">Separação</button>
+        <button class="nb" data-href="engenharia.html" onclick="navTo('engenharia.html')">Roteiro</button>
+      </div>
+    </div>
+  </div>
+  <div class="tr-right">
+    <div class="sync-dot"></div>
+    <span class="sync-lbl" id="slbl">carregando...</span>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <div class="tt">Separação de Material</div>
+  <div class="search-wrap">
+    <input class="search-input" id="buscaInput" placeholder="Buscar item por código, pedido ou OS para criar lote..." oninput="onBusca()" autocomplete="off">
+    <div class="sugg" id="sugg"></div>
+  </div>
+  <button class="btn-g" onclick="abrirCatalogoEstagios()">⚙ Estágios</button>
+</div>
+
+<!-- BOARD -->
+<div class="board-wrap" id="boardWrap">
+  <div class="loading"><div class="spinner"></div>carregando...</div>
+</div>
+
+</div>
+
+<!-- PAINEL LATERAL -->
+<div class="overlay" id="overlay" onclick="fecharPainel()"></div>
+<div class="side-panel" id="sidePanel">
+  <div class="sp-hdr">
+    <div>
+      <div class="sp-title" id="spTitle">—</div>
+      <div class="sp-sub" id="spSub">—</div>
+    </div>
+    <button class="sp-close" onclick="fecharPainel()">✕</button>
+  </div>
+  <div class="sp-body" id="spBody"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="status.js"></script>
+<script>
+function navTo(p){ location.href = p; }
+
+const MAT_LABEL = { metal_duro:"Metal Duro", carcaca:"Carcaça", luva:"Luva" };
+const MAT_ORDER = ["metal_duro","carcaca","luva"];
+
+let ITENS_CAD = [];   // itens cadastrados (fonte da busca p/ criar lote)
+let LOTES = [];       // material_lotes
+let ESTAGIOS = [];    // material_estagios (ativos)
+let ULTIMOS = [];     // material_ultimo_evento
+let LOTE_ABERTO = null;
+
+async function supaWrite(path, method, body, prefer){
+  const r = await fetch(SUPA_URL + path, {
+    method,
+    headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer: prefer||"return=representation" },
+    body: body!==undefined ? JSON.stringify(body) : undefined
+  });
+  if(r.status===204) return null;
+  const j = await r.json().catch(()=>null);
+  if(!r.ok) throw new Error((j&&j.message)||("HTTP "+r.status));
+  return j;
+}
+function toast(msg, tipo){
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.style.display = "block";
+  clearTimeout(t._tm); t._tm = setTimeout(()=>{ t.style.display="none"; }, tipo==="erro"?4800:2200);
+}
+function setSync(s){ document.getElementById("slbl").textContent = s; }
+
+function estagiosDoMaterial(material){
+  return ESTAGIOS.filter(e=>e.material===material).sort((a,b)=>a.ordem-b.ordem);
+}
+
+// último evento (do array ULTIMOS) para um lote+material
+function ultimoDe(loteId, material){
+  return ULTIMOS.find(u=>u.lote_id===loteId && u.material===material) || null;
+}
+
+// estado do material: 'aguardando' | 'andamento' | 'pronto' + rótulo pra exibir
+function estadoMaterial(loteId, material){
+  const est = estagiosDoMaterial(material);
+  const maxOrdem = est.length ? est[est.length-1].ordem : 0;
+  const u = ultimoDe(loteId, material);
+  if(!u) return { estado:"aguardando", label:"não iniciado" };
+  if(u.evento === "Entrada") return { estado:"andamento", label:"em "+u.estagio_descricao };
+  // evento === "Saída"
+  if(u.estagio_ordem >= maxOrdem) return { estado:"pronto", label:"pronto" };
+  const prox = est.find(e=>e.ordem > u.estagio_ordem);
+  return { estado:"andamento", label:"aguardando "+(prox?prox.descricao:"próxima etapa") };
+}
+
+function materiaisDoLote(lote){
+  const lista = [];
+  if(lote.tem_metal_duro) lista.push("metal_duro");
+  if(lote.tem_carcaca) lista.push("carcaca");
+  if(lote.tem_luva) lista.push("luva");
+  return lista;
+}
+
+function statusLote(lote){
+  const mats = materiaisDoLote(lote);
+  if(!mats.length) return "aguardando";
+  const estados = mats.map(m=>estadoMaterial(lote.id, m).estado);
+  if(estados.every(e=>e==="pronto")) return "completo";
+  if(estados.every(e=>e==="aguardando")) return "aguardando";
+  return "andamento";
+}
+
+function itemDoLote(lote){
+  return ITENS_CAD.find(i=>i.id===lote.item_id) || null;
+}
+
+// ---- BOARD ----
+function renderBoard(){
+  const cols = [
+    { key:"aguardando", nome:"Aguardando início", cor:"var(--text3)" },
+    { key:"andamento", nome:"Em andamento", cor:"var(--warn)" },
+    { key:"completo", nome:"Completo", cor:"var(--ok)" }
+  ];
+  const porStatus = { aguardando:[], andamento:[], completo:[] };
+  LOTES.forEach(l=>{ porStatus[statusLote(l)].push(l); });
+
+  const wrap = document.getElementById("boardWrap");
+  wrap.innerHTML = cols.map(c=>{
+    const lotes = porStatus[c.key];
+    const body = lotes.length
+      ? lotes.map(l=>renderCard(l)).join("")
+      : '<div class="col-empty">nenhum lote</div>';
+    return `<div class="col">
+      <div class="col-hdr"><div class="col-stripe" style="background:${c.cor}"></div><div class="col-name">${c.nome}</div><div class="col-cnt">${lotes.length}</div></div>
+      <div class="col-body">${body}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderCard(lote){
+  const item = itemDoLote(lote);
+  const cod = item ? item.codigo_peca : "(item removido)";
+  const mats = materiaisDoLote(lote);
+  const linhas = mats.map(m=>{
+    const e = estadoMaterial(lote.id, m);
+    return `<div class="lc-mat"><div class="lc-dot ${e.estado}"></div><div class="lc-mat-lbl">${MAT_LABEL[m]}</div><div class="lc-mat-st">${escHtml(e.label)}</div></div>`;
+  }).join("");
+  const loteTag = lote.lote_numero>1 || (item && LOTES.filter(l=>l.item_id===lote.item_id).length>1) ? ` · lote ${lote.lote_numero}` : "";
+  return `<div class="lote-card" onclick="abrirLote(${lote.id})">
+    <div class="lc-top"><div class="lc-cod">${escHtml(cod)}</div><div class="lc-qtd">${lote.quantidade} pç</div></div>
+    <div class="lc-meta">${item?("Pedido: "+escHtml(item.pedido||"—")+" · OS: "+escHtml(item.os||"—")):""}${loteTag}</div>
+    <div class="lc-mats">${linhas}</div>
+  </div>`;
+}
+
+// ---- BUSCA / CRIAR LOTE ----
+let _suggTimer=null;
+function onBusca(){
+  const q = document.getElementById("buscaInput").value.trim();
+  clearTimeout(_suggTimer);
+  if(q.length<2){ document.getElementById("sugg").style.display="none"; return; }
+  _suggTimer = setTimeout(()=>buscarSugg(q), 180);
+}
+function buscarSugg(q){
+  const qU = q.toUpperCase();
+  const lista = ITENS_CAD.filter(r=>{
+    const cod = String(r.codigo_peca||"").trim();
+    return cod.toUpperCase().includes(qU) || String(r.pedido||"").toUpperCase().includes(qU) || String(r.os||"").toUpperCase().includes(qU);
+  }).slice(0,12);
+  const box = document.getElementById("sugg");
+  if(!lista.length){
+    box.innerHTML = `<div class="sugg-item" style="cursor:default"><div style="color:var(--text3);font-size:12px">Nenhum item encontrado com "${escHtml(q)}". Cadastre em Cadastro › Item.</div></div>`;
+  }else{
+    box.innerHTML = lista.map(r=>{
+      const nLotes = LOTES.filter(l=>l.item_id===r.id).length;
+      const tag = nLotes ? `<span class="lc-qtd">${nLotes} lote(s)</span>` : `<span class="lc-qtd" style="background:var(--bg4);color:var(--text3)">sem lote</span>`;
+      return `<div class="sugg-item" onclick="abrirCriarLote(${r.id})">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <div class="sugg-cod">${escHtml(r.codigo_peca)}</div>${tag}
+        </div>
+        <div class="sugg-desc">${[r.pedido?"Pedido: "+escHtml(r.pedido):"",r.os?"OS: "+escHtml(r.os):"",r.quantidade?"Qtd: "+escHtml(r.quantidade)+" pç":""].filter(Boolean).join(" · ")}</div>
+      </div>`;
+    }).join("");
+  }
+  box.style.display="block";
+}
+document.addEventListener("click", e=>{
+  if(!e.target.closest(".search-wrap")) document.getElementById("sugg").style.display="none";
+});
+
+function abrirCriarLote(itemId){
+  document.getElementById("sugg").style.display="none";
+  document.getElementById("buscaInput").value="";
+  const item = ITENS_CAD.find(i=>i.id===itemId);
+  if(!item) return;
+  const nLotesExistentes = LOTES.filter(l=>l.item_id===itemId).length;
+  const proximoNumero = nLotesExistentes+1;
+  document.getElementById("spTitle").textContent = "Novo lote — "+item.codigo_peca;
+  document.getElementById("spSub").textContent = "Pedido: "+(item.pedido||"—")+" · OS: "+(item.os||"—")+(nLotesExistentes?(" · já tem "+nLotesExistentes+" lote(s)"):"");
+  document.getElementById("spBody").innerHTML = `
+    <div class="sp-f"><span class="sp-l">Lote nº</span><input class="sp-inp" id="novoLoteNum" value="${proximoNumero}" style="width:70px"></div>
+    <div class="sp-f"><span class="sp-l">Quantidade deste lote</span><input class="sp-inp" id="novoLoteQtd" value="${escHtml(item.quantidade||"")}" style="width:100px"></div>
+    <div class="sp-f">
+      <span class="sp-l">Composição</span>
+      <div class="chk-row" style="margin-top:4px">Metal Duro <span style="color:var(--text3);font-size:11px">(sempre incluso)</span></div>
+      <label class="chk-row"><input type="checkbox" id="novoLoteCarcaca"> Carcaça de Aço</label>
+      <label class="chk-row"><input type="checkbox" id="novoLoteLuva"> Luva</label>
+    </div>
+    <div class="sp-f"><span class="sp-l">Observação</span><input class="sp-inp" id="novoLoteObs"></div>
+    <button class="btn-g btn-acc" onclick="salvarNovoLote(${itemId})">+ Criar lote</button>
+  `;
+  abrirPainel();
+}
+
+async function salvarNovoLote(itemId){
+  const qtd = parseInt(document.getElementById("novoLoteQtd").value.trim(),10);
+  if(!qtd || qtd<=0){ toast("Informe uma quantidade válida", "erro"); return; }
+  const numero = parseInt(document.getElementById("novoLoteNum").value.trim(),10) || 1;
+  const body = {
+    item_id: itemId,
+    lote_numero: numero,
+    quantidade: qtd,
+    tem_metal_duro: true,
+    tem_carcaca: document.getElementById("novoLoteCarcaca").checked,
+    tem_luva: document.getElementById("novoLoteLuva").checked,
+    observacao: document.getElementById("novoLoteObs").value.trim() || null
+  };
+  try{
+    const novo = await supaWrite("/rest/v1/material_lotes","POST",body);
+    const row = Array.isArray(novo)?novo[0]:novo;
+    if(row) LOTES.unshift(row);
+    renderBoard();
+    toast("Lote criado");
+    fecharPainel();
+  }catch(e){
+    toast(e.message.includes("duplicate") ? "Já existe um lote com esse número para este item" : "Erro ao criar: "+e.message, "erro");
+  }
+}
+
+// ---- DETALHE DO LOTE (registrar eventos) ----
+async function abrirLote(loteId){
+  const lote = LOTES.find(l=>l.id===loteId);
+  if(!lote) return;
+  LOTE_ABERTO = lote;
+  const item = itemDoLote(lote);
+  document.getElementById("spTitle").textContent = item ? item.codigo_peca : "Lote #"+lote.id;
+  document.getElementById("spSub").textContent = (item?("Pedido: "+(item.pedido||"—")+" · OS: "+(item.os||"—")+" · "):"") + lote.quantidade+" pç · lote "+lote.lote_numero;
+
+  const mats = materiaisDoLote(lote);
+  const blocos = await Promise.all(mats.map(m=>renderMatBlock(lote, m)));
+  document.getElementById("spBody").innerHTML = blocos.join("");
+  abrirPainel();
+}
+
+async function renderMatBlock(lote, material){
+  const est = estagiosDoMaterial(material);
+  const e = estadoMaterial(lote.id, material);
+  const historico = await supaFetch(`/rest/v1/material_eventos?select=estagio_descricao,evento,data_evento&lote_id=eq.${lote.id}&material=eq.${material}&order=data_evento.desc,id.desc&limit=20`);
+  const histHtml = Array.isArray(historico) && historico.length
+    ? historico.map(h=>`<div class="mat-hist-item"><span>${h.evento==="Entrada"?"→":"←"} ${escHtml(h.estagio_descricao)}</span><span>${fmtDataHora(h.data_evento)}</span></div>`).join("")
+    : `<div class="mat-hist-item" style="opacity:.6">nenhum evento ainda</div>`;
+  const options = est.map(s=>`<option value="${s.id}">${escHtml(s.descricao)}</option>`).join("");
+  return `<div class="mat-block" data-material="${material}">
+    <div class="mat-hdr"><div class="mat-nome">${MAT_LABEL[material]}</div><div class="mat-status ${e.estado}">${escHtml(e.label)}</div></div>
+    <div class="mat-acoes">
+      <select class="mat-sel" id="sel_${material}">${options}</select>
+      <button class="btn-g" onclick="registrarEvento(${lote.id},'${material}','Entrada')">Entrada</button>
+      <button class="btn-g btn-acc" onclick="registrarEvento(${lote.id},'${material}','Saída')">Saída</button>
+    </div>
+    <div class="mat-hist">${histHtml}</div>
+  </div>`;
+}
+
+function fmtDataHora(v){
+  if(!v) return "—";
+  const d = new Date(v);
+  return isNaN(d) ? "—" : d.toLocaleDateString("pt-BR")+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+}
+
+async function registrarEvento(loteId, material, evento){
+  const sel = document.getElementById("sel_"+material);
+  const estagioId = parseInt(sel.value,10);
+  const estagio = ESTAGIOS.find(e=>e.id===estagioId);
+  if(!estagio){ toast("Selecione o estágio", "erro"); return; }
+  try{
+    const novo = await supaWrite("/rest/v1/material_eventos","POST",{
+      lote_id: loteId, material,
+      estagio_id: estagio.id, estagio_descricao: estagio.descricao, estagio_ordem: estagio.ordem,
+      evento
+    });
+    const row = Array.isArray(novo)?novo[0]:novo;
+    // atualiza cache local do último evento (evita re-fetch da view inteira)
+    const idx = ULTIMOS.findIndex(u=>u.lote_id===loteId && u.material===material);
+    const novoUltimo = { lote_id:loteId, material, estagio_id:estagio.id, estagio_descricao:estagio.descricao, estagio_ordem:estagio.ordem, evento, data_evento:row?row.data_evento:new Date().toISOString() };
+    if(idx>=0) ULTIMOS[idx]=novoUltimo; else ULTIMOS.push(novoUltimo);
+    toast("Evento registrado");
+    renderBoard();
+    if(LOTE_ABERTO && LOTE_ABERTO.id===loteId) abrirLote(loteId);
+  }catch(e){ toast("Erro ao registrar: "+e.message, "erro"); }
+}
+
+// ---- CATÁLOGO DE ESTÁGIOS (leitura simples por ora) ----
+function abrirCatalogoEstagios(){
+  document.getElementById("spTitle").textContent = "Catálogo de estágios";
+  document.getElementById("spSub").textContent = "Sequência de cada material (edição futura)";
+  const blocos = MAT_ORDER.map(m=>{
+    const linhas = estagiosDoMaterial(m).map(e=>`<div class="mat-hist-item"><span>${e.ordem}. ${escHtml(e.descricao)}</span></div>`).join("");
+    return `<div class="mat-block"><div class="mat-hdr"><div class="mat-nome">${MAT_LABEL[m]}</div></div><div class="mat-hist">${linhas}</div></div>`;
+  }).join("");
+  document.getElementById("spBody").innerHTML = blocos;
+  abrirPainel();
+}
+
+// ---- PAINEL ----
+function abrirPainel(){
+  document.getElementById("overlay").classList.add("open");
+  document.getElementById("sidePanel").classList.add("open");
+}
+function fecharPainel(){
+  document.getElementById("overlay").classList.remove("open");
+  document.getElementById("sidePanel").classList.remove("open");
+  LOTE_ABERTO = null;
+}
+
+// ---- INIT ----
+async function init(){
+  setSync("carregando...");
+  const [itensCad, estagios, lotes, ultimos] = await Promise.all([
+    supaFetch("/rest/v1/itens?select=*&order=created_at.desc&limit=2000"),
+    supaFetch("/rest/v1/material_estagios?select=*&ativo=eq.true&order=material,ordem&limit=100"),
+    supaFetch("/rest/v1/material_lotes?select=*&order=created_at.desc&limit=1000"),
+    supaFetch("/rest/v1/material_ultimo_evento?select=*&limit=5000")
+  ]);
+  ITENS_CAD = Array.isArray(itensCad) ? itensCad : [];
+  ESTAGIOS = Array.isArray(estagios) ? estagios : [];
+  LOTES = Array.isArray(lotes) ? lotes : [];
+  ULTIMOS = Array.isArray(ultimos) ? ultimos : [];
+  renderBoard();
+  setSync("atualizado " + new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));
+}
+init();
+</script>
+</body>
+</html>

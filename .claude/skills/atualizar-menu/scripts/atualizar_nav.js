@@ -41,6 +41,7 @@ const NAV = [
     group: "Cadastro",
     items: [
       { page: "cadastro-item.html", label: "Item", mobile: "Item" },
+      { page: "separacao-material.html", label: "Separação", mobile: "Separação" },
       { page: "engenharia.html", label: "Roteiro", mobile: "Roteiro" },
     ],
   },

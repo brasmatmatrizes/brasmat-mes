@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRASMAT MES — Separação de Material · Relatório</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="design.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;color:#fff}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:9px;color:var(--text3);font-family:var(--mono)}
+.nav{display:flex;gap:4px}
+.nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
+.tr-right{display:flex;align-items:center;gap:8px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.sync-lbl{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.btn-sm{background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text3);cursor:pointer;font-family:var(--mono)}
+.btn-sm:hover{border-color:var(--border2);color:var(--text2)}
+
+/* TOOLBAR */
+.toolbar{min-height:52px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:8px 20px;flex-shrink:0;flex-wrap:wrap}
+.flbl{font-size:11px;color:var(--text3);font-family:var(--mono);white-space:nowrap}
+.fsel,.fdate{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--text2);outline:none;height:32px;cursor:pointer}
+.fsel:focus,.fdate:focus{border-color:var(--accent)}
+.btn-g{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--text2);cursor:pointer;height:32px}
+.btn-g:hover{border-color:var(--border2);color:var(--text)}
+.btn-acc{background:var(--accent);border:1px solid var(--accent);color:#fff}
+.sep{width:1px;height:20px;background:var(--border);margin:0 4px}
+
+/* CONTENT */
+.content{overflow-y:auto;height:calc(100vh - 108px);padding:20px 24px}
+.page-hdr{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.page-title{font-size:19px;font-weight:500;color:var(--text);letter-spacing:0.01em}
+.page-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+
+/* CARDS DE RESUMO */
+.rrow{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px;max-width:640px}
+.rcard{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.rcard-lbl{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);font-family:var(--mono);margin-bottom:6px}
+.rcard-val{font-size:24px;font-weight:500;font-family:var(--mono);color:var(--text)}
+.rcard-sub{font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:4px}
+
+/* TABELA */
+.table-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.table-hdr-row{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)}
+.table-title{font-size:13px;font-weight:500;color:var(--text)}
+.table-count{font-size:12px;color:var(--text3);font-family:var(--mono)}
+.tw-head{display:grid;grid-template-columns:90px 140px 1fr 110px 80px 90px 150px 90px 90px 44px;border-bottom:1px solid var(--border);padding:0 16px}
+.th{font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);padding:9px 6px}
+.tw-body{display:flex;flex-direction:column;max-height:calc(100vh - 380px);overflow-y:auto}
+.tr{display:grid;grid-template-columns:90px 140px 1fr 110px 80px 90px 150px 90px 90px 44px;padding:0 16px;border-bottom:1px solid var(--border);transition:background 0.1s}
+.tr:last-child{border-bottom:none}.tr:hover{background:var(--bg3)}
+.tr.completo{border-left:3px solid var(--ok)}
+.tr.andamento{border-left:3px solid var(--warn)}
+.td{font-size:12px;color:var(--text2);padding:10px 6px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.lb{font-size:10px;font-family:var(--mono);font-weight:500;padding:2px 7px;border-radius:10px;white-space:nowrap}
+.lb.ok{background:rgba(45,191,126,0.15);color:var(--ok)}
+.lb.warn{background:rgba(245,166,35,0.15);color:var(--warn)}
+.btn-ico{background:transparent;border:1px solid var(--border);border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px}
+.btn-ico:hover{border-color:var(--border2);background:var(--bg3)}
+
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media (max-width:1000px){
+  .tw-head,.tr{grid-template-columns:80px 120px 1fr 90px 70px 80px 130px 80px 80px 40px}
+}
+
+/* IMPRESSÃO — só a área de impressão aparece */
+#printArea{display:none}
+@media print{
+  body *{visibility:hidden}
+  #printArea,#printArea *{visibility:visible}
+  #printArea{display:block;position:absolute;top:0;left:0;width:100%;background:#fff;color:#000;font-family:Arial,sans-serif;padding:10mm}
+  .p-top{display:flex;justify-content:space-between;align-items:flex-start;border:2px solid #000;padding:8px 12px}
+  .p-logo{font-size:20px;font-weight:700;letter-spacing:0.05em}
+  .p-title{font-size:14px;font-weight:700;text-align:center;flex:1;align-self:center}
+  .p-hdr{display:grid;grid-template-columns:1fr 1fr;border:2px solid #000;border-top:none}
+  .p-hf{display:flex;border-right:1px solid #000;padding:5px 10px;font-size:12px;gap:6px}
+  .p-hf:nth-child(2n){border-right:none}
+  .p-hf b{min-width:64px}
+  .p-tbl{width:100%;border-collapse:collapse;margin-top:8px}
+  .p-tbl th{border:1px solid #000;background:#e8e8e8;font-size:10px;padding:5px 6px;text-transform:uppercase}
+  .p-tbl td{border:1px solid #000;font-size:11px;padding:6px;vertical-align:middle}
+  .p-sub{background:#f0f0f0;font-weight:700;font-size:11px;text-transform:uppercase;padding:4px 6px}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="brand"><div class="bm">BM</div><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="nav">
+    <button class="nb" data-href="index.html" onclick="navTo('index.html')">Buscar Peça</button>
+    <div class="nav-group">
+      <button class="nb nb-group">Cliente ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="demanda.html" onclick="navTo('demanda.html')">Demanda Cliente</button>
+        <button class="nb" data-href="cliente.html" onclick="navTo('cliente.html')">Consulta Cliente</button>
+        <button class="nb" data-href="expedicao.html" onclick="navTo('expedicao.html')">Expedição</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nb nb-group">Produção ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="kanban.html" onclick="navTo('kanban.html')">Kanban</button>
+        <button class="nb" data-href="op-kanban.html" onclick="navTo('op-kanban.html')">Painel</button>
+        <button class="nb" data-href="apontamentos.html" onclick="navTo('apontamentos.html')">Apontamentos</button>
+        <button class="nb" data-href="paradas.html" onclick="navTo('paradas.html')">Peças paradas</button>
+      </div>
+    </div>
+    <div class="nav-group group-active">
+      <button class="nb nb-group active">Indicadores ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="prazos.html" onclick="navTo('prazos.html')">Prazos</button>
+        <button class="nb" data-href="otd.html" onclick="navTo('otd.html')">OTD</button>
+        <button class="nb" data-href="ordens.html" onclick="navTo('ordens.html')">Ordens em Aberto</button>
+        <button class="nb" data-href="operadores.html" onclick="navTo('operadores.html')">Performance</button>
+        <button class="nb" data-href="qualidade.html" onclick="navTo('qualidade.html')">Qualidade</button>
+        <button class="nb active" data-href="separacao-relatorio.html">Separação Relatório</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nb nb-group">Cadastro ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="cadastro-item.html" onclick="navTo('cadastro-item.html')">Item</button>
+        <button class="nb" data-href="separacao-material.html" onclick="navTo('separacao-material.html')">Separação</button>
+        <button class="nb" data-href="engenharia.html" onclick="navTo('engenharia.html')">Roteiro</button>
+      </div>
+    </div>
+  </div>
+  <div class="tr-right">
+    <button class="btn-sm" onclick="init()">↻ atualizar</button>
+    <div class="sync-dot"></div>
+    <span class="sync-lbl" id="slbl">carregando...</span>
+  </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <span class="flbl">Cliente</span>
+  <select class="fsel" id="fcli" onchange="render()"><option value="">Todos os clientes</option></select>
+  <span class="flbl">De</span>
+  <input type="date" class="fdate" id="fdi" onchange="render()">
+  <span class="flbl">até</span>
+  <input type="date" class="fdate" id="fdf" onchange="render()">
+  <div class="sep"></div>
+  <select class="fsel" id="fmat" onchange="render()">
+    <option value="">Todo material</option>
+    <option value="metal_duro">Metal Duro</option>
+    <option value="aco">Aço</option>
+  </select>
+  <select class="fsel" id="fetapa" onchange="render()"><option value="">Todas as etapas</option></select>
+  <div class="sep"></div>
+  <button class="btn-g" onclick="limpar()">Limpar filtros</button>
+  <button class="btn-g btn-acc" onclick="imprimirLista()" style="margin-left:auto">🖨 Imprimir lista filtrada</button>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+  <div class="page-hdr">
+    <div>
+      <div class="page-title">Separação de Material — Relatório</div>
+      <div class="page-sub">histórico completo, filtre e imprima · para movimentar cartões, use o <a href="separacao-material.html" style="color:var(--accent)">Kanban</a></div>
+    </div>
+  </div>
+
+  <div class="rrow">
+    <div class="rcard">
+      <div class="rcard-lbl">Componentes no filtro</div>
+      <div class="rcard-val" id="r-total">—</div>
+    </div>
+    <div class="rcard">
+      <div class="rcard-lbl">Status</div>
+      <div class="rcard-val" id="r-status" style="font-size:14px">—</div>
+    </div>
+  </div>
+
+  <div class="table-section">
+    <div class="table-hdr-row">
+      <div class="table-title">Componentes</div>
+      <div class="table-count" id="tbl-count">—</div>
+    </div>
+    <div class="tw-head">
+      <div class="th">Código</div>
+      <div class="th">Pedido / OS</div>
+      <div class="th">Cliente</div>
+      <div class="th">Lote</div>
+      <div class="th">Posição</div>
+      <div class="th">Material</div>
+      <div class="th">Etapa atual</div>
+      <div class="th">Parado há</div>
+      <div class="th">Prazo</div>
+      <div class="th"></div>
+    </div>
+    <div class="tw-body" id="tw-body">
+      <div class="loading"><div class="spinner"></div>carregando...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ÁREA DE IMPRESSÃO (invisível na tela, só aparece em @media print) -->
+<div id="printArea"></div>
+
+<script src="status.js"></script>
+<script>
+function navTo(p){ location.href = p; }
+
+const POS_LABEL = { nucleo:"Núcleo", carcaca:"Carcaça", luva:"Luva" };
+const MATERIAL_LABEL = { metal_duro:"Metal Duro", aco:"Aço" };
+
+let ITENS_CAD=[], ESTAGIOS=[], LOTES=[], COMPONENTES=[], ULTIMOS=[];
+
+// prazo_entrega é date puro — evita o bug de fuso do fmtDt (que assume timestamptz)
+function fmtDataPrazo(v){
+  const d = new Date(String(v).slice(0,10)+"T00:00:00");
+  return isNaN(d) ? "—" : d.toLocaleDateString("pt-BR");
+}
+
+function itemDoLote(lote){ return ITENS_CAD.find(i=>i.id===lote.item_id) || null; }
+function loteDoComponente(comp){ return LOTES.find(l=>l.id===comp.lote_id) || null; }
+function ultimoDoComponente(compId){ return ULTIMOS.find(u=>u.componente_id===compId) || null; }
+function maxOrdemEstagio(){ return Math.max(...ESTAGIOS.map(e=>e.ordem), 0); }
+
+function fmtD(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+
+function popularFiltros(){
+  const clientesComLote = new Set();
+  LOTES.forEach(l=>{ const it = itemDoLote(l); if(it && it.cliente) clientesComLote.add(it.cliente); });
+  const lista = [...clientesComLote].sort();
+  document.getElementById("fcli").innerHTML = '<option value="">Todos os clientes</option>' +
+    lista.map(c=>`<option value="${escHtml(c)}">${escHtml(String(c).replace(/^\d+_/,""))}</option>`).join("");
+
+  const especificas = ESTAGIOS.slice().sort((a,b)=>a.ordem-b.ordem)
+    .map(e=>`<option value="et:${e.ordem}">${escHtml(e.descricao)}</option>`).join("");
+  document.getElementById("fetapa").innerHTML = `<option value="">Todas as etapas / status</option>
+    <option value="completo">✓ Completos (Pronto)</option>
+    <option value="andamento">Em andamento</option>
+    <optgroup label="Etapa específica">${especificas}</optgroup>`;
+}
+
+function limpar(){
+  document.getElementById("fcli").value = "";
+  document.getElementById("fmat").value = "";
+  document.getElementById("fetapa").value = "";
+  presetMesAtual();
+  render();
+}
+
+function presetMesAtual(){
+  const h = new Date();
+  const ini = new Date(h.getFullYear(), h.getMonth(), 1);
+  document.getElementById("fdi").value = fmtD(ini);
+  document.getElementById("fdf").value = fmtD(h);
+}
+
+function linhasFiltradas(){
+  const cli = document.getElementById("fcli").value;
+  const di = document.getElementById("fdi").value;
+  const df = document.getElementById("fdf").value;
+  const mat = document.getElementById("fmat").value;
+  const etapaF = document.getElementById("fetapa").value;
+  const maxOrdem = maxOrdemEstagio();
+
+  return COMPONENTES.map(comp=>{
+    const lote = loteDoComponente(comp);
+    if(!lote) return null;
+    const item = itemDoLote(lote);
+    if(!item) return null;
+    const ultimo = ultimoDoComponente(comp.id);
+    const ordem = ultimo ? ultimo.estagio_ordem : 0;
+    return { comp, lote, item, ultimo, ordem };
+  }).filter(r=>{
+    if(!r) return false;
+    if(cli && r.item.cliente !== cli) return false;
+    if(mat && r.comp.tipo_material !== mat) return false;
+    if(di && String(r.lote.created_at).slice(0,10) < di) return false;
+    if(df && String(r.lote.created_at).slice(0,10) > df) return false;
+    if(etapaF === "completo" && r.ordem < maxOrdem) return false;
+    if(etapaF === "andamento" && r.ordem >= maxOrdem) return false;
+    if(etapaF.startsWith("et:") && r.ordem !== parseInt(etapaF.slice(3),10)) return false;
+    return true;
+  }).sort((a,b)=> new Date(b.ultimo?b.ultimo.data_evento:b.lote.created_at) - new Date(a.ultimo?a.ultimo.data_evento:a.lote.created_at));
+}
+
+function render(){
+  const linhas = linhasFiltradas();
+  renderResumo(linhas);
+  renderTabela(linhas);
+}
+
+function renderResumo(linhas){
+  const maxOrdem = maxOrdemEstagio();
+  const completos = linhas.filter(r=>r.ordem>=maxOrdem).length;
+  document.getElementById("r-total").textContent = linhas.length;
+  document.getElementById("r-status").textContent = `${completos} completos · ${linhas.length-completos} em andamento`;
+}
+
+function renderTabela(linhas){
+  document.getElementById("tbl-count").textContent = `${linhas.length} componente(s)`;
+  const body = document.getElementById("tw-body");
+  if(!linhas.length){
+    body.innerHTML = `<div style="padding:40px;text-align:center;color:var(--text3);font-size:12px">Nenhum componente encontrado com os filtros selecionados.</div>`;
+    return;
+  }
+  const maxOrdem = maxOrdemEstagio();
+  body.innerHTML = linhas.map(r=>{
+    const {comp, lote, item, ultimo, ordem} = r;
+    const completo = ordem>=maxOrdem;
+    const etapaLabel = ultimo ? ultimo.estagio_descricao : "Aguardando";
+    const dias = ultimo ? diasDesde(ultimo) : null;
+    const tempoLabel = dias===null ? "—" : diasStr(dias);
+    const resumo = materialResumoItem(item.id, {lotes:LOTES, componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS});
+    const loteLabel = resumo && resumo.total>1
+      ? `Lote ${lote.lote_numero} <span class="lb ${resumo.completo?'ok':'warn'}">${resumo.prontos}/${resumo.total}</span>`
+      : `Lote ${lote.lote_numero}`;
+    return `<div class="tr ${completo?'completo':'andamento'}">
+      <div class="td">${escHtml(item.codigo_peca)}</div>
+      <div class="td">${escHtml(item.pedido||"—")} / ${escHtml(item.os||"—")}</div>
+      <div class="td">${escHtml(String(item.cliente||"—").replace(/^\d+_/,""))}</div>
+      <div class="td">${loteLabel}</div>
+      <div class="td">${POS_LABEL[comp.posicao]}</div>
+      <div class="td">${MATERIAL_LABEL[comp.tipo_material]}</div>
+      <div class="td">${escHtml(etapaLabel)}</div>
+      <div class="td">${tempoLabel}</div>
+      <div class="td">${item.prazo_entrega ? fmtDataPrazo(item.prazo_entrega) : "—"}</div>
+      <div class="td" style="justify-content:center"><button class="btn-ico" title="Imprimir este lote" onclick="imprimirLote(${lote.id})">🖨</button></div>
+    </div>`;
+  }).join("");
+}
+
+// ---- IMPRESSÃO ----
+function descricaoFiltros(){
+  const partes = [];
+  const cli = document.getElementById("fcli");
+  if(cli.value) partes.push("Cliente: "+cli.options[cli.selectedIndex].text);
+  const di = document.getElementById("fdi").value, df = document.getElementById("fdf").value;
+  if(di || df) partes.push("Período: "+(di?fmtDataPrazo(di):"—")+" a "+(df?fmtDataPrazo(df):"—"));
+  const mat = document.getElementById("fmat");
+  if(mat.value) partes.push("Material: "+mat.options[mat.selectedIndex].text);
+  const et = document.getElementById("fetapa");
+  if(et.value) partes.push("Etapa/Status: "+et.options[et.selectedIndex].text);
+  return partes.length ? partes.join(" · ") : "sem filtro (todos os componentes)";
+}
+
+function imprimirLista(){
+  const linhas = linhasFiltradas();
+  const linhasHtml = linhas.map(r=>{
+    const {comp, lote, item, ultimo} = r;
+    const etapaLabel = ultimo ? ultimo.estagio_descricao : "Aguardando";
+    return `<tr>
+      <td>${escHtml(item.codigo_peca)}</td>
+      <td>${escHtml(item.pedido||"—")}</td>
+      <td>${escHtml(item.os||"—")}</td>
+      <td>${escHtml(String(item.cliente||"—").replace(/^\d+_/,""))}</td>
+      <td style="text-align:center">${lote.lote_numero}</td>
+      <td>${POS_LABEL[comp.posicao]}</td>
+      <td>${MATERIAL_LABEL[comp.tipo_material]}</td>
+      <td>${escHtml(etapaLabel)}</td>
+    </tr>`;
+  }).join("");
+  document.getElementById("printArea").innerHTML = `
+    <div class="p-top"><div class="p-logo">BRASMAT</div><div class="p-title">SEPARAÇÃO DE MATERIAL — RELATÓRIO</div><div style="font-size:10px">${new Date().toLocaleDateString("pt-BR")}</div></div>
+    <div class="p-hdr" style="grid-template-columns:1fr"><div class="p-hf"><b>FILTROS:</b> ${escHtml(descricaoFiltros())}</div></div>
+    <table class="p-tbl">
+      <tr><th>Código</th><th>Pedido</th><th>OS</th><th>Cliente</th><th>Lote</th><th>Posição</th><th>Material</th><th>Etapa atual</th></tr>
+      ${linhasHtml || '<tr><td colspan="8" style="text-align:center">Nenhum componente encontrado</td></tr>'}
+    </table>
+    <div style="margin-top:8px;font-size:10px">${linhas.length} componente(s)</div>`;
+  window.print();
+}
+
+async function imprimirLote(loteId){
+  const lote = LOTES.find(l=>l.id===loteId);
+  if(!lote) return;
+  const item = itemDoLote(lote);
+  const comps = COMPONENTES.filter(c=>c.lote_id===loteId);
+  const ids = comps.map(c=>c.id).join(",");
+  let evArr = [];
+  try{
+    const eventos = await supaFetch(`/rest/v1/material_eventos?select=componente_id,estagio_descricao,data_evento&componente_id=in.(${ids})&order=data_evento.asc`);
+    evArr = Array.isArray(eventos) ? eventos : [];
+  }catch(e){}
+  const blocos = comps.map(c=>{
+    const hist = evArr.filter(e=>e.componente_id===c.id);
+    const linhasHtml = hist.length
+      ? hist.map(e=>`<tr><td>${escHtml(e.estagio_descricao)}</td><td>${fmtDt(e.data_evento)}</td></tr>`).join("")
+      : `<tr><td colspan="2" style="text-align:center">ainda em Aguardando — nenhum evento</td></tr>`;
+    return `<div class="p-sub">${POS_LABEL[c.posicao]} (${MATERIAL_LABEL[c.tipo_material]})</div>
+      <table class="p-tbl"><tr><th>Etapa</th><th>Data</th></tr>${linhasHtml}</table>`;
+  }).join("");
+  document.getElementById("printArea").innerHTML = `
+    <div class="p-top"><div class="p-logo">BRASMAT</div><div class="p-title">SEPARAÇÃO DE MATERIAL — LOTE ${lote.lote_numero}</div><div style="font-size:10px">${new Date().toLocaleDateString("pt-BR")}</div></div>
+    <div class="p-hdr">
+      <div class="p-hf"><b>CÓDIGO:</b> ${escHtml(item?item.codigo_peca:"—")}</div>
+      <div class="p-hf"><b>PEDIDO:</b> ${escHtml(item?item.pedido||"—":"—")}</div>
+      <div class="p-hf"><b>OS:</b> ${escHtml(item?item.os||"—":"—")}</div>
+      <div class="p-hf"><b>CLIENTE:</b> ${escHtml(item?String(item.cliente||"—").replace(/^\d+_/,""):"—")}</div>
+    </div>
+    ${blocos}`;
+  window.print();
+}
+
+// ---- INIT ----
+async function init(){
+  document.getElementById("slbl").textContent = "carregando...";
+  const [itensCad, estagios, lotes, componentes, ultimos] = await Promise.all([
+    supaFetch("/rest/v1/itens?select=*&limit=10000"),
+    supaFetch("/rest/v1/material_estagios?select=*&ativo=eq.true&order=ordem&limit=20"),
+    supaFetch("/rest/v1/material_lotes?select=*&limit=10000"),
+    supaFetch("/rest/v1/material_lote_componentes?select=*&limit=10000"),
+    supaFetch("/rest/v1/material_ultimo_evento?select=*&limit=10000")
+  ]);
+  ITENS_CAD = Array.isArray(itensCad) ? itensCad : [];
+  ESTAGIOS = Array.isArray(estagios) ? estagios : [];
+  LOTES = Array.isArray(lotes) ? lotes : [];
+  COMPONENTES = Array.isArray(componentes) ? componentes : [];
+  ULTIMOS = Array.isArray(ultimos) ? ultimos : [];
+  popularFiltros();
+  if(!document.getElementById("fdi").value) presetMesAtual();
+  render();
+  document.getElementById("slbl").textContent = "atualizado " + new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+}
+init();
+</script>
+</body>
+</html>

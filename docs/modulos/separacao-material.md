@@ -116,7 +116,17 @@ atrasos antes que aconteçam, e só liberar o roteiro quando o kit de material e
   Térmico, sem precisar arrastar do zero por etapas que já aconteceram antes de entrar no
   sistema).
 - Sinal visual no **Cadastro Roteiro**: mostrar se o material do item já está pronto ou ainda
-  não (aviso, sem bloquear).
+  não (aviso, sem bloquear) — granular (quantos lotes prontos de quantos no total), não binário.
+- **Separação Relatório** (`separacao-relatorio.html`, só leitura, PCP + Engenharia + dono):
+  companheira do Kanban pra quando o histórico crescer — uma linha por componente, filtros
+  (cliente, período pela data de criação do lote, material, etapa/status), 2 cards de contagem
+  (sem tendência, volume ainda baixo demais pra isso valer a pena) e impressão em dois modos:
+  lista filtrada inteira, ou um lote específico com histórico completo. O Kanban continua sendo
+  onde se trabalha (arrastar = registrar evento); esta tela é só consulta.
+- **Visibilidade de conjunto de lotes**: quando um item tem mais de 1 lote, cartão e painel de
+  detalhe do Kanban (e a sugestão/cabeçalho do Cadastro Roteiro) mostram quantos lotes do
+  conjunto já estão prontos — pra ninguém interpretar que o processo terminou só porque um
+  lote isolado chegou em Pronto.
 
 ## 6. Fora do escopo por ora
 
@@ -153,5 +163,11 @@ atrasos antes que aconteçam, e só liberar o roteiro quando o kit de material e
    colunas = etapas reais) + status calculado automaticamente (não digitado) + sinal "kit
    completo" + integração de mão dupla com Cadastro Item (criar lote) e Cadastro Roteiro
    (aviso de material pronto/pendente).
-2. *(Futuro)* Fornecedor/terceiro por evento.
-3. *(Futuro)* Saldo de estoque de fato (quantidade, não só estágio).
+2. **Visibilidade de conjunto de lotes + Relatório ✅ (18/07/2026)**: resumo de conjunto de
+   lotes reaproveitado entre Kanban e Cadastro Roteiro (`materialResumoItem`, `status.js`) +
+   tela `separacao-relatorio.html` (histórico, filtros, 2 modos de impressão).
+3. *(Futuro)* Fornecedor/terceiro por evento.
+4. *(Futuro)* Saldo de estoque de fato (quantidade, não só estágio).
+5. *(Futuro)* Se o volume de histórico justificar: tendência, ranking por cliente e gargalo
+   por etapa na tela de Relatório (hoje ela só tem contagem, de propósito — ver análise
+   estratégica da conversa de 18/07/2026).

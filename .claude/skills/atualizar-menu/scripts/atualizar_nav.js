@@ -35,6 +35,7 @@ const NAV = [
       { page: "ordens.html", label: "Ordens em Aberto", mobile: "Ordens" },
       { page: "operadores.html", label: "Performance", mobile: "Performance" },
       { page: "qualidade.html", label: "Qualidade", mobile: "Qualidade" },
+      { page: "separacao-relatorio.html", label: "Separação Relatório", mobile: "Sep. Relatório" },
     ],
   },
   {

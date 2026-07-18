@@ -384,16 +384,30 @@ function abrirCriarLote(itemId){
     <div class="sp-f"><span class="sp-l">Quantidade deste lote</span><input class="sp-inp" id="novoLoteQtd" value="${escHtml(item.quantidade||"")}" style="width:110px"></div>
     <div class="sp-f">
       <span class="sp-l">Núcleo (obrigatório)</span>
-      <select class="sp-inp" id="novoNucleoTipo" style="width:180px">
+      <select class="sp-inp" id="novoNucleoTipo" style="width:180px" onchange="atualizarSituacao('nucleo')">
         <option value="">—</option>
         <option value="metal_duro">Metal Duro</option>
         <option value="aco">Aço</option>
       </select>
     </div>
+    <div class="sp-f" id="nucleoSituacaoWrap" style="display:none">
+      <span class="sp-l">Situação atual do núcleo — onde ele já está</span>
+      <select class="sp-inp" id="novoNucleoSituacao" style="width:220px"></select>
+    </div>
     <div class="sp-f">
       <span class="sp-l">Também precisa de</span>
-      <label class="chk-row"><input type="checkbox" id="novoLoteCarcaca"> Carcaça de Aço</label>
-      <label class="chk-row"><input type="checkbox" id="novoLoteLuva"> Luva (Aço)</label>
+      <label class="chk-row"><input type="checkbox" id="novoLoteCarcaca" onchange="atualizarSituacao('carcaca')"> Carcaça de Aço</label>
+    </div>
+    <div class="sp-f" id="carcacaSituacaoWrap" style="display:none">
+      <span class="sp-l">Situação atual da carcaça — onde ela já está</span>
+      <select class="sp-inp" id="novoCarcacaSituacao" style="width:220px"></select>
+    </div>
+    <div class="sp-f">
+      <label class="chk-row"><input type="checkbox" id="novoLoteLuva" onchange="atualizarSituacao('luva')"> Luva (Aço)</label>
+    </div>
+    <div class="sp-f" id="luvaSituacaoWrap" style="display:none">
+      <span class="sp-l">Situação atual da luva — onde ela já está</span>
+      <select class="sp-inp" id="novoLuvaSituacao" style="width:220px"></select>
     </div>
     <div class="sp-f"><span class="sp-l">Observação</span><input class="sp-inp" id="novoLoteObs"></div>
     <button class="btn-g btn-acc" onclick="salvarNovoLote(${itemId})">+ Criar lote</button>
@@ -401,11 +415,43 @@ function abrirCriarLote(itemId){
   abrirPainel();
 }
 
+// monta as opções de "situação atual" válidas pro material (Aguardando + as colunas que se aplicam a ele)
+function opcoesSituacaoHtml(tipoMaterial){
+  const opts = [{ordem:0, descricao:"Aguardando (nada feito ainda)"}].concat(
+    ESTAGIOS.filter(e=>tipoMaterial==="metal_duro" ? e.aplica_metal_duro : e.aplica_aco).sort((a,b)=>a.ordem-b.ordem)
+  );
+  return opts.map(o=>`<option value="${o.ordem}">${escHtml(o.descricao)}</option>`).join("");
+}
+
+// atualiza o select de "situação atual" quando o tipo/checkbox de núcleo, carcaça ou luva muda
+function atualizarSituacao(posicao){
+  if(posicao==="nucleo"){
+    const tipo = document.getElementById("novoNucleoTipo").value;
+    const wrap = document.getElementById("nucleoSituacaoWrap");
+    if(!tipo){ wrap.style.display="none"; return; }
+    document.getElementById("novoNucleoSituacao").innerHTML = opcoesSituacaoHtml(tipo);
+    wrap.style.display="";
+  }else{
+    const chkId = posicao==="carcaca" ? "novoLoteCarcaca" : "novoLoteLuva";
+    const wrapId = posicao==="carcaca" ? "carcacaSituacaoWrap" : "luvaSituacaoWrap";
+    const selId = posicao==="carcaca" ? "novoCarcacaSituacao" : "novoLuvaSituacao";
+    const on = document.getElementById(chkId).checked;
+    document.getElementById(wrapId).style.display = on ? "" : "none";
+    if(on) document.getElementById(selId).innerHTML = opcoesSituacaoHtml("aco");
+  }
+}
+
 async function salvarNovoLote(itemId){
   const qtd = parseInt(document.getElementById("novoLoteQtd").value.trim(),10);
   if(!qtd || qtd<=0){ toast("Informe uma quantidade válida", "erro"); return; }
   const nucleoTipo = document.getElementById("novoNucleoTipo").value;
   if(!nucleoTipo){ toast("Selecione o material do núcleo", "erro"); return; }
+  const carcacaOn = document.getElementById("novoLoteCarcaca").checked;
+  const luvaOn = document.getElementById("novoLoteLuva").checked;
+  // diagnóstico inicial: onde cada peça já está agora (0 = Aguardando, sem evento)
+  const situacaoNucleo = parseInt(document.getElementById("novoNucleoSituacao").value,10) || 0;
+  const situacaoCarcaca = carcacaOn ? (parseInt(document.getElementById("novoCarcacaSituacao").value,10)||0) : 0;
+  const situacaoLuva = luvaOn ? (parseInt(document.getElementById("novoLuvaSituacao").value,10)||0) : 0;
   const nLotesExistentes = LOTES.filter(l=>l.item_id===itemId).length;
   try{
     const novoLote = await supaWrite("/rest/v1/material_lotes","POST",{
@@ -416,11 +462,21 @@ async function salvarNovoLote(itemId){
     LOTES.unshift(lote);
 
     const comps = [{ lote_id: lote.id, posicao:"nucleo", tipo_material: nucleoTipo }];
-    if(document.getElementById("novoLoteCarcaca").checked) comps.push({ lote_id: lote.id, posicao:"carcaca", tipo_material:"aco" });
-    if(document.getElementById("novoLoteLuva").checked) comps.push({ lote_id: lote.id, posicao:"luva", tipo_material:"aco" });
+    if(carcacaOn) comps.push({ lote_id: lote.id, posicao:"carcaca", tipo_material:"aco" });
+    if(luvaOn) comps.push({ lote_id: lote.id, posicao:"luva", tipo_material:"aco" });
     const novosComps = await supaWrite("/rest/v1/material_lote_componentes","POST",comps);
     const rows = Array.isArray(novosComps)?novosComps:[novosComps];
     rows.forEach(r=>{ if(r) COMPONENTES.push(r); });
+
+    // aplica o diagnóstico inicial: já registra o cartão direto na coluna onde o material está hoje
+    const situacaoPorPosicao = { nucleo: situacaoNucleo, carcaca: situacaoCarcaca, luva: situacaoLuva };
+    for(const r of rows){
+      const ordemInicial = situacaoPorPosicao[r.posicao] || 0;
+      if(ordemInicial > 0){
+        const col = ESTAGIOS.find(e=>e.ordem===ordemInicial);
+        if(col) await registrarEvento(r, col);
+      }
+    }
 
     renderBoard();
     toast("Lote criado");
@@ -455,8 +511,32 @@ async function abrirComponente(compId){
   document.getElementById("spBody").innerHTML = `
     <div class="comp-block"><div class="sp-l" style="margin-bottom:6px">Histórico</div><div class="mat-hist">${histHtml}</div></div>
     ${outrosHtml}
+    <button class="btn-g" style="color:var(--danger);border-color:var(--danger)" onclick="excluirComponente(${compId})">🗑 Excluir esse cartão</button>
   `;
   abrirPainel();
+}
+
+// exclui um componente (cartão) — se era o único do lote, exclui o lote junto (evita lote "fantasma" vazio)
+async function excluirComponente(compId){
+  const comp = COMPONENTES.find(c=>c.id===compId);
+  if(!comp) return;
+  const lote = loteDoComponente(comp);
+  const item = lote ? itemDoLote(lote) : null;
+  const label = (item?item.codigo_peca:"componente") + " — " + POS_LABEL[comp.posicao];
+  if(!confirm(`Excluir o cartão "${label}"? O histórico dele também será apagado.`)) return;
+  try{
+    await supaWrite(`/rest/v1/material_lote_componentes?id=eq.${compId}`,"DELETE",undefined,"return=minimal");
+    COMPONENTES = COMPONENTES.filter(c=>c.id!==compId);
+    ULTIMOS = ULTIMOS.filter(u=>u.componente_id!==compId);
+    const irmaos = lote ? COMPONENTES.filter(c=>c.lote_id===lote.id) : [];
+    if(lote && !irmaos.length){
+      await supaWrite(`/rest/v1/material_lotes?id=eq.${lote.id}`,"DELETE",undefined,"return=minimal");
+      LOTES = LOTES.filter(l=>l.id!==lote.id);
+    }
+    fecharPainel();
+    renderBoard();
+    toast("Cartão excluído");
+  }catch(e){ toast("Erro ao excluir: "+e.message, "erro"); }
 }
 
 function fmtDataHora(v){

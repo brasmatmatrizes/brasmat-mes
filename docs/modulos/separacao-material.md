@@ -106,10 +106,15 @@ atrasos antes que aconteçam, e só liberar o roteiro quando o kit de material e
   quanto tempo está parado ali. **Arrastar o cartão registra o evento** — não precisa abrir
   formulário pra apontar. Um cartão só pode ser solto em coluna que se aplica ao seu material
   (o navegador já bloqueia visualmente soltar onde não pode). Clicar (sem arrastar) abre o
-  histórico do cartão + o status das outras peças do mesmo lote. "✓ kit completo" aparece
+  histórico do cartão + o status das outras peças do mesmo lote + botão pra **excluir o cartão**
+  (se o lote ficar sem nenhum componente, ele é removido junto). "✓ kit completo" aparece
   quando todos os componentes do lote chegam em Pronto.
 - Ponto de entrada a partir do **Cadastro Item**: buscar o item e criar o(s) lote(s) — escolher
-  núcleo (obrigatório, Metal Duro ou Aço) e marcar se também precisa de Carcaça/Luva.
+  núcleo (obrigatório, Metal Duro ou Aço) e marcar se também precisa de Carcaça/Luva. Pra cada
+  peça marcada, o PCP também informa a **situação atual** (diagnóstico inicial: onde ela já
+  está — ex. "carcaça já usinada e temperada" cria o cartão direto na coluna Tratamento
+  Térmico, sem precisar arrastar do zero por etapas que já aconteceram antes de entrar no
+  sistema).
 - Sinal visual no **Cadastro Roteiro**: mostrar se o material do item já está pronto ou ainda
   não (aviso, sem bloquear).
 

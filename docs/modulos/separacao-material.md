@@ -4,6 +4,15 @@ Especificação de módulo — descoberta em 18/07/2026, a partir da entrevista 
 da planilha real `GESTÃO RASTREABILIDADE DE MATERIAL.xlsx` (628 linhas de histórico,
 fev–jul/2026).
 
+> **Revisão 18/07/2026 (pós-MVP, corrigida pelo usuário depois de testar):** duas mudanças
+> importantes em relação à descoberta original — (1) o "núcleo" da peça **não é sempre Metal
+> Duro**, pode ser Aço também (só Carcaça e Luva são sempre Aço); (2) o painel visual não é
+> 3 colunas de status — é um **kanban de arrastar e soltar de verdade**, com as etapas reais
+> como colunas, e **um cartão por peça física** (não por lote inteiro), pra não travar dois
+> processos de material diferentes num cartão só. Seções 3–5, 7 e 8 abaixo já refletem essa
+> revisão; a seção 2 (fluxo hoje / achados na planilha) continua como registro histórico da
+> descoberta original.
+
 ## 1. Dor / objetivo
 
 Entre o **Cadastro Item** (Comercial cadastra a peça) e o **Cadastro Roteiro** (Engenharia
@@ -51,47 +60,58 @@ atrasos antes que aconteçam, e só liberar o roteiro quando o kit de material e
 ## 3. Fluxo proposto
 
 1. Comercial cadastra o item — sem mudança (já existe).
-2. PCP abre o item recém-cadastrado e registra um ou mais **lotes** — cada lote tem sua
-   própria quantidade (a soma dos lotes bate com a quantidade do item) e sua composição
-   (quais dos 3 materiais ele precisa).
-3. Para cada material de cada lote, o PCP registra os **eventos** conforme acontecem (ex.:
-   "entrou em separação de estoque", "saiu — foi para compra", "entrou em usinagem", "voltou
-   da usinagem", "entrou em tratamento térmico", "voltou — disponível para montagem"). Cada
-   evento tem **data real obrigatória** — nunca texto livre.
-4. O sistema **calcula automaticamente** o estágio atual de cada material (a partir do
-   último evento) e o status do kit do lote — "aguardando X" ou "kit completo" — em vez de
-   alguém digitar isso à parte.
-5. **Painel visual** (mesmo espírito do Painel de operadores, `op-kanban.html`) mostra os
-   lotes em andamento, agrupados/coloridos por estágio, pra enxergar rápido o que está
-   travando e desde quando.
-6. Quando todos os componentes de um lote chegam a "disponível", o lote fica "completo"; quando
-   todos os lotes de um item estão completos, o item fica sinalizado como **pronto para o
-   Roteiro** — a Engenharia vê esse sinal ao abrir o Cadastro Roteiro (aviso visual, **não**
-   bloqueio automático nesta fase).
+2. PCP abre o item recém-cadastrado e cria um ou mais **lotes** — cada lote tem sua própria
+   quantidade (a soma dos lotes bate com a quantidade do item, sem travar isso) e sua
+   **composição**: sempre um **núcleo** (Metal Duro *ou* Aço — a peça pode não ter nada de
+   Metal Duro) + opcionalmente **Carcaça** (sempre Aço) e/ou **Luva** (sempre Aço).
+3. Cada posição (núcleo/carcaça/luva) do lote vira **um cartão** no kanban — não um cartão por
+   lote inteiro, porque núcleo e carcaça podem estar em processos completamente diferentes ao
+   mesmo tempo (ex.: núcleo já pronto, carcaça ainda na usinagem) e um cartão só não dá conta
+   dos dois.
+4. O PCP **arrasta o cartão** para a coluna que representa onde o material está agora — o
+   arraste em si registra o evento (data real, automática). Colunas: Compra → Recebido/Estoque
+   → Usinagem → Tratamento Térmico → Pronto (mais "Aguardando" antes de qualquer evento). Um
+   cartão de Metal Duro só usa Compra e Pronto — pula direto as colunas que não se aplicam a
+   ele (não precisa arrastar por etapas que não existem pro seu material).
+5. O sistema **calcula automaticamente** a coluna atual de cada cartão a partir do último
+   evento — nunca digitado à parte.
+6. Quando todos os cartões (componentes) de um lote chegam em "Pronto", o lote fica **"kit
+   completo"**; quando todos os lotes de um item estão completos, o item fica sinalizado como
+   **pronto para o Roteiro** — a Engenharia vê esse sinal ao abrir o Cadastro Roteiro (aviso
+   visual, **não** bloqueio automático nesta fase).
 
 ## 4. Dados (linguagem simples — a tradução para tabelas é papel da `modelagem-dados-mes` /
 `arquiteto-modulo`)
 
 - **Lote**: pertence a um item (pedido+código+OS, do `itens`); tem uma quantidade própria
-  (pode ser menor que a quantidade total do item, se dividido); sabe quais dos 3 materiais
-  precisa.
-- **Evento de material**: pertence a um lote + a um material (Metal Duro / Carcaça / Luva);
-  tem um tipo de evento (do catálogo de estágios daquele material) e uma data. **Evento
-  imutável** — não se edita, só se registra um novo (mesmo padrão de `producao_eventos`).
-- **Catálogo de estágios por material**: a sequência de estágios possíveis de cada material
-  (Metal Duro tem 2; Carcaça e Luva têm 5 cada) — precisa ser **configurável** (tabela, não
-  fixo no código), caso o processo mude no futuro.
+  (pode ser menor que a quantidade total do item, se dividido); numerado automaticamente
+  (1, 2, 3... quando dividido) — o PCP nunca digita esse número.
+- **Componente**: uma peça física dentro de um lote — sua **posição** (núcleo/carcaça/luva) e
+  o **material real** dela (Metal Duro ou Aço). O material **não é fixo por posição**: só o
+  núcleo varia entre os dois; carcaça e luva são sempre Aço. Cada componente é um cartão do
+  kanban, com sua própria linha do tempo, independente dos outros componentes do mesmo lote.
+- **Evento**: um registro por movimento de um componente para uma coluna/estágio (o arraste em
+  si) — tipo de estágio + data. **Imutável** — não se edita, só se registra um novo (mesmo
+  padrão de `producao_eventos`).
+- **Catálogo de estágios**: uma trilha **única e compartilhada** entre os dois materiais (não
+  um catálogo por material) — cada estágio diz se vale para Metal Duro, para Aço, ou os dois.
+  Precisa ser **configurável** (tabela, não fixo no código), caso o processo mude no futuro.
 - Sem fornecedor, sem preço/custo nesta fase (decisão do usuário).
 
 ## 5. Telas
 
-- **Painel de Separação de Material** (PCP, uso de escritório): cartão por lote, tipo
-  kanban, agrupado/colorido por estágio ou por "o que está faltando"; clicar no cartão abre o
-  lote e permite registrar o próximo evento de cada material.
-- Ponto de entrada a partir do **Cadastro Item**: opção de já criar o(s) lote(s) e composição
-  logo depois de cadastrar o item (ou numa fila "itens aguardando análise do PCP").
-- Sinal visual no **Cadastro Roteiro**: mostrar se o material do item já está liberado ou
-  ainda não (aviso, sem bloquear).
+- **Kanban de Separação de Material** (PCP, uso de escritório): colunas = as etapas reais
+  (Aguardando / Compra / Recebido-Estoque / Usinagem / Tratamento Térmico / Pronto); um cartão
+  por componente (núcleo/carcaça/luva), mostrando código/pedido/OS, a posição, o material e há
+  quanto tempo está parado ali. **Arrastar o cartão registra o evento** — não precisa abrir
+  formulário pra apontar. Um cartão só pode ser solto em coluna que se aplica ao seu material
+  (o navegador já bloqueia visualmente soltar onde não pode). Clicar (sem arrastar) abre o
+  histórico do cartão + o status das outras peças do mesmo lote. "✓ kit completo" aparece
+  quando todos os componentes do lote chegam em Pronto.
+- Ponto de entrada a partir do **Cadastro Item**: buscar o item e criar o(s) lote(s) — escolher
+  núcleo (obrigatório, Metal Duro ou Aço) e marcar se também precisa de Carcaça/Luva.
+- Sinal visual no **Cadastro Roteiro**: mostrar se o material do item já está pronto ou ainda
+  não (aviso, sem bloquear).
 
 ## 6. Fora do escopo por ora
 
@@ -108,22 +128,25 @@ atrasos antes que aconteçam, e só liberar o roteiro quando o kit de material e
 - **PCP é o único ator** que mexe nisso — não precisa de sincronização entre múltiplos
   usuários editando o mesmo lote (diferente da Demanda Cliente).
 - **Um item pode ter mais de um lote** — quantidade dividida quando parte já tinha material
-  adiantado de antes.
-- **Cada material tem sua timeline própria de estágios**, independente dos outros materiais
-  do mesmo lote.
+  adiantado de antes. Número do lote é **sempre automático**.
+- **Núcleo pode ser Metal Duro ou Aço** — não é fixo; Carcaça e Luva, quando existem, são
+  sempre Aço.
+- **Um cartão do kanban = um componente (posição física)**, nunca um lote inteiro — evita
+  travar dois processos de material diferentes num cartão só.
+- **Trilha de colunas única e compartilhada** entre Metal Duro e Aço (não um catálogo por
+  material) — cartão de Metal Duro pula direto as colunas que não se aplicam a ele.
+- **Arrastar o cartão é a forma de registrar o evento** — sem formulário/botão intermediário,
+  pedido explícito do usuário: "o apontamento das etapas tem que ser muito simples e fácil".
 - **Histórico nunca é apagado nem arquivado** — mesmo padrão do resto do sistema.
 - **Datas de evento são sempre datas reais**, nunca texto livre (corrige o problema real
   encontrado na planilha atual).
-- **Painel visual (tipo kanban) é a primeira entrega**, não uma lista simples — decisão
-  explícita do usuário, mesmo que isso signifique mais trabalho de tela antes de validar o
-  modelo de dados.
 
 ## 8. Fases de implementação
 
-1. **MVP**: modelo de dados (lote + eventos por material + catálogo de estágios
-   configurável) + Painel visual tipo kanban (cartão por lote) + registrar evento a partir do
-   cartão + status calculado automaticamente (não digitado).
-2. Integração de mão dupla: criar lote(s) a partir do Cadastro Item; sinal de "material
-   pronto" no Cadastro Roteiro.
-3. *(Futuro)* Fornecedor/terceiro por evento.
-4. *(Futuro)* Saldo de estoque de fato (quantidade, não só estágio).
+1. **MVP ✅ (18/07/2026)**: modelo de dados (lote + componente + catálogo único de estágios
+   configurável + evento por movimento) + kanban de arrastar-e-soltar (cartão por componente,
+   colunas = etapas reais) + status calculado automaticamente (não digitado) + sinal "kit
+   completo" + integração de mão dupla com Cadastro Item (criar lote) e Cadastro Roteiro
+   (aviso de material pronto/pendente).
+2. *(Futuro)* Fornecedor/terceiro por evento.
+3. *(Futuro)* Saldo de estoque de fato (quantidade, não só estágio).

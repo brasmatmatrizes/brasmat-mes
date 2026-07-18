@@ -361,9 +361,10 @@ const FORM_ENTRY = {
 // ---- estado ----
 let POS = [];        // posicao_atual (só p/ exibição de roteiros legados no editor)
 let ITENS_CAD = [];  // itens cadastrados (Cadastro Item) — fonte da busca do roteiro
-let MAT_LOTES = [];      // material_lotes (Separação de Material)
-let MAT_ESTAGIOS = [];   // material_estagios ativos — só p/ saber a ordem máxima de cada material
-let MAT_ULTIMOS = [];    // material_ultimo_evento
+let MAT_LOTES = [];       // material_lotes (Separação de Material)
+let MAT_COMPONENTES = []; // material_lote_componentes (núcleo/carcaça/luva de cada lote)
+let MAT_ESTAGIOS = [];    // material_estagios ativos (colunas compartilhadas) — só p/ saber a ordem máxima
+let MAT_ULTIMOS = [];     // material_ultimo_evento (por componente_id)
 let OPS = [];        // roteiro_operacoes (catálogo completo)
 let FAMS = [];       // roteiro_familias (ordem dos grupos da paleta)
 let SUBS = [];       // roteiro_subcomponentes
@@ -402,19 +403,16 @@ function toast(msg){
 function setSync(s){ document.getElementById("slbl").textContent = s; }
 
 // status resumido do material de um item (Separação de Material): null = sem lote criado,
-// 'completo' = todos os lotes com todos os materiais prontos, 'andamento' = falta algo
+// 'completo' = todos os componentes de todos os lotes chegaram na última coluna, 'andamento' = falta algo
 function statusMaterialItem(itemId){
   const lotes = MAT_LOTES.filter(l=>l.item_id===itemId);
   if(!lotes.length) return null;
-  const maxOrdem = {};
-  MAT_ESTAGIOS.forEach(e=>{ maxOrdem[e.material] = Math.max(maxOrdem[e.material]||0, e.ordem); });
-  const materialPronto = (loteId, material)=>{
-    const u = MAT_ULTIMOS.find(x=>x.lote_id===loteId && x.material===material);
-    return !!u && u.evento==="Saída" && u.estagio_ordem>=(maxOrdem[material]||0);
-  };
-  const tudoPronto = lotes.every(l=>{
-    const mats = [l.tem_metal_duro&&"metal_duro", l.tem_carcaca&&"carcaca", l.tem_luva&&"luva"].filter(Boolean);
-    return mats.every(m=>materialPronto(l.id,m));
+  const maxOrdem = Math.max(...MAT_ESTAGIOS.map(e=>e.ordem), 0);
+  const comps = MAT_COMPONENTES.filter(c=>lotes.some(l=>l.id===c.lote_id));
+  if(!comps.length) return null;
+  const tudoPronto = comps.every(c=>{
+    const u = MAT_ULTIMOS.find(x=>x.componente_id===c.id);
+    return !!u && u.estagio_ordem>=maxOrdem;
   });
   return tudoPronto ? "completo" : "andamento";
 }
@@ -450,16 +448,17 @@ function fmtDataPrazo(v){
 // ---- init ----
 async function init(){
   setSync("carregando...");
-  const [ops, fams, subs, rots, pos, itensCad, matLotes, matEstagios, matUltimos] = await Promise.all([
+  const [ops, fams, subs, rots, pos, itensCad, matLotes, matComponentes, matEstagios, matUltimos] = await Promise.all([
     supaFetch("/rest/v1/roteiro_operacoes?select=id,codigo,descricao,familia,ativo&order=codigo&limit=1000"),
     supaFetch("/rest/v1/roteiro_familias?select=id,nome,ordem&order=ordem&limit=100"),
     supaFetch("/rest/v1/roteiro_subcomponentes?select=id,nome,ordem&order=ordem&limit=100"),
     supaFetch("/rest/v1/roteiros?select=*,roteiro_itens(count)&order=updated_at.desc&limit=300"),
     buscarPosicao(),   // paginado — posicao_atual já passa de 1000 linhas, o limit sozinho é truncado pela API
     supaFetch("/rest/v1/itens?select=*&order=created_at.desc&limit=2000"),
-    supaFetch("/rest/v1/material_lotes?select=*&limit=1000"),
-    supaFetch("/rest/v1/material_estagios?select=id,material,ordem&ativo=eq.true&limit=100"),
-    supaFetch("/rest/v1/material_ultimo_evento?select=*&limit=5000")
+    supaFetch("/rest/v1/material_lotes?select=id,item_id&limit=1000"),
+    supaFetch("/rest/v1/material_lote_componentes?select=id,lote_id&limit=2000"),
+    supaFetch("/rest/v1/material_estagios?select=id,ordem&ativo=eq.true&limit=20"),
+    supaFetch("/rest/v1/material_ultimo_evento?select=componente_id,estagio_ordem&limit=5000")
   ]);
   OPS  = Array.isArray(ops)  ? ops.sort((a,b)=>cmpCod(a.codigo,b.codigo)) : [];
   FAMS = Array.isArray(fams) ? fams : [];
@@ -468,6 +467,7 @@ async function init(){
   POS  = Array.isArray(pos)  ? pos  : [];
   ITENS_CAD = Array.isArray(itensCad) ? itensCad : [];
   MAT_LOTES = Array.isArray(matLotes) ? matLotes : [];
+  MAT_COMPONENTES = Array.isArray(matComponentes) ? matComponentes : [];
   MAT_ESTAGIOS = Array.isArray(matEstagios) ? matEstagios : [];
   MAT_ULTIMOS = Array.isArray(matUltimos) ? matUltimos : [];
   renderRoteiros();

@@ -219,13 +219,11 @@ function toast(msg, tipo){
 }
 function setSync(s){ document.getElementById("slbl").textContent = s; }
 
-// colunas: 0 = Aguardando (virtual, sem linha no banco) + as 5 reais de material_estagios
+// colunas: todas reais em material_estagios, incluindo "Aguardando" (ordem 0) — permite arrastar de volta pra lá
 function colunas(){
-  return [{ id:0, ordem:0, descricao:"Aguardando", aplica_metal_duro:true, aplica_aco:true, virtual:true }]
-    .concat(ESTAGIOS.slice().sort((a,b)=>a.ordem-b.ordem));
+  return ESTAGIOS.slice().sort((a,b)=>a.ordem-b.ordem);
 }
 function colunaAplica(col, tipoMaterial){
-  if(col.virtual) return true;
   return tipoMaterial==="metal_duro" ? col.aplica_metal_duro : col.aplica_aco;
 }
 
@@ -284,7 +282,7 @@ function renderBoard(){
     let comps = COMPONENTES.filter(c=>ordemAtual(c.id)===col.ordem);
     let concluidosCount = 0;
     // coluna Pronto: cartão cujo lote já está 100% completo "sai" da vista por padrão (kit já pode ir pro Roteiro)
-    if(col.ordem===maxOrdem && !col.virtual){
+    if(col.ordem===maxOrdem){
       const pendentes = comps.filter(c=>!loteCompleto(c.lote_id));
       const concluidos = comps.filter(c=>loteCompleto(c.lote_id));
       concluidosCount = concluidos.length;
@@ -296,8 +294,8 @@ function renderBoard(){
     const toggleHtml = concluidosCount
       ? `<button class="col-cnt" style="cursor:pointer;background:rgba(45,191,126,.15);color:var(--ok);border:none" onclick="toggleConcluidos()">${_mostrarConcluidos?'ocultar':'✓'} ${concluidosCount} concluído(s)</button>`
       : "";
-    const cor = col.virtual ? "var(--text3)" : (col.ordem>=maxOrdem ? "var(--ok)" : "var(--warn)");
-    return `<div class="col${col.virtual?' aguardando':''}" data-ordem="${col.ordem}">
+    const cor = col.ordem===0 ? "var(--text3)" : (col.ordem>=maxOrdem ? "var(--ok)" : "var(--warn)");
+    return `<div class="col${col.ordem===0?' aguardando':''}" data-ordem="${col.ordem}">
       <div class="col-hdr"><div class="col-stripe" style="background:${cor}"></div><div class="col-name">${escHtml(col.descricao)}</div><div class="col-cnt">${comps.length}</div>${toggleHtml}</div>
       <div class="col-body" data-ordem="${col.ordem}" ondragover="onDragOver(event,${col.ordem})" ondragleave="onDragLeave(event)" ondrop="onDrop(event,${col.ordem})">${body}</div>
     </div>`;
@@ -350,7 +348,7 @@ function onDragEnd(ev){
 }
 function onDragOver(ev, ordem){
   const col = colunas().find(c=>c.ordem===ordem);
-  if(!col || ordem===0 || !_dragTipo || !colunaAplica(col,_dragTipo)) return; // não permite — sem preventDefault o navegador bloqueia o drop
+  if(!col || !_dragTipo || !colunaAplica(col,_dragTipo)) return; // não permite — sem preventDefault o navegador bloqueia o drop
   ev.preventDefault();
   ev.currentTarget.classList.add("dragover");
 }
@@ -364,7 +362,7 @@ async function onDrop(ev, ordem){
   const comp = COMPONENTES.find(c=>c.id===compId);
   if(!comp) return;
   const col = colunas().find(c=>c.ordem===ordem);
-  if(!col || ordem===0 || !colunaAplica(col, comp.tipo_material)){
+  if(!col || !colunaAplica(col, comp.tipo_material)){
     toast("Essa etapa não se aplica a "+MATERIAL_LABEL[comp.tipo_material], "erro");
     return;
   }
@@ -471,10 +469,8 @@ function abrirCriarLote(itemId){
 
 // monta as opções de "situação atual" válidas pro material (Aguardando + as colunas que se aplicam a ele)
 function opcoesSituacaoHtml(tipoMaterial){
-  const opts = [{ordem:0, descricao:"Aguardando (nada feito ainda)"}].concat(
-    ESTAGIOS.filter(e=>tipoMaterial==="metal_duro" ? e.aplica_metal_duro : e.aplica_aco).sort((a,b)=>a.ordem-b.ordem)
-  );
-  return opts.map(o=>`<option value="${o.ordem}">${escHtml(o.descricao)}</option>`).join("");
+  const opts = ESTAGIOS.filter(e=>tipoMaterial==="metal_duro" ? e.aplica_metal_duro : e.aplica_aco).sort((a,b)=>a.ordem-b.ordem);
+  return opts.map(o=>`<option value="${o.ordem}">${escHtml(o.ordem===0?"Aguardando (nada feito ainda)":o.descricao)}</option>`).join("");
 }
 
 // atualiza o select de "situação atual" quando o tipo/checkbox de núcleo, carcaça ou luva muda

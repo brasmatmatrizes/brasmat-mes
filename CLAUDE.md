@@ -7,7 +7,7 @@ Sistema de execução de manufatura (MES) para a Brasmat — ferramentaria de ma
 - **Front-end estático puro** — sem build, sem servidor próprio. Cada página é um `.html` autocontido (HTML + CSS inline em `<style>` + JS inline em `<script>`).
 - **`status.js`** — lógica central compartilhada por todas as páginas: fetch ao Supabase, `status()`, helpers de progresso/tipo, e o painel de linha do tempo (`abrirPainelDetalhe`).
 - **Supabase** (PostgreSQL na nuvem) é o backend. O front usa **só a chave pública (publishable)** definida no topo do `status.js` (`SUPA_URL`, `SUPA_KEY`). Project ref: `hjvlznijsgdwurtsyukl`.
-- Deploy automático via **Vercel** (`brasmat-mes.vercel.app`) a cada push no `main`. Após mudança, lembrar de Ctrl+F5 (cache).
+- Deploy automático via **Vercel** (`brasmat-mes.vercel.app`) a cada push no `main` — **mas o webhook já falhou silenciosamente uma vez (18/07/2026)**: push confirmado no GitHub, Vercel não buildou nada, site ficou no ar com a versão antiga sem nenhum erro visível. **Sempre confirmar o deploy** (ver Convenções de trabalho), nunca assumir que push = no ar. Após mudança confirmada, lembrar de Ctrl+F5 (cache).
 
 ## Páginas (15)
 
@@ -62,6 +62,10 @@ O menu de navegação (`.nav` no topbar) deve conter as 15 páginas, em **todas*
 
 - **Edições cirúrgicas**: mexer só no que foi pedido. Não refatorar, renomear ou "melhorar" o entorno sem pedir. O usuário preza muito o que já funciona.
 - **Commit + push a cada alteração** concluída (o usuário acompanha pelo deploy). Mensagens de commit em inglês.
+- **Sempre confirmar o deploy depois do push — nunca assumir que subiu** (incidente real em 18/07/2026: push foi pro GitHub, o webhook da Vercel não disparou, e a tela ficou no ar com a versão antiga sem erro nenhum — o usuário só percebeu porque testou na mão). Checklist obrigatório após todo `git push origin main`:
+  1. Consultar o deployment mais recente do projeto (Vercel MCP: `get_deployment`/`list_deployments`, projeto `prj_WthhCKiz8Qc99oeAIDnQxVScm085`, team `team_7JmTWKZoXxpRc8jYDCuq7U6p`) e conferir que `githubCommitSha` bate com o commit que acabou de subir e `readyState` é `READY`.
+  2. Se não bater ou não aparecer em ~1 min: o webhook falhou — reacionar com um commit vazio (`git commit --allow-empty` + push) e reconferir. Não usar deploy de arquivo avulso (bypassa o Git e foge do fluxo documentado).
+  3. Só então testar a página real no ar (não só o preview local) e reportar ao usuário como concluído.
 - **Mostrar/explicar antes** de fazer mudanças estruturais ou investigações; ao corrigir divergência de dados, mostrar a evidência antes.
 - **Nunca mutar dado real em teste sem snapshot completo**: para testar, preferir leitura ou servidor local sem gravar. Se precisar mesmo escrever no Supabase real (PATCH/POST/DELETE em tabela de produção ou no bucket), **antes** capturar a linha inteira (`select=*` daquele id) e guardar; restaurar **exatamente a partir desse snapshot**, nunca por suposição/memória/fetch parcial; reconferir com `select=*`. Sem PITR no plano gratuito — se apagar, não volta.
 - **Design system**: usar as variáveis CSS de `:root` (`--bg`, `--accent`, `--ok`, `--warn`, `--danger`, `--mono`, etc.) — idênticas em todas as páginas. Manter o padrão visual existente.

@@ -168,26 +168,25 @@ async function buscarTotalRoteiro(pedido, codigo){
   return 0;
 }
 
-// Resumo dos lotes de um item na Separação de Material — agrupa por lote (não por componente),
-// pra deixar claro quando um item tem mais de 1 lote e quais já estão prontos.
+// Resumo dos lotes de um item na Separação de Material. Cada componente (material_lote_componentes)
+// já É um lote — uma posição (núcleo/carcaça/luva) com sua própria quantidade e numeração, independente
+// das outras posições do mesmo item (núcleo pode ter 2 lotes enquanto a carcaça tem só 1, por ex.).
+// "completo" = todo componente do item chegou em Pronto — não existe mais pareamento núcleo↔carcaça↔luva.
 // Recebe os arrays já carregados pela página chamadora (sem fetch próprio).
 function materialResumoItem(itemId, dados){
-  const lotesDoItem = (dados.lotes||[]).filter(l=>l.item_id===itemId);
-  if(!lotesDoItem.length) return null;
+  const comps = (dados.componentes||[]).filter(c=>c.item_id===itemId);
+  if(!comps.length) return null;
   const maxOrdem = Math.max(...(dados.estagios||[]).map(e=>e.ordem), 0);
   const ordemDoComponente = compId=>{
     const u = (dados.ultimos||[]).find(x=>x.componente_id===compId);
     return u ? u.estagio_ordem : 0;
   };
-  const detalhe = lotesDoItem.map(l=>{
-    const comps = (dados.componentes||[]).filter(c=>c.lote_id===l.id);
-    const completo = comps.length>0 && comps.every(c=>ordemDoComponente(c.id)>=maxOrdem);
-    return { numero: l.lote_numero, completo };
-  }).sort((a,b)=>a.numero-b.numero);
+  const detalhe = comps.map(c=>({
+    id: c.id, posicao: c.posicao, numero: c.lote_numero, quantidade: c.quantidade,
+    completo: ordemDoComponente(c.id) >= maxOrdem
+  })).sort((a,b)=> a.posicao===b.posicao ? a.numero-b.numero : a.posicao.localeCompare(b.posicao));
   const prontos = detalhe.filter(d=>d.completo).length;
-  const algumComponentePronto = (dados.componentes||[])
-    .filter(c=>lotesDoItem.some(l=>l.id===c.lote_id))
-    .some(c=>ordemDoComponente(c.id)>=maxOrdem);
+  const algumComponentePronto = prontos > 0;
   return { total: detalhe.length, prontos, completo: prontos===detalhe.length, algumComponentePronto, detalhe };
 }
 

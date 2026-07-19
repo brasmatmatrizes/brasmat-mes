@@ -240,7 +240,7 @@ function navTo(p){ location.href = p; }
 const POS_LABEL = { nucleo:"Núcleo", carcaca:"Carcaça", luva:"Luva" };
 const MATERIAL_LABEL = { metal_duro:"Metal Duro", aco:"Aço" };
 
-let ITENS_CAD=[], ESTAGIOS=[], LOTES=[], COMPONENTES=[], ULTIMOS=[];
+let ITENS_CAD=[], ESTAGIOS=[], COMPONENTES=[], ULTIMOS=[];
 
 // prazo_entrega é date puro — evita o bug de fuso do fmtDt (que assume timestamptz)
 function fmtDataPrazo(v){
@@ -248,8 +248,7 @@ function fmtDataPrazo(v){
   return isNaN(d) ? "—" : d.toLocaleDateString("pt-BR");
 }
 
-function itemDoLote(lote){ return ITENS_CAD.find(i=>i.id===lote.item_id) || null; }
-function loteDoComponente(comp){ return LOTES.find(l=>l.id===comp.lote_id) || null; }
+function itemDoComponente(comp){ return ITENS_CAD.find(i=>i.id===comp.item_id) || null; }
 function ultimoDoComponente(compId){ return ULTIMOS.find(u=>u.componente_id===compId) || null; }
 function maxOrdemEstagio(){ return Math.max(...ESTAGIOS.map(e=>e.ordem), 0); }
 
@@ -257,7 +256,7 @@ function fmtD(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"
 
 function popularFiltros(){
   const clientesComLote = new Set();
-  LOTES.forEach(l=>{ const it = itemDoLote(l); if(it && it.cliente) clientesComLote.add(it.cliente); });
+  COMPONENTES.forEach(c=>{ const it = itemDoComponente(c); if(it && it.cliente) clientesComLote.add(it.cliente); });
   const lista = [...clientesComLote].sort();
   document.getElementById("fcli").innerHTML = '<option value="">Todos os clientes</option>' +
     lista.map(c=>`<option value="${escHtml(c)}">${escHtml(String(c).replace(/^\d+_/,""))}</option>`).join("");
@@ -294,24 +293,22 @@ function linhasFiltradas(){
   const maxOrdem = maxOrdemEstagio();
 
   return COMPONENTES.map(comp=>{
-    const lote = loteDoComponente(comp);
-    if(!lote) return null;
-    const item = itemDoLote(lote);
+    const item = itemDoComponente(comp);
     if(!item) return null;
     const ultimo = ultimoDoComponente(comp.id);
     const ordem = ultimo ? ultimo.estagio_ordem : 0;
-    return { comp, lote, item, ultimo, ordem };
+    return { comp, item, ultimo, ordem };
   }).filter(r=>{
     if(!r) return false;
     if(cli && r.item.cliente !== cli) return false;
     if(mat && r.comp.tipo_material !== mat) return false;
-    if(di && String(r.lote.created_at).slice(0,10) < di) return false;
-    if(df && String(r.lote.created_at).slice(0,10) > df) return false;
+    if(di && String(r.comp.created_at).slice(0,10) < di) return false;
+    if(df && String(r.comp.created_at).slice(0,10) > df) return false;
     if(etapaF === "completo" && r.ordem < maxOrdem) return false;
     if(etapaF === "andamento" && r.ordem >= maxOrdem) return false;
     if(etapaF.startsWith("et:") && r.ordem !== parseInt(etapaF.slice(3),10)) return false;
     return true;
-  }).sort((a,b)=> new Date(b.ultimo?b.ultimo.data_evento:b.lote.created_at) - new Date(a.ultimo?a.ultimo.data_evento:a.lote.created_at));
+  }).sort((a,b)=> new Date(b.ultimo?b.ultimo.data_evento:b.comp.created_at) - new Date(a.ultimo?a.ultimo.data_evento:a.comp.created_at));
 }
 
 function render(){
@@ -324,7 +321,7 @@ function render(){
 function renderIndicadoresGerais(){
   let semLote = 0, andamento = 0;
   ITENS_CAD.forEach(item=>{
-    const resumo = materialResumoItem(item.id, {lotes:LOTES, componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS});
+    const resumo = materialResumoItem(item.id, {componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS});
     if(!resumo) semLote++;
     else if(!resumo.completo) andamento++;
   });
@@ -349,15 +346,15 @@ function renderTabela(linhas){
   }
   const maxOrdem = maxOrdemEstagio();
   body.innerHTML = linhas.map(r=>{
-    const {comp, lote, item, ultimo, ordem} = r;
+    const {comp, item, ultimo, ordem} = r;
     const completo = ordem>=maxOrdem;
     const etapaLabel = ultimo ? ultimo.estagio_descricao : "Aguardando";
     const dias = ultimo ? diasDesde(ultimo) : null;
     const tempoLabel = dias===null ? "—" : diasStr(dias);
-    const resumo = materialResumoItem(item.id, {lotes:LOTES, componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS});
+    const resumo = materialResumoItem(item.id, {componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS});
     const loteLabel = resumo && resumo.total>1
-      ? `Lote ${lote.lote_numero} <span class="lb ${resumo.completo?'ok':'warn'}">${resumo.prontos}/${resumo.total}</span>`
-      : `Lote ${lote.lote_numero}`;
+      ? `Lote ${comp.lote_numero} <span class="lb ${resumo.completo?'ok':'warn'}">${resumo.prontos}/${resumo.total}</span>`
+      : `Lote ${comp.lote_numero}`;
     return `<div class="tr ${completo?'completo':'andamento'}">
       <div class="td">${escHtml(item.codigo_peca)}</div>
       <div class="td">${escHtml(item.pedido||"—")} / ${escHtml(item.os||"—")}</div>
@@ -368,7 +365,7 @@ function renderTabela(linhas){
       <div class="td">${escHtml(etapaLabel)}</div>
       <div class="td">${tempoLabel}</div>
       <div class="td">${item.prazo_entrega ? fmtDataPrazo(item.prazo_entrega) : "—"}</div>
-      <div class="td" style="justify-content:center"><button class="btn-ico" title="Imprimir este lote" onclick="imprimirLote(${lote.id})">🖨</button></div>
+      <div class="td" style="justify-content:center"><button class="btn-ico" title="Imprimir este lote" onclick="imprimirComponente(${comp.id})">🖨</button></div>
     </div>`;
   }).join("");
 }
@@ -390,14 +387,14 @@ function descricaoFiltros(){
 function imprimirLista(){
   const linhas = linhasFiltradas();
   const linhasHtml = linhas.map(r=>{
-    const {comp, lote, item, ultimo} = r;
+    const {comp, item, ultimo} = r;
     const etapaLabel = ultimo ? ultimo.estagio_descricao : "Aguardando";
     return `<tr>
       <td>${escHtml(item.codigo_peca)}</td>
       <td>${escHtml(item.pedido||"—")}</td>
       <td>${escHtml(item.os||"—")}</td>
       <td>${escHtml(String(item.cliente||"—").replace(/^\d+_/,""))}</td>
-      <td style="text-align:center">${lote.lote_numero}</td>
+      <td style="text-align:center">${comp.lote_numero}</td>
       <td>${POS_LABEL[comp.posicao]}</td>
       <td>${MATERIAL_LABEL[comp.tipo_material]}</td>
       <td>${escHtml(etapaLabel)}</td>
@@ -414,50 +411,43 @@ function imprimirLista(){
   window.print();
 }
 
-async function imprimirLote(loteId){
-  const lote = LOTES.find(l=>l.id===loteId);
-  if(!lote) return;
-  const item = itemDoLote(lote);
-  const comps = COMPONENTES.filter(c=>c.lote_id===loteId);
-  const ids = comps.map(c=>c.id).join(",");
+async function imprimirComponente(compId){
+  const comp = COMPONENTES.find(c=>c.id===compId);
+  if(!comp) return;
+  const item = itemDoComponente(comp);
   let evArr = [];
   try{
-    const eventos = await supaFetch(`/rest/v1/material_eventos?select=componente_id,estagio_descricao,data_evento&componente_id=in.(${ids})&order=data_evento.asc`);
+    const eventos = await supaFetch(`/rest/v1/material_eventos?select=estagio_descricao,data_evento&componente_id=eq.${compId}&order=data_evento.asc`);
     evArr = Array.isArray(eventos) ? eventos : [];
   }catch(e){}
-  const blocos = comps.map(c=>{
-    const hist = evArr.filter(e=>e.componente_id===c.id);
-    const linhasHtml = hist.length
-      ? hist.map(e=>`<tr><td>${escHtml(e.estagio_descricao)}</td><td>${fmtDt(e.data_evento)}</td></tr>`).join("")
-      : `<tr><td colspan="2" style="text-align:center">ainda em Aguardando — nenhum evento</td></tr>`;
-    return `<div class="p-sub">${POS_LABEL[c.posicao]} (${MATERIAL_LABEL[c.tipo_material]})</div>
-      <table class="p-tbl"><tr><th>Etapa</th><th>Data</th></tr>${linhasHtml}</table>`;
-  }).join("");
+  const linhasHtml = evArr.length
+    ? evArr.map(e=>`<tr><td>${escHtml(e.estagio_descricao)}</td><td>${fmtDt(e.data_evento)}</td></tr>`).join("")
+    : `<tr><td colspan="2" style="text-align:center">ainda em Aguardando — nenhum evento</td></tr>`;
+  const bloco = `<div class="p-sub">${POS_LABEL[comp.posicao]} (${MATERIAL_LABEL[comp.tipo_material]}) — ${comp.quantidade} pç</div>
+    <table class="p-tbl"><tr><th>Etapa</th><th>Data</th></tr>${linhasHtml}</table>`;
   document.getElementById("printArea").innerHTML = `
-    <div class="p-top"><div class="p-logo">BRASMAT</div><div class="p-title">SEPARAÇÃO DE MATERIAL — LOTE ${lote.lote_numero}</div><div style="font-size:10px">${new Date().toLocaleDateString("pt-BR")}</div></div>
+    <div class="p-top"><div class="p-logo">BRASMAT</div><div class="p-title">SEPARAÇÃO DE MATERIAL — LOTE ${comp.lote_numero}</div><div style="font-size:10px">${new Date().toLocaleDateString("pt-BR")}</div></div>
     <div class="p-hdr">
       <div class="p-hf"><b>CÓDIGO:</b> ${escHtml(item?item.codigo_peca:"—")}</div>
       <div class="p-hf"><b>PEDIDO:</b> ${escHtml(item?item.pedido||"—":"—")}</div>
       <div class="p-hf"><b>OS:</b> ${escHtml(item?item.os||"—":"—")}</div>
       <div class="p-hf"><b>CLIENTE:</b> ${escHtml(item?String(item.cliente||"—").replace(/^\d+_/,""):"—")}</div>
     </div>
-    ${blocos}`;
+    ${bloco}`;
   window.print();
 }
 
 // ---- INIT ----
 async function init(){
   document.getElementById("slbl").textContent = "carregando...";
-  const [itensCad, estagios, lotes, componentes, ultimos] = await Promise.all([
+  const [itensCad, estagios, componentes, ultimos] = await Promise.all([
     supaFetch("/rest/v1/itens?select=*&limit=10000"),
     supaFetch("/rest/v1/material_estagios?select=*&ativo=eq.true&order=ordem&limit=20"),
-    supaFetch("/rest/v1/material_lotes?select=*&limit=10000"),
     supaFetch("/rest/v1/material_lote_componentes?select=*&limit=10000"),
     supaFetch("/rest/v1/material_ultimo_evento?select=*&limit=10000")
   ]);
   ITENS_CAD = Array.isArray(itensCad) ? itensCad : [];
   ESTAGIOS = Array.isArray(estagios) ? estagios : [];
-  LOTES = Array.isArray(lotes) ? lotes : [];
   COMPONENTES = Array.isArray(componentes) ? componentes : [];
   ULTIMOS = Array.isArray(ultimos) ? ultimos : [];
   popularFiltros();

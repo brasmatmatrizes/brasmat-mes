@@ -158,6 +158,7 @@
 .mesa-existente-status{color:var(--text3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mesa-existente-badge{color:var(--ok)}
 .mesa-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--border)}
+.mesa-pos-sec{border:1px solid var(--border);border-radius:12px;padding:12px 14px}
 
 /* MODO TV — monitor fixo na parede, só leitura, fonte maior, sem drag/clique */
 body.tv-mode .search-wrap,body.tv-mode .hint{display:none}
@@ -287,8 +288,8 @@ const POS_LABEL = { nucleo:"Núcleo", carcaca:"Carcaça", luva:"Luva" };
 const MATERIAL_LABEL = { metal_duro:"Metal Duro", aco:"Aço" };
 
 let ITENS_CAD = [];     // itens cadastrados (fonte da busca p/ criar lote)
-let LOTES = [];         // material_lotes
-let COMPONENTES = [];   // material_lote_componentes
+let COMPONENTES = [];   // material_lote_componentes — cada linha já É um lote (uma posição/núcleo,carcaça,luva/
+                        // com sua própria quantidade e numeração, independente das outras posições do item)
 let ESTAGIOS = [];      // material_estagios (5 colunas reais, ordem 1-5)
 let ULTIMOS = [];       // material_ultimo_evento (por componente_id)
 let _dragCompId = null;
@@ -355,11 +356,8 @@ function ordemAtual(compId){
   const u = ultimoDoComponente(compId);
   return u ? u.estagio_ordem : 0;
 }
-function itemDoLote(lote){
-  return ITENS_CAD.find(i=>i.id===lote.item_id) || null;
-}
-function loteDoComponente(comp){
-  return LOTES.find(l=>l.id===comp.lote_id) || null;
+function itemDoComponente(comp){
+  return ITENS_CAD.find(i=>i.id===comp.item_id) || null;
 }
 function diasParado(compId){
   const u = ultimoDoComponente(compId);
@@ -368,22 +366,14 @@ function diasParado(compId){
   if(isNaN(d)) return null;
   return Math.max(0, Math.floor((Date.now()-d.getTime())/86400000)); // relógio do servidor pode diferir por ms
 }
-function loteCompleto(loteId){
-  const comps = COMPONENTES.filter(c=>c.lote_id===loteId);
-  if(!comps.length) return false;
-  const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
-  return comps.every(c=>ordemAtual(c.id)>=maxOrdem);
-}
-// outras peças do mesmo lote que ainda não chegaram no Pronto (pra avisar "aguardando X")
-function pendentesDoLote(loteId, exceptCompId){
-  const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
-  return COMPONENTES.filter(c=>c.lote_id===loteId && c.id!==exceptCompId && ordemAtual(c.id)<maxOrdem);
+// outros lotes da mesma posição (núcleo/carcaça/luva) do mesmo item — pra numerar "lote N de M"
+function irmaosMesmaPosicao(comp){
+  return COMPONENTES.filter(c=>c.item_id===comp.item_id && c.posicao===comp.posicao);
 }
 
 // chave de urgência: vencido (mais atrasado primeiro) > vence hoje/em breve (mais próximo primeiro) > sem prazo (mais dias parado primeiro)
 function chavePrioridade(comp){
-  const lote = loteDoComponente(comp);
-  const item = lote ? itemDoLote(lote) : null;
+  const item = itemDoComponente(comp);
   const dias = diasParado(comp.id) || 0;
   let prazoRank = 2, prazoValor = 0;
   if(item && item.prazo_entrega){
@@ -428,10 +418,9 @@ function cardBateAndon(comp){
     return !!compraCol && ordemAtual(comp.id)===compraCol.ordem;
   }
   if(_andonFiltro==="prontos"){
-    const lote = loteDoComponente(comp);
-    const item = lote ? itemDoLote(lote) : null;
+    const item = itemDoComponente(comp);
     if(!item) return false;
-    const r = materialResumoItem(item.id, {lotes:LOTES, componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS});
+    const r = materialResumoItem(item.id, {componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS});
     return !!(r && r.completo);
   }
   return true;
@@ -439,9 +428,9 @@ function cardBateAndon(comp){
 function calcAndon(){
   const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
   let kitsProntos = 0;
-  const itensComLote = new Set(LOTES.map(l=>l.item_id));
+  const itensComLote = new Set(COMPONENTES.map(c=>c.item_id));
   itensComLote.forEach(itemId=>{
-    const r = materialResumoItem(itemId, {lotes:LOTES, componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS});
+    const r = materialResumoItem(itemId, {componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS});
     if(r && r.completo) kitsProntos++;
   });
   const parados = COMPONENTES.filter(c=>{
@@ -490,10 +479,15 @@ function renderBoard(){
   wrap.innerHTML = cols.map(col=>{
     let comps = ordenarPorUrgencia(COMPONENTES.filter(c=>ordemAtual(c.id)===col.ordem));
     let concluidosCount = 0;
-    // coluna Pronto: cartão cujo lote já está 100% completo "sai" da vista por padrão (kit já pode ir pro Roteiro)
+    // coluna Pronto: cartão cujo ITEM já está 100% completo (todas as posições, todos os lotes) some da vista por padrão
     if(col.ordem===maxOrdem){
-      const pendentes = comps.filter(c=>!loteCompleto(c.lote_id));
-      const concluidos = comps.filter(c=>loteCompleto(c.lote_id));
+      const itemCompleto = c=>{
+        const item = itemDoComponente(c);
+        const r = item ? materialResumoItem(item.id, {componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS}) : null;
+        return !!(r && r.completo);
+      };
+      const pendentes = comps.filter(c=>!itemCompleto(c));
+      const concluidos = comps.filter(c=>itemCompleto(c));
       concluidosCount = concluidos.length;
       comps = _mostrarConcluidos ? comps : pendentes;
     }
@@ -513,24 +507,20 @@ function renderBoard(){
 }
 
 function renderCard(comp){
-  const lote = loteDoComponente(comp);
-  const item = lote ? itemDoLote(lote) : null;
+  const item = itemDoComponente(comp);
   const cod = item ? item.codigo_peca : "(?)";
   const dias = diasParado(comp.id);
   const diasHtml = dias===null ? "" : `<span class="mc-dias${dias>=3?' atraso':''}">${dias===0?"hoje":dias+"d parado"}</span>`;
-  const resumoItem = item ? materialResumoItem(item.id, {lotes:LOTES, componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS}) : null;
-  const loteTag = resumoItem && resumoItem.total>1 ? ` · lote ${lote.lote_numero}` : "";
+  const resumoItem = item ? materialResumoItem(item.id, {componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS}) : null;
+  const irmaos = irmaosMesmaPosicao(comp);
+  const loteTag = irmaos.length>1 ? ` · lote ${comp.lote_numero} de ${irmaos.length}` : "";
   const lotesResumoHtml = resumoItem && resumoItem.total>1
     ? `<div class="mc-lotes ${resumoItem.completo?'ok':'warn'}">${resumoItem.completo ? `✓ todos os ${resumoItem.total} lotes prontos` : `⚠ ${resumoItem.prontos} de ${resumoItem.total} lotes prontos`}</div>`
     : "";
   const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
   const estaNoPronto = ordemAtual(comp.id)>=maxOrdem;
-  const completo = estaNoPronto && loteCompleto(comp.lote_id);
-  const pendentes = estaNoPronto && !completo && lote ? pendentesDoLote(comp.lote_id, comp.id) : [];
-  const aguardandoHtml = pendentes.length
-    ? `<div class="mc-aguardando">pronto — aguardando ${pendentes.map(p=>POS_LABEL[p.posicao]).join(", ")}</div>` : "";
   let prazoHtml = "";
-  if(item && item.prazo_entrega && !completo){
+  if(item && item.prazo_entrega && !estaNoPronto){
     const hoje = new Date();
     const hojeISO = hoje.getFullYear()+"-"+String(hoje.getMonth()+1).padStart(2,"0")+"-"+String(hoje.getDate()).padStart(2,"0");
     const pz = String(item.prazo_entrega).slice(0,10);
@@ -541,15 +531,13 @@ function renderCard(comp){
   // modo TV: sem drag, sem clique, sem hover — só leitura, pra monitor fixo na parede
   const interAttrs = _tvMode ? "" : `draggable="true"
       ondragstart="onDragStart(event,${comp.id},'${comp.tipo_material}')" ondragend="onDragEnd(event)"
-      onmouseenter="destacarLote(${comp.lote_id})" onmouseleave="limparDestaqueLote()"
+      onmouseenter="destacarItem(${comp.item_id})" onmouseleave="limparDestaqueItem()"
       onclick="abrirComponente(${comp.id})"`;
-  return `<div class="mat-card${dimCls}" data-comp-id="${comp.id}" data-lote-id="${comp.lote_id}" ${interAttrs}>
+  return `<div class="mat-card${dimCls}" data-comp-id="${comp.id}" data-item-id="${comp.item_id}" ${interAttrs}>
     <div class="mc-top"><div class="mc-cod">${escHtml(cod)}</div><span class="mc-pos ${comp.posicao}">${POS_LABEL[comp.posicao]}</span></div>
     <div class="mc-meta">${item?("Pedido "+escHtml(item.pedido||"—")+" · OS "+escHtml(item.os||"—")):""}${loteTag}</div>
-    <div class="mc-bottom"><span class="mc-mat">${MATERIAL_LABEL[comp.tipo_material]}</span><span class="mc-qtd">${lote?lote.quantidade:"—"} pç</span>${prazoHtml}${diasHtml}</div>
+    <div class="mc-bottom"><span class="mc-mat">${MATERIAL_LABEL[comp.tipo_material]}</span><span class="mc-qtd">${comp.quantidade} pç</span>${prazoHtml}${diasHtml}</div>
     ${trilhaHtml(comp)}
-    ${aguardandoHtml}
-    ${completo ? '<div class="mc-completo">✓ kit completo</div>' : ''}
     ${lotesResumoHtml}
   </div>`;
 }
@@ -560,11 +548,11 @@ function trilhaHtml(comp){
   const atual = ordemAtual(comp.id);
   return `<div class="mc-trilha">${aplicaveis.map(e=>`<span class="mc-dot${e.ordem<=atual?' filled':''}"></span>`).join("")}</div>`;
 }
-// realça no board os cartões irmãos do mesmo lote (revela a hierarquia item→lote→componente sob demanda)
-function destacarLote(loteId){
-  document.querySelectorAll(`.mat-card[data-lote-id="${loteId}"]`).forEach(el=>el.classList.add("mc-lote-hover"));
+// realça no board os outros lotes do mesmo item (qualquer posição) — mostra sob demanda o quanto falta pra peça inteira
+function destacarItem(itemId){
+  document.querySelectorAll(`.mat-card[data-item-id="${itemId}"]`).forEach(el=>el.classList.add("mc-lote-hover"));
 }
-function limparDestaqueLote(){
+function limparDestaqueItem(){
   document.querySelectorAll(".mat-card.mc-lote-hover").forEach(el=>el.classList.remove("mc-lote-hover"));
 }
 
@@ -654,7 +642,7 @@ function buscarSugg(q){
     box.innerHTML = `<div class="sugg-item" style="cursor:default"><div style="color:var(--text3);font-size:12px">Nenhum item encontrado com "${escHtml(q)}". Cadastre em Cadastro › Item.</div></div>`;
   }else{
     box.innerHTML = lista.map(r=>{
-      const nLotes = LOTES.filter(l=>l.item_id===r.id).length;
+      const nLotes = COMPONENTES.filter(c=>c.item_id===r.id).length;
       const tag = nLotes ? `<span class="badge-pill" style="background:rgba(59,127,255,.15);color:var(--accent)">${nLotes} lote(s)</span>` : `<span class="badge-pill" style="background:var(--bg4);color:var(--text3)">sem lote</span>`;
       return `<div class="sugg-item" onclick="abrirMesa(${r.id})">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
@@ -670,19 +658,14 @@ document.addEventListener("click", e=>{
   if(!e.target.closest(".search-wrap")) document.getElementById("sugg").style.display="none";
 });
 
-// monta as opções de "situação atual" válidas pro material (Aguardando + as colunas que se aplicam a ele)
-// usada pelo fluxo de "adicionar componente faltante" (renderAdicionarComponente) — a Mesa não usa esta função
-function opcoesSituacaoHtml(tipoMaterial){
-  const opts = ESTAGIOS.filter(e=>tipoMaterial==="metal_duro" ? e.aplica_metal_duro : e.aplica_aco).sort((a,b)=>a.ordem-b.ordem);
-  return opts.map(o=>`<option value="${o.ordem}">${escHtml(o.ordem===0?"Aguardando (nada feito ainda)":o.descricao)}</option>`).join("");
-}
-
 // ---- MESA DE PLANEJAMENTO ----
-// Planeja TODOS os lotes de um item de uma vez, antes de qualquer cartão existir no Kanban.
-// Estado é só rascunho em memória até "Criar lotes" — nada é gravado antes disso.
+// Planeja os lotes de um item ANTES de qualquer cartão existir no Kanban. Cada posição (núcleo/carcaça/
+// luva) planeja sua PRÓPRIA lista de lotes, independente das outras — o núcleo pode ter 2 lotes enquanto
+// a carcaça tem só 1, por exemplo, porque cada material tem sua própria lógica de fornecimento.
+// Estado é só rascunho em memória até salvar — nada é gravado antes disso.
 let _mesaItem = null;
-let _mesaEstrutura = { nucleo:null, carcaca:false, luva:false }; // molde: quais posições as linhas abaixo têm
-let _mesaLinhas = [];      // rascunho de lotes: [{tempId, quantidade, observacao, comp:{nucleo:{fato,intencao},...}}]
+let _mesaEstrutura = { nucleo:null, carcaca:false, luva:false }; // molde: quais posições existem na peça
+let _mesaPosicoes = {};    // { nucleo:[linha,...], carcaca:[...], luva:[...] } — só existe a chave se a posição está ativa
 let _mesaTempSeq = 1;
 let _mesaConcluirChecked = false; // estado do checkbox "planejamento concluído" — em variável pra sobreviver a um clique sem precisar re-renderizar tudo
 
@@ -695,7 +678,7 @@ function abrirMesa(itemId){
   if(!item) return;
   _mesaItem = item;
   _mesaEstrutura = { nucleo:null, carcaca:false, luva:false };
-  _mesaLinhas = [];
+  _mesaPosicoes = {};
   _mesaConcluirChecked = !!item.plano_separacao_concluido;
   renderMesa();
   abrirMesaPainel();
@@ -709,98 +692,104 @@ function fecharMesa(){
   document.getElementById("mesaPanel").classList.remove("open");
 }
 
-function mesaNovaLinhaObj(qtd, comp){
-  return { tempId:_mesaTempSeq++, quantidade:qtd, observacao:"", comp: comp ? JSON.parse(JSON.stringify(comp)) : {} };
+function mesaNovaLinhaObj(qtd){
+  return { tempId:_mesaTempSeq++, quantidade:qtd, observacao:"", fato:0, intencao:null };
 }
-function mesaAlocado(){
-  const drafts = _mesaLinhas.reduce((s,l)=>s+(parseInt(l.quantidade,10)||0),0);
-  const existentes = _mesaItem ? LOTES.filter(l=>l.item_id===_mesaItem.id).reduce((s,l)=>s+(parseInt(l.quantidade,10)||0),0) : 0;
+// quanto já está alocado numa posição (lotes já salvos + rascunho) — cada posição soma só a si mesma
+function mesaAlocado(pos){
+  const drafts = (_mesaPosicoes[pos]||[]).reduce((s,l)=>s+(parseInt(l.quantidade,10)||0),0);
+  const existentes = _mesaItem
+    ? COMPONENTES.filter(c=>c.item_id===_mesaItem.id && c.posicao===pos).reduce((s,c)=>s+(parseInt(c.quantidade,10)||0),0)
+    : 0;
   return drafts+existentes;
 }
-// garante que toda linha tenha exatamente as posições ativas na estrutura (molde) — chamada sempre que a estrutura muda
-function mesaSincronizarComponentes(){
-  _mesaLinhas.forEach(l=>{
-    ["nucleo","carcaca","luva"].forEach(pos=>{
-      const ativo = pos==="nucleo" ? !!_mesaEstrutura.nucleo : !!_mesaEstrutura[pos];
-      if(ativo && !l.comp[pos]) l.comp[pos] = { fato:0, intencao:null };
-      if(!ativo && l.comp[pos]) delete l.comp[pos];
-    });
+// garante que exista (ou não) a lista de rascunho de cada posição, conforme a estrutura da peça
+function mesaSincronizar(){
+  ["nucleo","carcaca","luva"].forEach(pos=>{
+    const ativo = pos==="nucleo" ? !!_mesaEstrutura.nucleo : !!_mesaEstrutura[pos];
+    if(ativo && !_mesaPosicoes[pos]) _mesaPosicoes[pos] = [];
+    if(!ativo && _mesaPosicoes[pos]) delete _mesaPosicoes[pos];
   });
 }
-function mesaSetNucleo(tipo){
-  const primeiraVez = !_mesaEstrutura.nucleo && !_mesaLinhas.length;
-  _mesaEstrutura.nucleo = (_mesaEstrutura.nucleo===tipo) ? null : tipo;
-  mesaSincronizarComponentes();
-  if(_mesaEstrutura.nucleo && primeiraVez){
+// ao ativar uma posição pela primeira vez, já cria a primeira linha com o restante não alocado — fluxo mínimo
+function mesaAtivarPosicaoSeVazia(pos){
+  if(_mesaPosicoes[pos] && _mesaPosicoes[pos].length===0){
     const total = parseInt(_mesaItem.quantidade,10)||0;
-    const restante = Math.max(0, total-mesaAlocado());
-    _mesaLinhas.push(mesaNovaLinhaObj(restante||1));
-    mesaSincronizarComponentes();
+    const restante = Math.max(0, total-mesaAlocado(pos));
+    _mesaPosicoes[pos].push(mesaNovaLinhaObj(restante||1));
   }
+}
+function mesaSetNucleo(tipo){
+  _mesaEstrutura.nucleo = (_mesaEstrutura.nucleo===tipo) ? null : tipo;
+  mesaSincronizar();
+  if(_mesaEstrutura.nucleo) mesaAtivarPosicaoSeVazia('nucleo');
   renderMesa();
 }
 function mesaToggle(pos){
   _mesaEstrutura[pos] = !_mesaEstrutura[pos];
-  mesaSincronizarComponentes();
+  mesaSincronizar();
+  if(_mesaEstrutura[pos]) mesaAtivarPosicaoSeVazia(pos);
   renderMesa();
 }
-function mesaAdicionarLinha(){
+function mesaAdicionarLinha(pos){
   const total = parseInt(_mesaItem.quantidade,10)||0;
-  const restante = Math.max(0, total-mesaAlocado());
-  _mesaLinhas.push(mesaNovaLinhaObj(restante||1));
-  mesaSincronizarComponentes();
+  const restante = Math.max(0, total-mesaAlocado(pos));
+  _mesaPosicoes[pos].push(mesaNovaLinhaObj(restante||1));
   renderMesa();
 }
-function mesaDividir(tempId){
-  const idx = _mesaLinhas.findIndex(l=>l.tempId===tempId);
+function mesaDividir(pos, tempId){
+  const linhas = _mesaPosicoes[pos]; if(!linhas) return;
+  const idx = linhas.findIndex(l=>l.tempId===tempId);
   if(idx<0) return;
-  const l = _mesaLinhas[idx];
+  const l = linhas[idx];
   const qtd = parseInt(l.quantidade,10)||0;
   if(qtd<2){ toast("Quantidade insuficiente para dividir", "erro"); return; }
   const metade1 = Math.ceil(qtd/2), metade2 = qtd-metade1;
   l.quantidade = metade1;
-  const nova = mesaNovaLinhaObj(metade2, l.comp);
-  nova.observacao = l.observacao;
-  _mesaLinhas.splice(idx+1,0,nova);
+  const nova = mesaNovaLinhaObj(metade2);
+  nova.observacao = l.observacao; nova.fato = l.fato; nova.intencao = l.intencao;
+  linhas.splice(idx+1,0,nova);
   renderMesa();
 }
-function mesaDuplicar(tempId){
-  const idx = _mesaLinhas.findIndex(l=>l.tempId===tempId);
+function mesaDuplicar(pos, tempId){
+  const linhas = _mesaPosicoes[pos]; if(!linhas) return;
+  const idx = linhas.findIndex(l=>l.tempId===tempId);
   if(idx<0) return;
-  const l = _mesaLinhas[idx];
-  const nova = mesaNovaLinhaObj(l.quantidade, l.comp);
-  nova.observacao = l.observacao;
-  _mesaLinhas.splice(idx+1,0,nova);
+  const l = linhas[idx];
+  const nova = mesaNovaLinhaObj(l.quantidade);
+  nova.observacao = l.observacao; nova.fato = l.fato; nova.intencao = l.intencao;
+  linhas.splice(idx+1,0,nova);
   renderMesa();
 }
-function mesaRemoverLinha(tempId){
-  _mesaLinhas = _mesaLinhas.filter(l=>l.tempId!==tempId);
+function mesaRemoverLinha(pos, tempId){
+  if(!_mesaPosicoes[pos]) return;
+  _mesaPosicoes[pos] = _mesaPosicoes[pos].filter(l=>l.tempId!==tempId);
   renderMesa();
 }
-// digitação de quantidade/observação: só atualiza estado + a barra (renderMesa() completo perderia o foco do campo)
-function mesaOnQtdInput(tempId, val){
-  const l = _mesaLinhas.find(x=>x.tempId===tempId);
+// digitação de quantidade/observação: só atualiza estado + a barra daquela posição (renderMesa() completo perderia o foco do campo)
+function mesaOnQtdInput(pos, tempId, val){
+  const l = (_mesaPosicoes[pos]||[]).find(x=>x.tempId===tempId);
   if(!l) return;
   l.quantidade = val;
-  mesaAtualizarBarra();
+  mesaAtualizarBarra(pos);
 }
-function mesaOnQtdChange(tempId){
-  const l = _mesaLinhas.find(x=>x.tempId===tempId);
+function mesaOnQtdChange(pos, tempId){
+  const l = (_mesaPosicoes[pos]||[]).find(x=>x.tempId===tempId);
   if(!l) return;
   const n = parseInt(l.quantidade,10);
   l.quantidade = (n && n>0) ? n : 1;
   renderMesa();
 }
-function mesaOnObsInput(tempId, val){
-  const l = _mesaLinhas.find(x=>x.tempId===tempId);
+function mesaOnObsInput(pos, tempId, val){
+  const l = (_mesaPosicoes[pos]||[]).find(x=>x.tempId===tempId);
   if(l) l.observacao = val;
 }
-function mesaAtualizarBarra(){
-  const fill = document.getElementById("mesaAllocFill");
-  const lbl = document.getElementById("mesaAllocLbl");
+function mesaAtualizarBarra(pos){
+  const fill = document.getElementById("mesaAllocFill_"+pos);
+  const lbl = document.getElementById("mesaAllocLbl_"+pos);
   if(!fill || !_mesaItem) return;
   const total = parseInt(_mesaItem.quantidade,10)||0;
-  const alocado = mesaAlocado();
+  const alocado = mesaAlocado(pos);
   const pct = total>0 ? Math.min(100, alocado/total*100) : 0;
   fill.style.width = pct+"%";
   fill.classList.toggle("over", alocado>total);
@@ -808,94 +797,107 @@ function mesaAtualizarBarra(){
 }
 
 // clique na trilha = FATO ("já está aqui" — vira evento real ao salvar); clicar de novo no mesmo ponto desfaz
-function mesaSetFato(tempId, pos, ordem){
-  const l = _mesaLinhas.find(x=>x.tempId===tempId);
-  if(!l || !l.comp[pos]) return;
-  l.comp[pos].fato = (l.comp[pos].fato===ordem) ? 0 : ordem;
-  if(l.comp[pos].fato>0) l.comp[pos].intencao = null;
+function mesaSetFato(pos, tempId, ordem){
+  const l = (_mesaPosicoes[pos]||[]).find(x=>x.tempId===tempId);
+  if(!l) return;
+  l.fato = (l.fato===ordem) ? 0 : ordem;
+  if(l.fato>0) l.intencao = null;
   renderMesa();
 }
-// só disponível enquanto o componente ainda está em Aguardando (fato=0) — intenção nunca vira evento sozinha
-function mesaSetIntencao(tempId, pos, ordem){
-  const l = _mesaLinhas.find(x=>x.tempId===tempId);
-  if(!l || !l.comp[pos]) return;
-  l.comp[pos].intencao = (l.comp[pos].intencao===ordem) ? null : ordem;
+// só disponível enquanto a linha ainda está em Aguardando (fato=0) — intenção nunca vira evento sozinha
+function mesaSetIntencao(pos, tempId, ordem){
+  const l = (_mesaPosicoes[pos]||[]).find(x=>x.tempId===tempId);
+  if(!l) return;
+  l.intencao = (l.intencao===ordem) ? null : ordem;
   renderMesa();
 }
 
-function mesaTrilhaHtml(tempId, pos, estado, tipoMaterial){
+function mesaTrilhaHtml(pos, tempId, l, tipoMaterial){
   const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
   const aplicaveis = ESTAGIOS.filter(e=>e.ordem>0 && colunaAplica(e,tipoMaterial)).sort((a,b)=>a.ordem-b.ordem);
   const dots = aplicaveis.map(e=>{
-    const filled = estado.fato>0 && e.ordem<=estado.fato;
-    return `<span class="mesa-dot${filled?' filled':''}" title="${escHtml(e.ordem>=maxOrdem?'Pronto':e.descricao)}" onclick="mesaSetFato(${tempId},'${pos}',${e.ordem})"></span>`;
+    const filled = l.fato>0 && e.ordem<=l.fato;
+    return `<span class="mesa-dot${filled?' filled':''}" title="${escHtml(e.ordem>=maxOrdem?'Pronto':e.descricao)}" onclick="mesaSetFato('${pos}',${tempId},${e.ordem})"></span>`;
   }).join("");
-  const statusHtml = estado.fato>0
-    ? `<div class="mesa-comp-status">${estado.fato>=maxOrdem?"✓ Pronto":"já em: "+escHtml((ESTAGIOS.find(e=>e.ordem===estado.fato)||{}).descricao||"")}</div>`
-    : mesaIntencaoHtml(tempId,pos,estado,tipoMaterial);
+  const statusHtml = l.fato>0
+    ? `<div class="mesa-comp-status">${l.fato>=maxOrdem?"✓ Pronto":"já em: "+escHtml((ESTAGIOS.find(e=>e.ordem===l.fato)||{}).descricao||"")}</div>`
+    : mesaIntencaoHtml(pos,tempId,l,tipoMaterial);
   return `<div class="mesa-trilha">${dots}</div>${statusHtml}`;
 }
 // "entra por" — só as etapas intermediárias (exclui Aguardando e Pronto, que não são pontos de entrada)
-function mesaIntencaoHtml(tempId, pos, estado, tipoMaterial){
+function mesaIntencaoHtml(pos, tempId, l, tipoMaterial){
   const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
   const opcoes = ESTAGIOS.filter(e=>e.ordem>0 && e.ordem<maxOrdem && colunaAplica(e,tipoMaterial)).sort((a,b)=>a.ordem-b.ordem);
   if(!opcoes.length) return "";
   return `<div class="mesa-intencao"><span class="mesa-intencao-lbl">entra por:</span>${opcoes.map(o=>
-    `<button type="button" class="mesa-chip mini${estado.intencao===o.ordem?' on':''}" onclick="mesaSetIntencao(${tempId},'${pos}',${o.ordem})">${escHtml(o.descricao)}</button>`
+    `<button type="button" class="mesa-chip mini${l.intencao===o.ordem?' on':''}" onclick="mesaSetIntencao('${pos}',${tempId},${o.ordem})">${escHtml(o.descricao)}</button>`
   ).join("")}</div>`;
 }
 
-function mesaLinhaHtml(l, i){
-  const posicoes = ["nucleo","carcaca","luva"].filter(p=>l.comp[p]);
-  const compsHtml = posicoes.map(p=>{
-    const tipoMaterial = p==="nucleo" ? _mesaEstrutura.nucleo : "aco";
-    return `<div class="mesa-comp">
-      <div class="mesa-comp-lbl">${POS_LABEL[p]} <span class="mesa-comp-mat">${MATERIAL_LABEL[tipoMaterial]}</span></div>
-      ${mesaTrilhaHtml(l.tempId,p,l.comp[p],tipoMaterial)}
-    </div>`;
-  }).join("");
+function mesaLinhaHtml(pos, l, i, tipoMaterial){
   return `<div class="mesa-lote">
     <div class="mesa-lote-hdr">
       <span class="mesa-lote-tag">Lote ${i+1}</span>
-      <input class="sp-inp mesa-qtd-inp" type="number" min="1" id="mesaQtd_${l.tempId}" value="${escHtml(String(l.quantidade))}" oninput="mesaOnQtdInput(${l.tempId},this.value)" onchange="mesaOnQtdChange(${l.tempId})">
+      <input class="sp-inp mesa-qtd-inp" type="number" min="1" value="${escHtml(String(l.quantidade))}" oninput="mesaOnQtdInput('${pos}',${l.tempId},this.value)" onchange="mesaOnQtdChange('${pos}',${l.tempId})">
       <span class="mesa-qtd-suf">pç</span>
-      <input class="sp-inp mesa-obs-inp" placeholder="observação (opcional)" value="${escHtml(l.observacao||"")}" oninput="mesaOnObsInput(${l.tempId},this.value)">
+      <input class="sp-inp mesa-obs-inp" placeholder="observação (opcional)" value="${escHtml(l.observacao||"")}" oninput="mesaOnObsInput('${pos}',${l.tempId},this.value)">
       <div class="mesa-lote-acoes">
-        <button type="button" class="btn-g mini" title="Dividir a quantidade em dois lotes" onclick="mesaDividir(${l.tempId})">⑃ dividir</button>
-        <button type="button" class="btn-g mini" title="Duplicar este lote" onclick="mesaDuplicar(${l.tempId})">⧉ duplicar</button>
-        <button type="button" class="btn-g mini danger" title="Remover este lote do planejamento" onclick="mesaRemoverLinha(${l.tempId})">🗑</button>
+        <button type="button" class="btn-g mini" title="Dividir a quantidade em dois lotes" onclick="mesaDividir('${pos}',${l.tempId})">⑃ dividir</button>
+        <button type="button" class="btn-g mini" title="Duplicar este lote" onclick="mesaDuplicar('${pos}',${l.tempId})">⧉ duplicar</button>
+        <button type="button" class="btn-g mini danger" title="Remover este lote do planejamento" onclick="mesaRemoverLinha('${pos}',${l.tempId})">🗑</button>
       </div>
     </div>
-    <div class="mesa-lote-comps">${compsHtml}</div>
+    ${mesaTrilhaHtml(pos,l.tempId,l,tipoMaterial)}
   </div>`;
 }
-function mesaLoteExistenteHtml(lote){
+function mesaLoteExistenteHtml(comp){
   const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
-  const comps = COMPONENTES.filter(c=>c.lote_id===lote.id);
-  const completo = comps.length>0 && comps.every(c=>ordemAtual(c.id)>=maxOrdem);
-  const compsLbl = comps.map(c=>{
-    const u = ultimoDoComponente(c.id);
-    return POS_LABEL[c.posicao]+": "+(u?escHtml(u.estagio_descricao):"Aguardando");
-  }).join(" · ");
-  const abrirPrimeiro = comps.length ? `fecharMesa();abrirComponente(${comps[0].id})` : "";
-  return `<div class="mesa-existente-row${completo?' ok':''}" ${abrirPrimeiro?`onclick="${abrirPrimeiro}"`:''}>
-    <span class="mesa-existente-num">Lote ${lote.lote_numero}</span>
-    <span class="mesa-qtd-suf">${lote.quantidade} pç</span>
-    <span class="mesa-existente-status">${compsLbl||"sem componentes"}</span>
+  const u = ultimoDoComponente(comp.id);
+  const completo = ordemAtual(comp.id) >= maxOrdem;
+  return `<div class="mesa-existente-row${completo?' ok':''}" onclick="fecharMesa();abrirComponente(${comp.id})">
+    <span class="mesa-existente-num">Lote ${comp.lote_numero}</span>
+    <span class="mesa-qtd-suf">${comp.quantidade} pç</span>
+    <span class="mesa-existente-status">${escHtml(u?u.estagio_descricao:"Aguardando")}</span>
     ${completo?'<span class="mesa-existente-badge">✓ Pronto</span>':''}
+  </div>`;
+}
+
+// uma seção inteira por posição (núcleo/carcaça/luva) — cada uma com sua própria barra de alocação e lista de lotes
+function mesaSecaoPosicaoHtml(pos){
+  const ativo = pos==="nucleo" ? !!_mesaEstrutura.nucleo : !!_mesaEstrutura[pos];
+  if(!ativo) return "";
+  const tipoMaterial = pos==="nucleo" ? _mesaEstrutura.nucleo : "aco";
+  const linhas = _mesaPosicoes[pos] || [];
+  const total = parseInt(_mesaItem.quantidade,10)||0;
+  const alocado = mesaAlocado(pos);
+  const pct = total>0 ? Math.min(100, alocado/total*100) : 0;
+
+  const existentes = COMPONENTES.filter(c=>c.item_id===_mesaItem.id && c.posicao===pos).sort((a,b)=>a.lote_numero-b.lote_numero);
+  const existentesHtml = existentes.length
+    ? `<div class="sp-l" style="margin-top:6px">Lotes já criados (${existentes.length})</div><div class="mesa-existentes">${existentes.map(mesaLoteExistenteHtml).join("")}</div>`
+    : "";
+
+  const linhasHtml = linhas.length
+    ? linhas.map((l,i)=>mesaLinhaHtml(pos,l,i,tipoMaterial)).join("")
+    : (existentes.length ? "" : `<div class="mesa-hint">Nenhum lote planejado ainda.</div>`);
+
+  return `<div class="mesa-sec mesa-pos-sec">
+    <div class="mesa-sec-hdr">
+      <div class="sp-l">${POS_LABEL[pos]} <span class="mesa-comp-mat">(${MATERIAL_LABEL[tipoMaterial]})</span></div>
+      <button type="button" class="btn-g mini" onclick="mesaAdicionarLinha('${pos}')">+ novo lote</button>
+    </div>
+    <div class="mesa-alloc-track"><div class="mesa-alloc-fill${alocado>total?' over':''}" id="mesaAllocFill_${pos}" style="width:${pct}%"></div></div>
+    <div class="mesa-alloc-lbl" id="mesaAllocLbl_${pos}">${alocado} de ${total} pç alocada${alocado>total?' — ⚠ passou do total':''}</div>
+    <div class="mesa-linhas">${linhasHtml}</div>
+    ${existentesHtml}
   </div>`;
 }
 
 function renderMesa(){
   if(!_mesaItem) return;
   const item = _mesaItem;
-  const lotesExistentes = LOTES.filter(l=>l.item_id===item.id).sort((a,b)=>a.lote_numero-b.lote_numero);
   document.getElementById("mesaTitle").textContent = "Planejamento — "+item.codigo_peca;
   document.getElementById("mesaSub").textContent = "Pedido: "+(item.pedido||"—")+" · OS: "+(item.os||"—")+" · Qtd total: "+(item.quantidade||"—")+" pç";
-
-  const total = parseInt(item.quantidade,10)||0;
-  const alocado = mesaAlocado();
-  const pct = total>0 ? Math.min(100, alocado/total*100) : 0;
 
   const estruturaHtml = `<div class="mesa-sec">
     <div class="sp-l">Estrutura da peça</div>
@@ -907,34 +909,19 @@ function renderMesa(){
     </div>
   </div>`;
 
-  const allocHtml = `<div class="mesa-sec">
-    <div class="mesa-alloc-track"><div class="mesa-alloc-fill${alocado>total?' over':''}" id="mesaAllocFill" style="width:${pct}%"></div></div>
-    <div class="mesa-alloc-lbl" id="mesaAllocLbl">${alocado} de ${total} pç alocada${alocado>total?' — ⚠ passou do total':''}</div>
-  </div>`;
+  const semNada = !_mesaEstrutura.nucleo && !_mesaEstrutura.carcaca && !_mesaEstrutura.luva;
+  const posicoesHtml = semNada
+    ? `<div class="mesa-hint">Escolha ao menos o material do núcleo acima para começar a planejar.</div>`
+    : ["nucleo","carcaca","luva"].map(mesaSecaoPosicaoHtml).join("");
 
-  const linhasHtml = !_mesaEstrutura.nucleo
-    ? `<div class="mesa-hint">Escolha o material do núcleo acima para começar a planejar os lotes.</div>`
-    : (_mesaLinhas.length ? _mesaLinhas.map((l,i)=>mesaLinhaHtml(l,i)).join("") : `<div class="mesa-hint">Nenhum lote no planejamento ainda — clique em "+ nova linha".</div>`);
-
-  const existentesHtml = lotesExistentes.length ? `<div class="mesa-sec">
-    <div class="sp-l">Lotes já criados (${lotesExistentes.length})</div>
-    <div class="mesa-existentes">${lotesExistentes.map(l=>mesaLoteExistenteHtml(l)).join("")}</div>
-  </div>` : "";
-
+  const totalLinhasNovas = ["nucleo","carcaca","luva"].reduce((s,p)=>s+((_mesaPosicoes[p]||[]).length),0);
   const concluirMudou = _mesaConcluirChecked !== !!item.plano_separacao_concluido;
-  const podeSalvar = (_mesaEstrutura.nucleo && _mesaLinhas.length) || concluirMudou;
-  const btnLabel = _mesaLinhas.length ? "+ Criar "+_mesaLinhas.length+" lote(s)" : "Salvar planejamento";
+  const podeSalvar = totalLinhasNovas>0 || concluirMudou;
+  const btnLabel = totalLinhasNovas ? "+ Criar "+totalLinhasNovas+" lote(s)" : "Salvar planejamento";
 
   document.getElementById("mesaBody").innerHTML = `
     ${estruturaHtml}
-    ${allocHtml}
-    <div class="mesa-sec">
-      <div class="mesa-sec-hdr"><div class="sp-l">Novos lotes a planejar</div>
-        <button type="button" class="btn-g mini" onclick="mesaAdicionarLinha()" ${_mesaEstrutura.nucleo?'':'disabled'}>+ nova linha</button>
-      </div>
-      <div class="mesa-linhas">${linhasHtml}</div>
-    </div>
-    ${existentesHtml}
+    ${posicoesHtml}
     <div class="mesa-footer">
       <label class="chk-row"><input type="checkbox" id="mesaConcluirChk" ${_mesaConcluirChecked?'checked':''} onchange="_mesaConcluirChecked=this.checked;mesaAtualizarBotaoSalvar()"> Marcar planejamento deste item como concluído</label>
       <button type="button" class="btn-g btn-acc" id="mesaSalvarBtn" onclick="mesaSalvar()" ${podeSalvar?'':'disabled'}>${btnLabel}</button>
@@ -946,57 +933,58 @@ function renderMesa(){
 function mesaAtualizarBotaoSalvar(){
   const btn = document.getElementById("mesaSalvarBtn");
   if(!btn || !_mesaItem) return;
+  const totalLinhasNovas = ["nucleo","carcaca","luva"].reduce((s,p)=>s+((_mesaPosicoes[p]||[]).length),0);
   const concluirMudou = _mesaConcluirChecked !== !!_mesaItem.plano_separacao_concluido;
-  btn.disabled = !((_mesaEstrutura.nucleo && _mesaLinhas.length) || concluirMudou);
+  btn.disabled = !(totalLinhasNovas>0 || concluirMudou);
 }
 
 async function mesaSalvar(){
   if(!_mesaItem) return;
+  const posicoesAtivas = ["nucleo","carcaca","luva"].filter(p=>_mesaPosicoes[p]);
+  const totalLinhasNovas = posicoesAtivas.reduce((s,p)=>s+_mesaPosicoes[p].length,0);
   const concluirMudou = _mesaConcluirChecked !== !!_mesaItem.plano_separacao_concluido;
-  if(!_mesaLinhas.length && !concluirMudou){ toast("Nada para salvar", "erro"); return; }
-  for(const l of _mesaLinhas){
-    const qtd = parseInt(l.quantidade,10);
-    if(!qtd || qtd<=0){ toast("Informe uma quantidade válida em todos os lotes", "erro"); return; }
-    if(!l.comp.nucleo){ toast("Cada lote precisa ter um núcleo definido", "erro"); return; }
+  if(!totalLinhasNovas && !concluirMudou){ toast("Nada para salvar", "erro"); return; }
+
+  for(const p of posicoesAtivas){
+    for(const l of _mesaPosicoes[p]){
+      const qtd = parseInt(l.quantidade,10);
+      if(!qtd || qtd<=0){ toast("Informe uma quantidade válida em todos os lotes", "erro"); return; }
+    }
   }
-  if(_mesaLinhas.length){
-    const total = parseInt(_mesaItem.quantidade,10)||0;
-    const alocado = mesaAlocado();
+
+  const total = parseInt(_mesaItem.quantidade,10)||0;
+  for(const p of posicoesAtivas){
+    if(!_mesaPosicoes[p].length) continue;
+    const alocado = mesaAlocado(p);
     if(alocado!==total){
       const msg = alocado>total
-        ? `A soma dos lotes (${alocado} pç) passa da quantidade do item (${total} pç). Salvar assim mesmo?`
-        : `A soma dos lotes (${alocado} pç) é menor que a quantidade do item (${total} pç) — ${total-alocado} pç ainda sem lote. Salvar assim mesmo?`;
+        ? `${POS_LABEL[p]}: a soma dos lotes (${alocado} pç) passa da quantidade do item (${total} pç). Salvar assim mesmo?`
+        : `${POS_LABEL[p]}: a soma dos lotes (${alocado} pç) é menor que a quantidade do item (${total} pç) — ${total-alocado} pç ainda sem lote. Salvar assim mesmo?`;
       if(!confirm(msg)) return;
     }
   }
 
   const itemId = _mesaItem.id;
-  let nLotesExistentes = LOTES.filter(l=>l.item_id===itemId).length;
   try{
-    for(const l of _mesaLinhas){
-      nLotesExistentes++;
-      const novoLote = await supaWrite("/rest/v1/material_lotes","POST",{
-        item_id: itemId, lote_numero: nLotesExistentes, quantidade: parseInt(l.quantidade,10),
-        observacao: (l.observacao||"").trim() || null
-      });
-      const lote = Array.isArray(novoLote)?novoLote[0]:novoLote;
-      LOTES.unshift(lote);
-
-      const posicoes = Object.keys(l.comp);
-      const compsPayload = posicoes.map(p=>({
-        lote_id: lote.id, posicao: p,
-        tipo_material: p==="nucleo" ? _mesaEstrutura.nucleo : "aco",
-        entrada_prevista_ordem: (l.comp[p].fato>0) ? null : (l.comp[p].intencao || null)
-      }));
-      const novosComps = await supaWrite("/rest/v1/material_lote_componentes","POST",compsPayload);
-      const rows = Array.isArray(novosComps)?novosComps:[novosComps];
-      rows.forEach(r=>{ if(r) COMPONENTES.push(r); });
-
-      for(const r of rows){
-        const fato = l.comp[r.posicao] ? l.comp[r.posicao].fato : 0;
-        if(fato>0){
-          const col = ESTAGIOS.find(e=>e.ordem===fato);
-          if(col) await registrarEvento(r, col);
+    for(const p of posicoesAtivas){
+      const linhas = _mesaPosicoes[p];
+      if(!linhas.length) continue;
+      let nLotesExistentes = COMPONENTES.filter(c=>c.item_id===itemId && c.posicao===p).length;
+      const tipoMaterial = p==="nucleo" ? _mesaEstrutura.nucleo : "aco";
+      for(const l of linhas){
+        nLotesExistentes++;
+        const payload = {
+          item_id: itemId, posicao: p, tipo_material: tipoMaterial,
+          lote_numero: nLotesExistentes, quantidade: parseInt(l.quantidade,10),
+          observacao: (l.observacao||"").trim() || null,
+          entrada_prevista_ordem: (l.fato>0) ? null : (l.intencao || null)
+        };
+        const novo = await supaWrite("/rest/v1/material_lote_componentes","POST",payload);
+        const row = Array.isArray(novo)?novo[0]:novo;
+        if(row) COMPONENTES.push(row);
+        if(l.fato>0 && row){
+          const col = ESTAGIOS.find(e=>e.ordem===l.fato);
+          if(col) await registrarEvento(row, col);
         }
       }
     }
@@ -1009,7 +997,7 @@ async function mesaSalvar(){
     }
 
     renderBoard();
-    toast(_mesaLinhas.length ? (_mesaLinhas.length>1 ? _mesaLinhas.length+" lotes criados" : "Lote criado") : "Planejamento atualizado");
+    toast(totalLinhasNovas ? (totalLinhasNovas>1 ? totalLinhasNovas+" lotes criados" : "Lote criado") : "Planejamento atualizado");
     fecharMesa();
   }catch(e){
     toast(e.message.includes("duplicate") ? "Conflito ao salvar — recarregue a página e tente de novo" : "Erro ao criar: "+e.message, "erro");
@@ -1021,42 +1009,28 @@ async function abrirComponente(compId){
   if(Date.now() - _dragEndedAt < 200) return; // evita abrir o painel logo após soltar o arraste
   const comp = COMPONENTES.find(c=>c.id===compId);
   if(!comp) return;
-  const lote = loteDoComponente(comp);
-  const item = lote ? itemDoLote(lote) : null;
+  const item = itemDoComponente(comp);
   document.getElementById("spTitle").textContent = (item?item.codigo_peca:"Componente") + " — " + POS_LABEL[comp.posicao];
-  document.getElementById("spSub").textContent = (item?("Pedido: "+(item.pedido||"—")+" · OS: "+(item.os||"—")+" · "):"") + MATERIAL_LABEL[comp.tipo_material] + " · lote "+(lote?lote.lote_numero:"—");
+  document.getElementById("spSub").textContent = (item?("Pedido: "+(item.pedido||"—")+" · OS: "+(item.os||"—")+" · "):"") + MATERIAL_LABEL[comp.tipo_material] + " · lote "+comp.lote_numero;
 
   const historico = await supaFetch(`/rest/v1/material_eventos?select=estagio_descricao,data_evento&componente_id=eq.${compId}&order=data_evento.desc,id.desc&limit=30`);
   const histHtml = Array.isArray(historico) && historico.length
     ? historico.map(h=>`<div class="mat-hist-item"><span>→ ${escHtml(h.estagio_descricao)}</span><span>${fmtDataHora(h.data_evento)}</span></div>`).join("")
     : `<div class="mat-hist-item" style="opacity:.6">ainda em Aguardando — nenhum evento</div>`;
 
-  const outrosComps = lote ? COMPONENTES.filter(c=>c.lote_id===lote.id && c.id!==compId) : [];
-  const outrosHtml = outrosComps.length ? `<div class="sp-f"><span class="sp-l">Outras peças do mesmo lote</span>` +
-    outrosComps.map(c=>{
-      const u = ultimoDoComponente(c.id);
-      return `<div class="mat-hist-item"><span>${POS_LABEL[c.posicao]} (${MATERIAL_LABEL[c.tipo_material]})</span><span>${u?escHtml(u.estagio_descricao):"Aguardando"}</span></div>`;
-    }).join("") + `</div>` : "";
-
-  const resumoItem = item ? materialResumoItem(item.id, {lotes:LOTES, componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS}) : null;
+  const resumoItem = item ? materialResumoItem(item.id, {componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS}) : null;
   const outrosLotesHtml = resumoItem && resumoItem.total>1 ? `<div class="sp-f"><span class="sp-l">Outros lotes deste item</span>` +
-    resumoItem.detalhe.filter(d=>!lote || d.numero!==lote.lote_numero).map(d=>
-      `<div class="mat-hist-item"><span>Lote ${d.numero}</span><span>${d.completo?"✓ Pronto":"em andamento"}</span></div>`
+    resumoItem.detalhe.filter(d=>d.id!==compId).map(d=>
+      `<div class="mat-hist-item"><span>${POS_LABEL[d.posicao]} · lote ${d.numero} (${d.quantidade} pç)</span><span>${d.completo?"✓ Pronto":"em andamento"}</span></div>`
     ).join("") + `</div>` : "";
 
-  const excluirLoteBtn = (lote && outrosComps.length)
-    ? `<button class="btn-g" style="color:var(--danger);border-color:var(--danger)" onclick="excluirLoteInteiro(${lote.id})">🗑 Excluir lote inteiro (${outrosComps.length+1} cartões)</button>` : "";
-  const adicionarHtml = lote ? renderAdicionarComponente(lote.id) : "";
   const moverHtml = botoesMoverHtml(comp);
 
   document.getElementById("spBody").innerHTML = `
     ${moverHtml}
     <div class="comp-block"><div class="sp-l" style="margin-bottom:6px">Histórico</div><div class="mat-hist">${histHtml}</div></div>
-    ${outrosHtml}
     ${outrosLotesHtml}
-    ${adicionarHtml}
-    <button class="btn-g" style="color:var(--danger);border-color:var(--danger)" onclick="excluirComponente(${compId})">🗑 Excluir esse cartão</button>
-    ${excluirLoteBtn}
+    <button class="btn-g" style="color:var(--danger);border-color:var(--danger)" onclick="excluirComponente(${compId})">🗑 Excluir este lote</button>
   `;
   abrirPainel();
 }
@@ -1081,107 +1055,20 @@ async function moverComponente(compId, estagioId){
   abrirComponente(compId);
 }
 
-// posições (núcleo/carcaça/luva) que esse lote ainda não tem cartão
-function posicoesFaltantes(loteId){
-  const existentes = new Set(COMPONENTES.filter(c=>c.lote_id===loteId).map(c=>c.posicao));
-  return ["nucleo","carcaca","luva"].filter(p=>!existentes.has(p));
-}
-
-// bloco "+ adicionar componente" — conserta lote que ficou sem núcleo/carcaça/luva (ex.: excluído por engano)
-function renderAdicionarComponente(loteId){
-  const faltantes = posicoesFaltantes(loteId);
-  if(!faltantes.length) return "";
-  const blocos = faltantes.map(pos=>{
-    const label = POS_LABEL[pos];
-    const tipoSelect = pos==="nucleo"
-      ? `<select class="sp-inp" id="addTipo_${loteId}_${pos}" style="width:180px;margin-bottom:6px" onchange="atualizarSituacaoAdd(${loteId},'${pos}')">
-          <option value="">Material — selecione</option>
-          <option value="metal_duro">Metal Duro</option>
-          <option value="aco">Aço</option>
-        </select>` : "";
-    const situacaoOpts = pos==="nucleo" ? `<option value="0">Aguardando (nada feito ainda)</option>` : opcoesSituacaoHtml("aco");
-    return `<div style="margin-bottom:10px">
-      <div class="sp-l" style="margin-bottom:5px">+ ${label}${pos!=="nucleo"?" (Aço)":""}</div>
-      ${tipoSelect}
-      <select class="sp-inp" id="addSit_${loteId}_${pos}" style="width:220px;margin-bottom:6px">${situacaoOpts}</select>
-      <button class="btn-g" onclick="salvarComponenteAdicional(${loteId},'${pos}')">+ Adicionar ${label}</button>
-    </div>`;
-  }).join("");
-  return `<div class="comp-block"><div class="sp-l" style="margin-bottom:8px">Adicionar componente faltante</div>${blocos}</div>`;
-}
-
-// atualiza o select de "situação atual" quando o material do núcleo (na seção de adicionar) muda
-function atualizarSituacaoAdd(loteId, posicao){
-  const tipo = document.getElementById(`addTipo_${loteId}_${posicao}`).value;
-  document.getElementById(`addSit_${loteId}_${posicao}`).innerHTML = tipo
-    ? opcoesSituacaoHtml(tipo) : `<option value="0">Aguardando (nada feito ainda)</option>`;
-}
-
-async function salvarComponenteAdicional(loteId, posicao){
-  const tipoMaterial = posicao==="nucleo" ? document.getElementById(`addTipo_${loteId}_${posicao}`).value : "aco";
-  if(posicao==="nucleo" && !tipoMaterial){ toast("Selecione o material do núcleo", "erro"); return; }
-  const situacao = parseInt(document.getElementById(`addSit_${loteId}_${posicao}`).value,10) || 0;
-  try{
-    const novo = await supaWrite("/rest/v1/material_lote_componentes","POST",{ lote_id: loteId, posicao, tipo_material: tipoMaterial });
-    const row = Array.isArray(novo)?novo[0]:novo;
-    if(row) COMPONENTES.push(row);
-    if(situacao > 0 && row){
-      const col = ESTAGIOS.find(e=>e.ordem===situacao);
-      if(col) await registrarEvento(row, col);
-    }
-    renderBoard();
-    toast("Componente adicionado");
-    if(row) abrirComponente(row.id); else fecharPainel();
-  }catch(e){ toast(e.message.includes("duplicate") ? "Esse lote já tem esse componente" : "Erro ao adicionar: "+e.message, "erro"); }
-}
-
-// exclui o lote inteiro (todos os componentes de uma vez) — cascade apaga componentes+eventos junto
-async function excluirLoteInteiro(loteId){
-  const lote = LOTES.find(l=>l.id===loteId);
-  if(!lote) return;
-  const item = itemDoLote(lote);
-  const comps = COMPONENTES.filter(c=>c.lote_id===loteId);
-  const posicoes = comps.map(c=>POS_LABEL[c.posicao]).join(" + ");
-  const label = (item?item.codigo_peca:"item") + " — lote " + lote.lote_numero;
-  if(!confirm(`Excluir o lote inteiro "${label}" (${posicoes})? Isso apaga os ${comps.length} cartões e todo o histórico deles.`)) return;
-  try{
-    await supaWrite(`/rest/v1/material_lotes?id=eq.${loteId}`,"DELETE",undefined,"return=minimal");
-    const compIds = comps.map(c=>c.id);
-    COMPONENTES = COMPONENTES.filter(c=>c.lote_id!==loteId);
-    ULTIMOS = ULTIMOS.filter(u=>!compIds.includes(u.componente_id));
-    LOTES = LOTES.filter(l=>l.id!==loteId);
-    fecharPainel();
-    renderBoard();
-    toast("Lote excluído");
-  }catch(e){ toast("Erro ao excluir: "+e.message, "erro"); }
-}
-
-// exclui um componente (cartão) — se era o único do lote, exclui o lote junto (evita lote "fantasma" vazio)
+// exclui um lote (cartão) — imutável, cascade apaga o histórico de eventos dele junto
 async function excluirComponente(compId){
   const comp = COMPONENTES.find(c=>c.id===compId);
   if(!comp) return;
-  const lote = loteDoComponente(comp);
-  const item = lote ? itemDoLote(lote) : null;
-  const label = (item?item.codigo_peca:"componente") + " — " + POS_LABEL[comp.posicao];
-  const irmaosRestantes = lote ? COMPONENTES.filter(c=>c.lote_id===lote.id && c.id!==compId) : [];
-  let msg = `Excluir o cartão "${label}"? O histórico dele também será apagado.`;
-  if(comp.posicao==="nucleo" && irmaosRestantes.length){
-    const outrosNomes = irmaosRestantes.map(c=>POS_LABEL[c.posicao]).join(" e ");
-    msg = `⚠ Este lote vai ficar SEM NÚCLEO registrado (continua com ${outrosNomes}). Toda peça normalmente tem um núcleo — se foi engano no cadastro, considere excluir o lote inteiro em vez de só o núcleo. Excluir mesmo assim o cartão "${label}"?`;
-  }
-  if(!confirm(msg)) return;
+  const item = itemDoComponente(comp);
+  const label = (item?item.codigo_peca:"item") + " — " + POS_LABEL[comp.posicao] + " lote " + comp.lote_numero;
+  if(!confirm(`Excluir o lote "${label}" (${comp.quantidade} pç)? O histórico dele também será apagado.`)) return;
   try{
     await supaWrite(`/rest/v1/material_lote_componentes?id=eq.${compId}`,"DELETE",undefined,"return=minimal");
     COMPONENTES = COMPONENTES.filter(c=>c.id!==compId);
     ULTIMOS = ULTIMOS.filter(u=>u.componente_id!==compId);
-    const irmaos = lote ? COMPONENTES.filter(c=>c.lote_id===lote.id) : [];
-    if(lote && !irmaos.length){
-      await supaWrite(`/rest/v1/material_lotes?id=eq.${lote.id}`,"DELETE",undefined,"return=minimal");
-      LOTES = LOTES.filter(l=>l.id!==lote.id);
-    }
     fecharPainel();
     renderBoard();
-    toast("Cartão excluído");
+    toast("Lote excluído");
   }catch(e){ toast("Erro ao excluir: "+e.message, "erro"); }
 }
 
@@ -1206,16 +1093,14 @@ async function init(){
   setSync("carregando...");
   _tvMode = new URLSearchParams(location.search).get("tv")==="1";
   aplicarTvMode();
-  const [itensCad, estagios, lotes, componentes, ultimos] = await Promise.all([
+  const [itensCad, estagios, componentes, ultimos] = await Promise.all([
     supaFetch("/rest/v1/itens?select=*&order=created_at.desc&limit=2000"),
     supaFetch("/rest/v1/material_estagios?select=*&ativo=eq.true&order=ordem&limit=20"),
-    supaFetch("/rest/v1/material_lotes?select=*&order=created_at.desc&limit=1000"),
     supaFetch("/rest/v1/material_lote_componentes?select=*&limit=2000"),
     supaFetch("/rest/v1/material_ultimo_evento?select=*&limit=5000")
   ]);
   ITENS_CAD = Array.isArray(itensCad) ? itensCad : [];
   ESTAGIOS = Array.isArray(estagios) ? estagios : [];
-  LOTES = Array.isArray(lotes) ? lotes : [];
   COMPONENTES = Array.isArray(componentes) ? componentes : [];
   ULTIMOS = Array.isArray(ultimos) ? ultimos : [];
   renderBoard();
@@ -1223,18 +1108,16 @@ async function init(){
 }
 init();
 
-// fallback: sem realtime nesta página (PCP é o único ator) — recarrega itens/lotes/componentes a cada 60s,
+// fallback: sem realtime nesta página (PCP é o único ator) — recarrega itens/componentes a cada 60s,
 // pra pegar item novo cadastrado em outra aba/pessoa sem precisar de F5. ESTAGIOS não muda, não recarrega.
 async function atualizarAuto(){
   try{
-    const [itensCad, lotes, componentes, ultimos] = await Promise.all([
+    const [itensCad, componentes, ultimos] = await Promise.all([
       supaFetch("/rest/v1/itens?select=*&order=created_at.desc&limit=2000"),
-      supaFetch("/rest/v1/material_lotes?select=*&order=created_at.desc&limit=1000"),
       supaFetch("/rest/v1/material_lote_componentes?select=*&limit=2000"),
       supaFetch("/rest/v1/material_ultimo_evento?select=*&limit=5000")
     ]);
     if(Array.isArray(itensCad)) ITENS_CAD = itensCad;
-    if(Array.isArray(lotes)) LOTES = lotes;
     if(Array.isArray(componentes)) COMPONENTES = componentes;
     if(Array.isArray(ultimos)) ULTIMOS = ultimos;
     renderBoard();

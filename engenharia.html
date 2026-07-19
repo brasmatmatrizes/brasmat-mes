@@ -377,8 +377,7 @@ const FORM_ENTRY = {
 // ---- estado ----
 let POS = [];        // posicao_atual (só p/ exibição de roteiros legados no editor)
 let ITENS_CAD = [];  // itens cadastrados (Cadastro Item) — fonte da busca do roteiro
-let MAT_LOTES = [];       // material_lotes (Separação de Material)
-let MAT_COMPONENTES = []; // material_lote_componentes (núcleo/carcaça/luva de cada lote)
+let MAT_COMPONENTES = []; // material_lote_componentes (Separação de Material) — cada linha já é um lote por posição
 let MAT_ESTAGIOS = [];    // material_estagios ativos (colunas compartilhadas) — só p/ saber a ordem máxima
 let MAT_ULTIMOS = [];     // material_ultimo_evento (por componente_id)
 let OPS = [];        // roteiro_operacoes (catálogo completo)
@@ -451,15 +450,14 @@ function fmtDataPrazo(v){
 // ---- init ----
 async function init(){
   setSync("carregando...");
-  const [ops, fams, subs, rots, pos, itensCad, matLotes, matComponentes, matEstagios, matUltimos] = await Promise.all([
+  const [ops, fams, subs, rots, pos, itensCad, matComponentes, matEstagios, matUltimos] = await Promise.all([
     supaFetch("/rest/v1/roteiro_operacoes?select=id,codigo,descricao,familia,ativo&order=codigo&limit=1000"),
     supaFetch("/rest/v1/roteiro_familias?select=id,nome,ordem&order=ordem&limit=100"),
     supaFetch("/rest/v1/roteiro_subcomponentes?select=id,nome,ordem&order=ordem&limit=100"),
     supaFetch("/rest/v1/roteiros?select=*,roteiro_itens(count)&order=updated_at.desc&limit=300"),
     buscarPosicao(),   // paginado — posicao_atual já passa de 1000 linhas, o limit sozinho é truncado pela API
     supaFetch("/rest/v1/itens?select=*&order=created_at.desc&limit=2000"),
-    supaFetch("/rest/v1/material_lotes?select=id,item_id,lote_numero&limit=1000"),
-    supaFetch("/rest/v1/material_lote_componentes?select=id,lote_id&limit=2000"),
+    supaFetch("/rest/v1/material_lote_componentes?select=id,item_id&limit=2000"),
     supaFetch("/rest/v1/material_estagios?select=id,ordem&ativo=eq.true&limit=20"),
     supaFetch("/rest/v1/material_ultimo_evento?select=componente_id,estagio_ordem&limit=5000")
   ]);
@@ -469,7 +467,6 @@ async function init(){
   ROTS = Array.isArray(rots) ? rots : [];
   POS  = Array.isArray(pos)  ? pos  : [];
   ITENS_CAD = Array.isArray(itensCad) ? itensCad : [];
-  MAT_LOTES = Array.isArray(matLotes) ? matLotes : [];
   MAT_COMPONENTES = Array.isArray(matComponentes) ? matComponentes : [];
   MAT_ESTAGIOS = Array.isArray(matEstagios) ? matEstagios : [];
   MAT_ULTIMOS = Array.isArray(matUltimos) ? matUltimos : [];
@@ -542,7 +539,7 @@ function buscarSugg(q){
       const cod = String(r.codigo_peca||"").trim(), ped = String(r.pedido||"").trim();
       const os = String(r.os||"").trim(), qtd = String(r.quantidade||"").trim();
       const jaTem = ROTS.find(x=>x.codigo_peca===cod && x.pedido===ped);
-      const matResumo = materialResumoItem(r.id, {lotes:MAT_LOTES, componentes:MAT_COMPONENTES, ultimos:MAT_ULTIMOS, estagios:MAT_ESTAGIOS});
+      const matResumo = materialResumoItem(r.id, {componentes:MAT_COMPONENTES, ultimos:MAT_ULTIMOS, estagios:MAT_ESTAGIOS});
       const liberado = !!r.ferramenta_interna || (matResumo && matResumo.algumComponentePronto);
       const tag = jaTem ? '<span class="rot-cnt" style="background:rgba(45,191,126,0.15);color:var(--ok)">✓ já tem roteiro</span>'
         : liberado ? '<span class="rot-cnt">+ criar roteiro</span>'
@@ -576,7 +573,7 @@ async function selPeca(codigo, pedido){
   const it = ITENS_CAD.find(r=>String(r.codigo_peca||"").trim()===codigo && String(r.pedido||"").trim()===pedido);
   if(!it){ toast("Item não encontrado — cadastre em Cadastro › Item"); return; }
   if(!it.ferramenta_interna){
-    const matResumo = materialResumoItem(it.id, {lotes:MAT_LOTES, componentes:MAT_COMPONENTES, ultimos:MAT_ULTIMOS, estagios:MAT_ESTAGIOS});
+    const matResumo = materialResumoItem(it.id, {componentes:MAT_COMPONENTES, ultimos:MAT_ULTIMOS, estagios:MAT_ESTAGIOS});
     if(!matResumo || !matResumo.algumComponentePronto){
       toast("Não é possível criar o roteiro — nenhum material desta peça está pronto ainda. Veja a Separação de Material.", "erro");
       return;
@@ -645,7 +642,7 @@ async function abrirRoteiro(id){
   // sinal (aviso, não bloqueia) do status do material em Separação de Material
   // match por código+pedido (identidade do roteiro — unique(pedido,codigo_peca) — não inclui OS)
   const itemDoRot = ITENS_CAD.find(i=>i.codigo_peca===R.codigo_peca && i.pedido===R.pedido);
-  const matResumoRot = itemDoRot ? materialResumoItem(itemDoRot.id, {lotes:MAT_LOTES, componentes:MAT_COMPONENTES, ultimos:MAT_ULTIMOS, estagios:MAT_ESTAGIOS}) : null;
+  const matResumoRot = itemDoRot ? materialResumoItem(itemDoRot.id, {componentes:MAT_COMPONENTES, ultimos:MAT_ULTIMOS, estagios:MAT_ESTAGIOS}) : null;
   document.getElementById("edMatSt").innerHTML = renderMatBanner(itemDoRot, matResumoRot);
 
   SUB_ATUAL = "";

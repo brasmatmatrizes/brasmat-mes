@@ -276,9 +276,9 @@ async function existeRoteiro(codigo, pedido){
   const r = await supaFetch(`/rest/v1/roteiros?select=id&codigo_peca=eq.${enc(codigo)}&pedido=eq.${enc(pedido)}&limit=1`);
   return Array.isArray(r) && r.length>0;
 }
-// já existe separação de material (Cadastro Separação) pra esse item? (material_lotes tem item_id, FK direta)
+// já existe separação de material (Cadastro Separação) pra esse item? (material_lote_componentes tem item_id, FK direta)
 async function existeMaterial(itemId){
-  const r = await supaFetch(`/rest/v1/material_lotes?select=id&item_id=eq.${itemId}&limit=1`);
+  const r = await supaFetch(`/rest/v1/material_lote_componentes?select=id&item_id=eq.${itemId}&limit=1`);
   return Array.isArray(r) && r.length>0;
 }
 

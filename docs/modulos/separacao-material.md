@@ -187,8 +187,54 @@ nenhum material separado. A partir de 19/07/2026:
 3. **Bloqueio mínimo de material no Cadastro Roteiro ✅ (19/07/2026)**: coluna
    `itens.ferramenta_interna` + regra de bloqueio na criação de roteiro (ver seção 6.1) +
    banner visual de status (bloqueado/parcial/ferramenta interna/completo).
-4. *(Futuro)* Fornecedor/terceiro por evento.
-5. *(Futuro)* Saldo de estoque de fato (quantidade, não só estágio).
-6. *(Futuro)* Se o volume de histórico justificar: tendência, ranking por cliente e gargalo
+4. **Mesa de Planejamento ✅ (19/07/2026)**: ver seção 9 — substitui o formulário "Novo lote"
+   por um planejamento consolidado de todos os lotes do item antes de qualquer cartão existir
+   no Kanban.
+5. *(Futuro)* Fornecedor/terceiro por evento.
+6. *(Futuro)* Saldo de estoque de fato (quantidade, não só estágio).
+7. *(Futuro)* Se o volume de histórico justificar: tendência, ranking por cliente e gargalo
    por etapa na tela de Relatório (hoje ela só tem contagem, de propósito — ver análise
    estratégica da conversa de 18/07/2026).
+
+## 9. Mesa de Planejamento (19/07/2026)
+
+**Dor**: o formulário "Novo lote" (dentro do próprio Kanban) só criava 1 lote por vez — uma
+peça com 8 núcleos em 4 trajetórias diferentes (2 comprar, 2 em estoque, 2 já usinados
+aguardando TT, 2 do zero) exigia abrir o formulário 4 vezes, redigitando núcleo/carcaça/luva
+toda vez, sem visão consolidada do que já tinha sido planejado.
+
+**Solução**: substituído por uma **Mesa de Planejamento** — um overlay aberto a partir da
+mesma busca, por item, ANTES de qualquer cartão existir no Kanban:
+
+- **Estrutura da peça** (chips no topo: núcleo MD/Aço, +Carcaça, +Luva) — molde permanente,
+  editável a qualquer momento; toda linha de lote nova/existente herda automaticamente as
+  posições ativas (`mesaSincronizarComponentes`).
+- **Lotes como linhas** — a primeira linha já nasce com a quantidade total restante do item;
+  **dividir** (`mesaDividir`) fatia a quantidade de uma linha em duas, **duplicar**
+  (`mesaDuplicar`) clona composição+situação — ambos evitam redigitar.
+- **Barra de alocação** — soma em tempo real (rascunho + lotes já existentes) vs. quantidade
+  total do item, com aviso visual se passar do total.
+- **Mini-trilha clicável por componente** — clicar num ponto marca **fato** ("já está aqui",
+  vira evento real ao salvar, mesmo comportamento do antigo "situação atual"). Só enquanto o
+  componente ainda está em Aguardando (fato=0), aparecem chips de **intenção** ("entra por") —
+  as etapas intermediárias do material (exclui Aguardando e Pronto), puramente informativo,
+  gravado em `material_lote_componentes.entrada_prevista_ordem`. Intenção nunca vira evento
+  sozinha; só documenta o plano até o material físico realmente aparecer.
+- **Lotes já criados** aparecem na Mesa como linha-resumo só leitura (clicar abre o histórico
+  normal do componente).
+- **Planejamento concluído** — checkbox por item (`itens.plano_separacao_concluido`),
+  salvável mesmo sem nenhum lote novo no rascunho (ex.: só confirmar que o planejamento já
+  feito antes está fechado).
+- **Gravação em bloco** — um único clique em "Criar lotes" grava todos os lotes + componentes
+  do rascunho + eventos iniciais dos componentes marcados como fato, em sequência (não
+  paralelo, pra manter a numeração automática do lote determinística). Soma diferente da
+  quantidade do item gera confirmação (não bloqueio — decisão firmada na seção 7 continua
+  valendo).
+
+**Banco**: 2 colunas aditivas, nenhuma tabela nova —
+`material_lote_componentes.entrada_prevista_ordem` (int, nullable) e
+`itens.plano_separacao_concluido` (bool, default false).
+
+**Kanban**: zero mudança de comportamento — trilha de colunas, drag = evento, card =
+componente, status calculado, tudo como antes. A Mesa só passou a ser a origem dos cartões
+(no lugar do formulário antigo).

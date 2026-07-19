@@ -115,6 +115,50 @@
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);color:var(--text);padding:9px 18px;border-radius:9px;font-size:12px;font-family:var(--mono);z-index:300;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 .toast-erro{border:2px solid var(--danger);color:var(--danger);font-size:14px;font-weight:600;padding:13px 22px;box-shadow:0 8px 28px rgba(240,69,69,.4)}
 
+/* MESA DE PLANEJAMENTO */
+.mesa-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-48%) scale(.98);width:min(1080px,92vw);max-height:88vh;background:var(--bg2);border:1px solid var(--border2);border-radius:14px;z-index:170;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;display:flex;flex-direction:column;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+.mesa-panel.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+.mesa-sec{display:flex;flex-direction:column;gap:8px}
+.mesa-sec-hdr{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mesa-chips{display:flex;flex-wrap:wrap;gap:7px}
+.mesa-chip{background:var(--bg3);border:1px solid var(--border);border-radius:999px;padding:6px 13px;font-size:11.5px;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all .12s}
+.mesa-chip:hover{border-color:var(--border2);color:var(--text)}
+.mesa-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.mesa-chip.mini{padding:3px 9px;font-size:10px}
+.mesa-alloc-track{height:9px;background:var(--bg3);border:1px solid var(--border);border-radius:999px;overflow:hidden}
+.mesa-alloc-fill{height:100%;background:var(--accent);border-radius:999px;transition:width .15s}
+.mesa-alloc-fill.over{background:var(--warn)}
+.mesa-alloc-lbl{font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-top:4px}
+.mesa-hint{font-size:12px;color:var(--text3);font-family:var(--mono);padding:14px;text-align:center;background:var(--bg3);border-radius:10px}
+.mesa-linhas{display:flex;flex-direction:column;gap:10px}
+.mesa-lote{border:1px solid var(--border);border-radius:10px;padding:11px 13px;background:var(--bg3)}
+.mesa-lote-hdr{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.mesa-lote-tag{font-size:11px;font-family:var(--mono);color:var(--text2);font-weight:500;background:var(--bg4);border-radius:999px;padding:3px 10px}
+.mesa-qtd-inp{width:64px;text-align:right}
+.mesa-qtd-suf{font-size:10.5px;color:var(--text3);font-family:var(--mono)}
+.mesa-obs-inp{flex:1;min-width:120px}
+.mesa-lote-acoes{display:flex;gap:5px;margin-left:auto}
+.mesa-lote-acoes .danger{color:var(--danger);border-color:var(--danger)}
+.mesa-lote-comps{display:flex;gap:14px;flex-wrap:wrap}
+.mesa-comp{min-width:150px;flex:1}
+.mesa-comp-lbl{font-size:10.5px;color:var(--text2);font-family:var(--mono);margin-bottom:6px}
+.mesa-comp-mat{color:var(--text3)}
+.mesa-trilha{display:flex;align-items:center;gap:5px;margin-bottom:6px}
+.mesa-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);background:var(--bg2);cursor:pointer;flex-shrink:0;transition:all .12s}
+.mesa-dot:hover{border-color:var(--accent)}
+.mesa-dot.filled{background:var(--ok);border-color:var(--ok)}
+.mesa-comp-status{font-size:10px;font-family:var(--mono);color:var(--ok)}
+.mesa-intencao{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.mesa-intencao-lbl{font-size:9.5px;color:var(--text3);font-family:var(--mono)}
+.mesa-existentes{display:flex;flex-direction:column;gap:5px}
+.mesa-existente-row{display:flex;align-items:center;gap:10px;font-size:11px;font-family:var(--mono);color:var(--text2);padding:6px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer}
+.mesa-existente-row:hover{border-color:var(--border2)}
+.mesa-existente-row.ok{border-color:rgba(45,191,126,.3)}
+.mesa-existente-num{color:var(--text)}
+.mesa-existente-status{color:var(--text3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mesa-existente-badge{color:var(--ok)}
+.mesa-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--border)}
+
 /* MODO TV — monitor fixo na parede, só leitura, fonte maior, sem drag/clique */
 body.tv-mode .search-wrap,body.tv-mode .hint{display:none}
 body.tv-mode .toolbar{height:auto;padding:16px 28px}
@@ -209,7 +253,7 @@ body.tv-mode .mc-dot{width:7px;height:7px}
 </div>
 
 <!-- PAINEL LATERAL -->
-<div class="overlay" id="overlay" onclick="fecharPainel()"></div>
+<div class="overlay" id="overlay" onclick="fecharPainel();fecharMesa()"></div>
 <div class="side-panel" id="sidePanel">
   <div class="sp-hdr">
     <div>
@@ -219,6 +263,18 @@ body.tv-mode .mc-dot{width:7px;height:7px}
     <button class="sp-close" onclick="fecharPainel()">✕</button>
   </div>
   <div class="sp-body" id="spBody"></div>
+</div>
+
+<!-- MESA DE PLANEJAMENTO -->
+<div class="mesa-panel" id="mesaPanel">
+  <div class="sp-hdr">
+    <div>
+      <div class="sp-title" id="mesaTitle">—</div>
+      <div class="sp-sub" id="mesaSub">—</div>
+    </div>
+    <button class="sp-close" onclick="fecharMesa()">✕</button>
+  </div>
+  <div class="sp-body" id="mesaBody"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -600,7 +656,7 @@ function buscarSugg(q){
     box.innerHTML = lista.map(r=>{
       const nLotes = LOTES.filter(l=>l.item_id===r.id).length;
       const tag = nLotes ? `<span class="badge-pill" style="background:rgba(59,127,255,.15);color:var(--accent)">${nLotes} lote(s)</span>` : `<span class="badge-pill" style="background:var(--bg4);color:var(--text3)">sem lote</span>`;
-      return `<div class="sugg-item" onclick="abrirCriarLote(${r.id})">
+      return `<div class="sugg-item" onclick="abrirMesa(${r.id})">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
           <div class="sugg-cod">${escHtml(r.codigo_peca)}</div>${tag}
         </div>
@@ -614,122 +670,349 @@ document.addEventListener("click", e=>{
   if(!e.target.closest(".search-wrap")) document.getElementById("sugg").style.display="none";
 });
 
-function abrirCriarLote(itemId){
+// monta as opções de "situação atual" válidas pro material (Aguardando + as colunas que se aplicam a ele)
+// usada pelo fluxo de "adicionar componente faltante" (renderAdicionarComponente) — a Mesa não usa esta função
+function opcoesSituacaoHtml(tipoMaterial){
+  const opts = ESTAGIOS.filter(e=>tipoMaterial==="metal_duro" ? e.aplica_metal_duro : e.aplica_aco).sort((a,b)=>a.ordem-b.ordem);
+  return opts.map(o=>`<option value="${o.ordem}">${escHtml(o.ordem===0?"Aguardando (nada feito ainda)":o.descricao)}</option>`).join("");
+}
+
+// ---- MESA DE PLANEJAMENTO ----
+// Planeja TODOS os lotes de um item de uma vez, antes de qualquer cartão existir no Kanban.
+// Estado é só rascunho em memória até "Criar lotes" — nada é gravado antes disso.
+let _mesaItem = null;
+let _mesaEstrutura = { nucleo:null, carcaca:false, luva:false }; // molde: quais posições as linhas abaixo têm
+let _mesaLinhas = [];      // rascunho de lotes: [{tempId, quantidade, observacao, comp:{nucleo:{fato,intencao},...}}]
+let _mesaTempSeq = 1;
+let _mesaConcluirChecked = false; // estado do checkbox "planejamento concluído" — em variável pra sobreviver a um clique sem precisar re-renderizar tudo
+
+function abrirMesa(itemId){
   document.getElementById("sugg").style.display="none";
   document.getElementById("buscaInput").value="";
   _filtroTexto = "";
   renderBoard();
   const item = ITENS_CAD.find(i=>i.id===itemId);
   if(!item) return;
-  const lotesDoItem = LOTES.filter(l=>l.item_id===itemId);
-  const nLotesExistentes = lotesDoItem.length;
-  const proximoNumero = nLotesExistentes+1;
-  const qtdAlocada = lotesDoItem.reduce((s,l)=>s+(parseInt(l.quantidade,10)||0),0);
-  const qtdRestante = (parseInt(item.quantidade,10)||0) - qtdAlocada;
-  document.getElementById("spTitle").textContent = "Novo lote — "+item.codigo_peca;
-  document.getElementById("spSub").textContent = "Pedido: "+(item.pedido||"—")+" · OS: "+(item.os||"—")+(nLotesExistentes?(" · já tem "+nLotesExistentes+" lote(s)"):"");
-  document.getElementById("spBody").innerHTML = `
-    <div class="sp-f"><span class="sp-l">Lote nº (automático)</span><div class="sp-static">${proximoNumero}${nLotesExistentes?(" de "+(nLotesExistentes+1)+" — item dividido em lotes"):""}</div></div>
-    <div class="sp-f"><span class="sp-l">Quantidade deste lote${nLotesExistentes?" (restante: "+qtdRestante+" de "+(parseInt(item.quantidade,10)||0)+" pç)":""}</span><input class="sp-inp" id="novoLoteQtd" value="${escHtml(qtdRestante>0?String(qtdRestante):"")}" style="width:110px"></div>
-    <div class="sp-f">
-      <span class="sp-l">Núcleo (obrigatório)</span>
-      <select class="sp-inp" id="novoNucleoTipo" style="width:180px" onchange="atualizarSituacao('nucleo')">
-        <option value="">—</option>
-        <option value="metal_duro">Metal Duro</option>
-        <option value="aco">Aço</option>
-      </select>
-    </div>
-    <div class="sp-f" id="nucleoSituacaoWrap" style="display:none">
-      <span class="sp-l">Situação atual do núcleo — onde ele já está</span>
-      <select class="sp-inp" id="novoNucleoSituacao" style="width:220px"></select>
-    </div>
-    <div class="sp-f">
-      <span class="sp-l">Também precisa de</span>
-      <label class="chk-row"><input type="checkbox" id="novoLoteCarcaca" onchange="atualizarSituacao('carcaca')"> Carcaça de Aço</label>
-    </div>
-    <div class="sp-f" id="carcacaSituacaoWrap" style="display:none">
-      <span class="sp-l">Situação atual da carcaça — onde ela já está</span>
-      <select class="sp-inp" id="novoCarcacaSituacao" style="width:220px"></select>
-    </div>
-    <div class="sp-f">
-      <label class="chk-row"><input type="checkbox" id="novoLoteLuva" onchange="atualizarSituacao('luva')"> Luva (Aço)</label>
-    </div>
-    <div class="sp-f" id="luvaSituacaoWrap" style="display:none">
-      <span class="sp-l">Situação atual da luva — onde ela já está</span>
-      <select class="sp-inp" id="novoLuvaSituacao" style="width:220px"></select>
-    </div>
-    <div class="sp-f"><span class="sp-l">Observação</span><input class="sp-inp" id="novoLoteObs"></div>
-    <button class="btn-g btn-acc" onclick="salvarNovoLote(${itemId})">+ Criar lote</button>
-  `;
-  abrirPainel();
+  _mesaItem = item;
+  _mesaEstrutura = { nucleo:null, carcaca:false, luva:false };
+  _mesaLinhas = [];
+  _mesaConcluirChecked = !!item.plano_separacao_concluido;
+  renderMesa();
+  abrirMesaPainel();
+}
+function abrirMesaPainel(){
+  document.getElementById("overlay").classList.add("open");
+  document.getElementById("mesaPanel").classList.add("open");
+}
+function fecharMesa(){
+  document.getElementById("overlay").classList.remove("open");
+  document.getElementById("mesaPanel").classList.remove("open");
 }
 
-// monta as opções de "situação atual" válidas pro material (Aguardando + as colunas que se aplicam a ele)
-function opcoesSituacaoHtml(tipoMaterial){
-  const opts = ESTAGIOS.filter(e=>tipoMaterial==="metal_duro" ? e.aplica_metal_duro : e.aplica_aco).sort((a,b)=>a.ordem-b.ordem);
-  return opts.map(o=>`<option value="${o.ordem}">${escHtml(o.ordem===0?"Aguardando (nada feito ainda)":o.descricao)}</option>`).join("");
+function mesaNovaLinhaObj(qtd, comp){
+  return { tempId:_mesaTempSeq++, quantidade:qtd, observacao:"", comp: comp ? JSON.parse(JSON.stringify(comp)) : {} };
 }
-
-// atualiza o select de "situação atual" quando o tipo/checkbox de núcleo, carcaça ou luva muda
-function atualizarSituacao(posicao){
-  if(posicao==="nucleo"){
-    const tipo = document.getElementById("novoNucleoTipo").value;
-    const wrap = document.getElementById("nucleoSituacaoWrap");
-    if(!tipo){ wrap.style.display="none"; return; }
-    document.getElementById("novoNucleoSituacao").innerHTML = opcoesSituacaoHtml(tipo);
-    wrap.style.display="";
-  }else{
-    const chkId = posicao==="carcaca" ? "novoLoteCarcaca" : "novoLoteLuva";
-    const wrapId = posicao==="carcaca" ? "carcacaSituacaoWrap" : "luvaSituacaoWrap";
-    const selId = posicao==="carcaca" ? "novoCarcacaSituacao" : "novoLuvaSituacao";
-    const on = document.getElementById(chkId).checked;
-    document.getElementById(wrapId).style.display = on ? "" : "none";
-    if(on) document.getElementById(selId).innerHTML = opcoesSituacaoHtml("aco");
-  }
+function mesaAlocado(){
+  const drafts = _mesaLinhas.reduce((s,l)=>s+(parseInt(l.quantidade,10)||0),0);
+  const existentes = _mesaItem ? LOTES.filter(l=>l.item_id===_mesaItem.id).reduce((s,l)=>s+(parseInt(l.quantidade,10)||0),0) : 0;
+  return drafts+existentes;
 }
-
-async function salvarNovoLote(itemId){
-  const qtd = parseInt(document.getElementById("novoLoteQtd").value.trim(),10);
-  if(!qtd || qtd<=0){ toast("Informe uma quantidade válida", "erro"); return; }
-  const nucleoTipo = document.getElementById("novoNucleoTipo").value;
-  if(!nucleoTipo){ toast("Selecione o material do núcleo", "erro"); return; }
-  const carcacaOn = document.getElementById("novoLoteCarcaca").checked;
-  const luvaOn = document.getElementById("novoLoteLuva").checked;
-  // diagnóstico inicial: onde cada peça já está agora (0 = Aguardando, sem evento)
-  const situacaoNucleo = parseInt(document.getElementById("novoNucleoSituacao").value,10) || 0;
-  const situacaoCarcaca = carcacaOn ? (parseInt(document.getElementById("novoCarcacaSituacao").value,10)||0) : 0;
-  const situacaoLuva = luvaOn ? (parseInt(document.getElementById("novoLuvaSituacao").value,10)||0) : 0;
-  const nLotesExistentes = LOTES.filter(l=>l.item_id===itemId).length;
-  try{
-    const novoLote = await supaWrite("/rest/v1/material_lotes","POST",{
-      item_id: itemId, lote_numero: nLotesExistentes+1, quantidade: qtd,
-      observacao: document.getElementById("novoLoteObs").value.trim() || null
+// garante que toda linha tenha exatamente as posições ativas na estrutura (molde) — chamada sempre que a estrutura muda
+function mesaSincronizarComponentes(){
+  _mesaLinhas.forEach(l=>{
+    ["nucleo","carcaca","luva"].forEach(pos=>{
+      const ativo = pos==="nucleo" ? !!_mesaEstrutura.nucleo : !!_mesaEstrutura[pos];
+      if(ativo && !l.comp[pos]) l.comp[pos] = { fato:0, intencao:null };
+      if(!ativo && l.comp[pos]) delete l.comp[pos];
     });
-    const lote = Array.isArray(novoLote)?novoLote[0]:novoLote;
-    LOTES.unshift(lote);
+  });
+}
+function mesaSetNucleo(tipo){
+  const primeiraVez = !_mesaEstrutura.nucleo && !_mesaLinhas.length;
+  _mesaEstrutura.nucleo = (_mesaEstrutura.nucleo===tipo) ? null : tipo;
+  mesaSincronizarComponentes();
+  if(_mesaEstrutura.nucleo && primeiraVez){
+    const total = parseInt(_mesaItem.quantidade,10)||0;
+    const restante = Math.max(0, total-mesaAlocado());
+    _mesaLinhas.push(mesaNovaLinhaObj(restante||1));
+    mesaSincronizarComponentes();
+  }
+  renderMesa();
+}
+function mesaToggle(pos){
+  _mesaEstrutura[pos] = !_mesaEstrutura[pos];
+  mesaSincronizarComponentes();
+  renderMesa();
+}
+function mesaAdicionarLinha(){
+  const total = parseInt(_mesaItem.quantidade,10)||0;
+  const restante = Math.max(0, total-mesaAlocado());
+  _mesaLinhas.push(mesaNovaLinhaObj(restante||1));
+  mesaSincronizarComponentes();
+  renderMesa();
+}
+function mesaDividir(tempId){
+  const idx = _mesaLinhas.findIndex(l=>l.tempId===tempId);
+  if(idx<0) return;
+  const l = _mesaLinhas[idx];
+  const qtd = parseInt(l.quantidade,10)||0;
+  if(qtd<2){ toast("Quantidade insuficiente para dividir", "erro"); return; }
+  const metade1 = Math.ceil(qtd/2), metade2 = qtd-metade1;
+  l.quantidade = metade1;
+  const nova = mesaNovaLinhaObj(metade2, l.comp);
+  nova.observacao = l.observacao;
+  _mesaLinhas.splice(idx+1,0,nova);
+  renderMesa();
+}
+function mesaDuplicar(tempId){
+  const idx = _mesaLinhas.findIndex(l=>l.tempId===tempId);
+  if(idx<0) return;
+  const l = _mesaLinhas[idx];
+  const nova = mesaNovaLinhaObj(l.quantidade, l.comp);
+  nova.observacao = l.observacao;
+  _mesaLinhas.splice(idx+1,0,nova);
+  renderMesa();
+}
+function mesaRemoverLinha(tempId){
+  _mesaLinhas = _mesaLinhas.filter(l=>l.tempId!==tempId);
+  renderMesa();
+}
+// digitação de quantidade/observação: só atualiza estado + a barra (renderMesa() completo perderia o foco do campo)
+function mesaOnQtdInput(tempId, val){
+  const l = _mesaLinhas.find(x=>x.tempId===tempId);
+  if(!l) return;
+  l.quantidade = val;
+  mesaAtualizarBarra();
+}
+function mesaOnQtdChange(tempId){
+  const l = _mesaLinhas.find(x=>x.tempId===tempId);
+  if(!l) return;
+  const n = parseInt(l.quantidade,10);
+  l.quantidade = (n && n>0) ? n : 1;
+  renderMesa();
+}
+function mesaOnObsInput(tempId, val){
+  const l = _mesaLinhas.find(x=>x.tempId===tempId);
+  if(l) l.observacao = val;
+}
+function mesaAtualizarBarra(){
+  const fill = document.getElementById("mesaAllocFill");
+  const lbl = document.getElementById("mesaAllocLbl");
+  if(!fill || !_mesaItem) return;
+  const total = parseInt(_mesaItem.quantidade,10)||0;
+  const alocado = mesaAlocado();
+  const pct = total>0 ? Math.min(100, alocado/total*100) : 0;
+  fill.style.width = pct+"%";
+  fill.classList.toggle("over", alocado>total);
+  lbl.textContent = alocado+" de "+total+" pç alocada"+(alocado>total?" — ⚠ passou do total":"");
+}
 
-    const comps = [{ lote_id: lote.id, posicao:"nucleo", tipo_material: nucleoTipo }];
-    if(carcacaOn) comps.push({ lote_id: lote.id, posicao:"carcaca", tipo_material:"aco" });
-    if(luvaOn) comps.push({ lote_id: lote.id, posicao:"luva", tipo_material:"aco" });
-    const novosComps = await supaWrite("/rest/v1/material_lote_componentes","POST",comps);
-    const rows = Array.isArray(novosComps)?novosComps:[novosComps];
-    rows.forEach(r=>{ if(r) COMPONENTES.push(r); });
+// clique na trilha = FATO ("já está aqui" — vira evento real ao salvar); clicar de novo no mesmo ponto desfaz
+function mesaSetFato(tempId, pos, ordem){
+  const l = _mesaLinhas.find(x=>x.tempId===tempId);
+  if(!l || !l.comp[pos]) return;
+  l.comp[pos].fato = (l.comp[pos].fato===ordem) ? 0 : ordem;
+  if(l.comp[pos].fato>0) l.comp[pos].intencao = null;
+  renderMesa();
+}
+// só disponível enquanto o componente ainda está em Aguardando (fato=0) — intenção nunca vira evento sozinha
+function mesaSetIntencao(tempId, pos, ordem){
+  const l = _mesaLinhas.find(x=>x.tempId===tempId);
+  if(!l || !l.comp[pos]) return;
+  l.comp[pos].intencao = (l.comp[pos].intencao===ordem) ? null : ordem;
+  renderMesa();
+}
 
-    // aplica o diagnóstico inicial: já registra o cartão direto na coluna onde o material está hoje
-    const situacaoPorPosicao = { nucleo: situacaoNucleo, carcaca: situacaoCarcaca, luva: situacaoLuva };
-    for(const r of rows){
-      const ordemInicial = situacaoPorPosicao[r.posicao] || 0;
-      if(ordemInicial > 0){
-        const col = ESTAGIOS.find(e=>e.ordem===ordemInicial);
-        if(col) await registrarEvento(r, col);
+function mesaTrilhaHtml(tempId, pos, estado, tipoMaterial){
+  const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
+  const aplicaveis = ESTAGIOS.filter(e=>e.ordem>0 && colunaAplica(e,tipoMaterial)).sort((a,b)=>a.ordem-b.ordem);
+  const dots = aplicaveis.map(e=>{
+    const filled = estado.fato>0 && e.ordem<=estado.fato;
+    return `<span class="mesa-dot${filled?' filled':''}" title="${escHtml(e.ordem>=maxOrdem?'Pronto':e.descricao)}" onclick="mesaSetFato(${tempId},'${pos}',${e.ordem})"></span>`;
+  }).join("");
+  const statusHtml = estado.fato>0
+    ? `<div class="mesa-comp-status">${estado.fato>=maxOrdem?"✓ Pronto":"já em: "+escHtml((ESTAGIOS.find(e=>e.ordem===estado.fato)||{}).descricao||"")}</div>`
+    : mesaIntencaoHtml(tempId,pos,estado,tipoMaterial);
+  return `<div class="mesa-trilha">${dots}</div>${statusHtml}`;
+}
+// "entra por" — só as etapas intermediárias (exclui Aguardando e Pronto, que não são pontos de entrada)
+function mesaIntencaoHtml(tempId, pos, estado, tipoMaterial){
+  const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
+  const opcoes = ESTAGIOS.filter(e=>e.ordem>0 && e.ordem<maxOrdem && colunaAplica(e,tipoMaterial)).sort((a,b)=>a.ordem-b.ordem);
+  if(!opcoes.length) return "";
+  return `<div class="mesa-intencao"><span class="mesa-intencao-lbl">entra por:</span>${opcoes.map(o=>
+    `<button type="button" class="mesa-chip mini${estado.intencao===o.ordem?' on':''}" onclick="mesaSetIntencao(${tempId},'${pos}',${o.ordem})">${escHtml(o.descricao)}</button>`
+  ).join("")}</div>`;
+}
+
+function mesaLinhaHtml(l, i){
+  const posicoes = ["nucleo","carcaca","luva"].filter(p=>l.comp[p]);
+  const compsHtml = posicoes.map(p=>{
+    const tipoMaterial = p==="nucleo" ? _mesaEstrutura.nucleo : "aco";
+    return `<div class="mesa-comp">
+      <div class="mesa-comp-lbl">${POS_LABEL[p]} <span class="mesa-comp-mat">${MATERIAL_LABEL[tipoMaterial]}</span></div>
+      ${mesaTrilhaHtml(l.tempId,p,l.comp[p],tipoMaterial)}
+    </div>`;
+  }).join("");
+  return `<div class="mesa-lote">
+    <div class="mesa-lote-hdr">
+      <span class="mesa-lote-tag">Lote ${i+1}</span>
+      <input class="sp-inp mesa-qtd-inp" type="number" min="1" id="mesaQtd_${l.tempId}" value="${escHtml(String(l.quantidade))}" oninput="mesaOnQtdInput(${l.tempId},this.value)" onchange="mesaOnQtdChange(${l.tempId})">
+      <span class="mesa-qtd-suf">pç</span>
+      <input class="sp-inp mesa-obs-inp" placeholder="observação (opcional)" value="${escHtml(l.observacao||"")}" oninput="mesaOnObsInput(${l.tempId},this.value)">
+      <div class="mesa-lote-acoes">
+        <button type="button" class="btn-g mini" title="Dividir a quantidade em dois lotes" onclick="mesaDividir(${l.tempId})">⑃ dividir</button>
+        <button type="button" class="btn-g mini" title="Duplicar este lote" onclick="mesaDuplicar(${l.tempId})">⧉ duplicar</button>
+        <button type="button" class="btn-g mini danger" title="Remover este lote do planejamento" onclick="mesaRemoverLinha(${l.tempId})">🗑</button>
+      </div>
+    </div>
+    <div class="mesa-lote-comps">${compsHtml}</div>
+  </div>`;
+}
+function mesaLoteExistenteHtml(lote){
+  const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
+  const comps = COMPONENTES.filter(c=>c.lote_id===lote.id);
+  const completo = comps.length>0 && comps.every(c=>ordemAtual(c.id)>=maxOrdem);
+  const compsLbl = comps.map(c=>{
+    const u = ultimoDoComponente(c.id);
+    return POS_LABEL[c.posicao]+": "+(u?escHtml(u.estagio_descricao):"Aguardando");
+  }).join(" · ");
+  const abrirPrimeiro = comps.length ? `fecharMesa();abrirComponente(${comps[0].id})` : "";
+  return `<div class="mesa-existente-row${completo?' ok':''}" ${abrirPrimeiro?`onclick="${abrirPrimeiro}"`:''}>
+    <span class="mesa-existente-num">Lote ${lote.lote_numero}</span>
+    <span class="mesa-qtd-suf">${lote.quantidade} pç</span>
+    <span class="mesa-existente-status">${compsLbl||"sem componentes"}</span>
+    ${completo?'<span class="mesa-existente-badge">✓ Pronto</span>':''}
+  </div>`;
+}
+
+function renderMesa(){
+  if(!_mesaItem) return;
+  const item = _mesaItem;
+  const lotesExistentes = LOTES.filter(l=>l.item_id===item.id).sort((a,b)=>a.lote_numero-b.lote_numero);
+  document.getElementById("mesaTitle").textContent = "Planejamento — "+item.codigo_peca;
+  document.getElementById("mesaSub").textContent = "Pedido: "+(item.pedido||"—")+" · OS: "+(item.os||"—")+" · Qtd total: "+(item.quantidade||"—")+" pç";
+
+  const total = parseInt(item.quantidade,10)||0;
+  const alocado = mesaAlocado();
+  const pct = total>0 ? Math.min(100, alocado/total*100) : 0;
+
+  const estruturaHtml = `<div class="mesa-sec">
+    <div class="sp-l">Estrutura da peça</div>
+    <div class="mesa-chips">
+      <button type="button" class="mesa-chip${_mesaEstrutura.nucleo==='metal_duro'?' on':''}" onclick="mesaSetNucleo('metal_duro')">Núcleo: Metal Duro</button>
+      <button type="button" class="mesa-chip${_mesaEstrutura.nucleo==='aco'?' on':''}" onclick="mesaSetNucleo('aco')">Núcleo: Aço</button>
+      <button type="button" class="mesa-chip${_mesaEstrutura.carcaca?' on':''}" onclick="mesaToggle('carcaca')">+ Carcaça de Aço</button>
+      <button type="button" class="mesa-chip${_mesaEstrutura.luva?' on':''}" onclick="mesaToggle('luva')">+ Luva (Aço)</button>
+    </div>
+  </div>`;
+
+  const allocHtml = `<div class="mesa-sec">
+    <div class="mesa-alloc-track"><div class="mesa-alloc-fill${alocado>total?' over':''}" id="mesaAllocFill" style="width:${pct}%"></div></div>
+    <div class="mesa-alloc-lbl" id="mesaAllocLbl">${alocado} de ${total} pç alocada${alocado>total?' — ⚠ passou do total':''}</div>
+  </div>`;
+
+  const linhasHtml = !_mesaEstrutura.nucleo
+    ? `<div class="mesa-hint">Escolha o material do núcleo acima para começar a planejar os lotes.</div>`
+    : (_mesaLinhas.length ? _mesaLinhas.map((l,i)=>mesaLinhaHtml(l,i)).join("") : `<div class="mesa-hint">Nenhum lote no planejamento ainda — clique em "+ nova linha".</div>`);
+
+  const existentesHtml = lotesExistentes.length ? `<div class="mesa-sec">
+    <div class="sp-l">Lotes já criados (${lotesExistentes.length})</div>
+    <div class="mesa-existentes">${lotesExistentes.map(l=>mesaLoteExistenteHtml(l)).join("")}</div>
+  </div>` : "";
+
+  const concluirMudou = _mesaConcluirChecked !== !!item.plano_separacao_concluido;
+  const podeSalvar = (_mesaEstrutura.nucleo && _mesaLinhas.length) || concluirMudou;
+  const btnLabel = _mesaLinhas.length ? "+ Criar "+_mesaLinhas.length+" lote(s)" : "Salvar planejamento";
+
+  document.getElementById("mesaBody").innerHTML = `
+    ${estruturaHtml}
+    ${allocHtml}
+    <div class="mesa-sec">
+      <div class="mesa-sec-hdr"><div class="sp-l">Novos lotes a planejar</div>
+        <button type="button" class="btn-g mini" onclick="mesaAdicionarLinha()" ${_mesaEstrutura.nucleo?'':'disabled'}>+ nova linha</button>
+      </div>
+      <div class="mesa-linhas">${linhasHtml}</div>
+    </div>
+    ${existentesHtml}
+    <div class="mesa-footer">
+      <label class="chk-row"><input type="checkbox" id="mesaConcluirChk" ${_mesaConcluirChecked?'checked':''} onchange="_mesaConcluirChecked=this.checked;mesaAtualizarBotaoSalvar()"> Marcar planejamento deste item como concluído</label>
+      <button type="button" class="btn-g btn-acc" id="mesaSalvarBtn" onclick="mesaSalvar()" ${podeSalvar?'':'disabled'}>${btnLabel}</button>
+    </div>
+  `;
+}
+
+// habilita/desabilita o botão sem re-renderizar a Mesa inteira (o clique no checkbox não pode perder o rascunho digitado)
+function mesaAtualizarBotaoSalvar(){
+  const btn = document.getElementById("mesaSalvarBtn");
+  if(!btn || !_mesaItem) return;
+  const concluirMudou = _mesaConcluirChecked !== !!_mesaItem.plano_separacao_concluido;
+  btn.disabled = !((_mesaEstrutura.nucleo && _mesaLinhas.length) || concluirMudou);
+}
+
+async function mesaSalvar(){
+  if(!_mesaItem) return;
+  const concluirMudou = _mesaConcluirChecked !== !!_mesaItem.plano_separacao_concluido;
+  if(!_mesaLinhas.length && !concluirMudou){ toast("Nada para salvar", "erro"); return; }
+  for(const l of _mesaLinhas){
+    const qtd = parseInt(l.quantidade,10);
+    if(!qtd || qtd<=0){ toast("Informe uma quantidade válida em todos os lotes", "erro"); return; }
+    if(!l.comp.nucleo){ toast("Cada lote precisa ter um núcleo definido", "erro"); return; }
+  }
+  if(_mesaLinhas.length){
+    const total = parseInt(_mesaItem.quantidade,10)||0;
+    const alocado = mesaAlocado();
+    if(alocado!==total){
+      const msg = alocado>total
+        ? `A soma dos lotes (${alocado} pç) passa da quantidade do item (${total} pç). Salvar assim mesmo?`
+        : `A soma dos lotes (${alocado} pç) é menor que a quantidade do item (${total} pç) — ${total-alocado} pç ainda sem lote. Salvar assim mesmo?`;
+      if(!confirm(msg)) return;
+    }
+  }
+
+  const itemId = _mesaItem.id;
+  let nLotesExistentes = LOTES.filter(l=>l.item_id===itemId).length;
+  try{
+    for(const l of _mesaLinhas){
+      nLotesExistentes++;
+      const novoLote = await supaWrite("/rest/v1/material_lotes","POST",{
+        item_id: itemId, lote_numero: nLotesExistentes, quantidade: parseInt(l.quantidade,10),
+        observacao: (l.observacao||"").trim() || null
+      });
+      const lote = Array.isArray(novoLote)?novoLote[0]:novoLote;
+      LOTES.unshift(lote);
+
+      const posicoes = Object.keys(l.comp);
+      const compsPayload = posicoes.map(p=>({
+        lote_id: lote.id, posicao: p,
+        tipo_material: p==="nucleo" ? _mesaEstrutura.nucleo : "aco",
+        entrada_prevista_ordem: (l.comp[p].fato>0) ? null : (l.comp[p].intencao || null)
+      }));
+      const novosComps = await supaWrite("/rest/v1/material_lote_componentes","POST",compsPayload);
+      const rows = Array.isArray(novosComps)?novosComps:[novosComps];
+      rows.forEach(r=>{ if(r) COMPONENTES.push(r); });
+
+      for(const r of rows){
+        const fato = l.comp[r.posicao] ? l.comp[r.posicao].fato : 0;
+        if(fato>0){
+          const col = ESTAGIOS.find(e=>e.ordem===fato);
+          if(col) await registrarEvento(r, col);
+        }
       }
     }
 
+    if(concluirMudou){
+      await supaWrite(`/rest/v1/itens?id=eq.${itemId}`,"PATCH",{plano_separacao_concluido:_mesaConcluirChecked},"return=minimal");
+      _mesaItem.plano_separacao_concluido = _mesaConcluirChecked;
+      const itemRef = ITENS_CAD.find(i=>i.id===itemId);
+      if(itemRef) itemRef.plano_separacao_concluido = _mesaConcluirChecked;
+    }
+
     renderBoard();
-    toast("Lote criado");
-    fecharPainel();
+    toast(_mesaLinhas.length ? (_mesaLinhas.length>1 ? _mesaLinhas.length+" lotes criados" : "Lote criado") : "Planejamento atualizado");
+    fecharMesa();
   }catch(e){
-    toast(e.message.includes("duplicate") ? "Já existe esse número de lote para este item" : "Erro ao criar: "+e.message, "erro");
+    toast(e.message.includes("duplicate") ? "Conflito ao salvar — recarregue a página e tente de novo" : "Erro ao criar: "+e.message, "erro");
   }
 }
 

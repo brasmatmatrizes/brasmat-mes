@@ -185,7 +185,10 @@ function materialResumoItem(itemId, dados){
     return { numero: l.lote_numero, completo };
   }).sort((a,b)=>a.numero-b.numero);
   const prontos = detalhe.filter(d=>d.completo).length;
-  return { total: detalhe.length, prontos, completo: prontos===detalhe.length, detalhe };
+  const algumComponentePronto = (dados.componentes||[])
+    .filter(c=>lotesDoItem.some(l=>l.id===c.lote_id))
+    .some(c=>ordemDoComponente(c.id)>=maxOrdem);
+  return { total: detalhe.length, prontos, completo: prontos===detalhe.length, algumComponentePronto, detalhe };
 }
 
 function calcProgresso(eventos){

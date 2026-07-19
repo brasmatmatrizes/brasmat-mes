@@ -135,8 +135,26 @@ atrasos antes que aconteçam, e só liberar o roteiro quando o kit de material e
   antes (regra do projeto: custo não pode ficar exposto publicamente).
 - **Saldo de estoque com quantidade** (quanto tem de cada material no almoxarifado) — este
   módulo só registra "o material X deste lote está em estoque", não controla o saldo geral.
-- **Bloqueio automático** do Cadastro Roteiro até o kit estar completo — nesta fase é só
-  aviso visual.
+
+## 6.1 Bloqueio mínimo de material no Cadastro Roteiro (revisão 19/07/2026)
+
+A decisão original ("bloqueio automático fica pra depois, nesta fase é só aviso visual") foi
+**revista** depois de acontecer na prática: existe 1 roteiro real criado pra um item sem
+nenhum material separado. A partir de 19/07/2026:
+
+- **Criar um roteiro novo** exige que o item tenha **pelo menos 1 componente** (qualquer
+  posição, qualquer lote — não precisa ser o lote inteiro completo) já na etapa Pronto, OU que
+  o item esteja marcado **Ferramenta interna** (`itens.ferramenta_interna`, checkbox no
+  Cadastro Item) — ferramentas/dispositivos internos usados pra fabricar a peça do cliente
+  (não são a peça do cliente em si) podem ter roteiro antes de qualquer matéria-prima da peça
+  final estar no local.
+- **Bloqueio é duro, sem confirmação manual** — a única saída é a flag de ferramenta interna.
+- **Roteiro já existente nunca é bloqueado** — a regra vale só no momento de criar; editar,
+  imprimir ou excluir um roteiro já cadastrado continua liberado (o roteiro real citado acima
+  continua acessível, intocado).
+- O sinal visual (banner na busca e no cabeçalho do editor) mostra 3 estados: bloqueado
+  (🔒 vermelho), parcialmente pronto/liberado (⏳ amarelo, com detalhe por lote) e ferramenta
+  interna (🔧 roxo) — além do ✓ verde quando 100% completo.
 
 ## 7. Decisões firmadas (não re-perguntar)
 
@@ -166,8 +184,11 @@ atrasos antes que aconteçam, e só liberar o roteiro quando o kit de material e
 2. **Visibilidade de conjunto de lotes + Relatório ✅ (18/07/2026)**: resumo de conjunto de
    lotes reaproveitado entre Kanban e Cadastro Roteiro (`materialResumoItem`, `status.js`) +
    tela `separacao-relatorio.html` (histórico, filtros, 2 modos de impressão).
-3. *(Futuro)* Fornecedor/terceiro por evento.
-4. *(Futuro)* Saldo de estoque de fato (quantidade, não só estágio).
-5. *(Futuro)* Se o volume de histórico justificar: tendência, ranking por cliente e gargalo
+3. **Bloqueio mínimo de material no Cadastro Roteiro ✅ (19/07/2026)**: coluna
+   `itens.ferramenta_interna` + regra de bloqueio na criação de roteiro (ver seção 6.1) +
+   banner visual de status (bloqueado/parcial/ferramenta interna/completo).
+4. *(Futuro)* Fornecedor/terceiro por evento.
+5. *(Futuro)* Saldo de estoque de fato (quantidade, não só estágio).
+6. *(Futuro)* Se o volume de histórico justificar: tendência, ranking por cliente e gargalo
    por etapa na tela de Relatório (hoje ela só tem contagem, de propósito — ver análise
    estratégica da conversa de 18/07/2026).

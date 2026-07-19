@@ -73,6 +73,20 @@
 .mc-lotes{margin-top:6px;font-size:9.5px;font-family:var(--mono);border-radius:6px;padding:3px 6px;text-align:center}
 .mc-lotes.ok{color:var(--ok);background:rgba(45,191,126,.12)}
 .mc-lotes.warn{color:var(--warn);background:rgba(245,166,35,.12)}
+.mc-trilha{display:flex;gap:3px;margin-top:6px}
+.mc-dot{width:5px;height:5px;border-radius:50%;background:var(--border2);flex-shrink:0}
+.mc-dot.filled{background:var(--accent)}
+.mat-card.mc-dim{opacity:.28}
+.mat-card.mc-lote-hover{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.col-sub{font-size:8.5px;color:var(--text3);font-family:var(--mono);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.col-body.drag-valid{outline:2px solid rgba(45,191,126,.3);outline-offset:-2px}
+.col-body.drag-invalid{opacity:.35}
+.andon{display:flex;gap:6px;flex-shrink:0}
+.andon-chip{font-size:11px;font-family:var(--mono);padding:5px 10px;border-radius:999px;border:1px solid var(--border);background:transparent;cursor:pointer;white-space:nowrap;color:var(--text2)}
+.andon-chip:hover{border-color:var(--border2)}
+.andon-chip.ok{color:var(--ok);border-color:rgba(45,191,126,.35)}
+.andon-chip.warn{color:var(--warn);border-color:rgba(245,166,35,.35)}
+.andon-chip.active{outline:2px solid var(--accent);outline-offset:1px}
 
 .loading{display:flex;align-items:center;justify-content:center;height:100%;color:var(--text3);font-family:var(--mono);font-size:12px;gap:10px}
 .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
@@ -161,6 +175,7 @@
     <input class="search-input" id="buscaInput" placeholder="Buscar item por código, pedido ou OS para criar lote..." oninput="onBusca()" autocomplete="off">
     <div class="sugg" id="sugg"></div>
   </div>
+  <div class="andon" id="andonBar"></div>
   <div class="hint">arraste o cartão pra próxima etapa</div>
 </div>
 
@@ -201,6 +216,8 @@ let ULTIMOS = [];       // material_ultimo_evento (por componente_id)
 let _dragCompId = null;
 let _dragTipo = null;
 let _dragEndedAt = 0;
+let _filtroTexto = "";     // texto da busca, também usado pra esmaecer cartões no board
+let _andonFiltro = null;   // 'prontos' | 'parados' | 'compra' | null — clique nos contadores da toolbar
 
 async function supaWrite(path, method, body, prefer){
   const r = await fetch(SUPA_URL + path, {
@@ -229,6 +246,12 @@ function colunas(){
 }
 function colunaAplica(col, tipoMaterial){
   return tipoMaterial==="metal_duro" ? col.aplica_metal_duro : col.aplica_aco;
+}
+// rótulo "só Aço" / "só Metal Duro" quando a coluna não vale pros dois materiais
+function subLabelColuna(col){
+  if(col.aplica_metal_duro && !col.aplica_aco) return "só Metal Duro";
+  if(col.aplica_aco && !col.aplica_metal_duro) return "só Aço";
+  return "";
 }
 
 function ultimoDoComponente(compId){
@@ -263,6 +286,93 @@ function pendentesDoLote(loteId, exceptCompId){
   return COMPONENTES.filter(c=>c.lote_id===loteId && c.id!==exceptCompId && ordemAtual(c.id)<maxOrdem);
 }
 
+// chave de urgência: vencido (mais atrasado primeiro) > vence hoje/em breve (mais próximo primeiro) > sem prazo (mais dias parado primeiro)
+function chavePrioridade(comp){
+  const lote = loteDoComponente(comp);
+  const item = lote ? itemDoLote(lote) : null;
+  const dias = diasParado(comp.id) || 0;
+  let prazoRank = 2, prazoValor = 0;
+  if(item && item.prazo_entrega){
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const pz = new Date(String(item.prazo_entrega).slice(0,10)+"T00:00:00");
+    if(!isNaN(pz)){
+      const diffDias = Math.round((pz-hoje)/86400000);
+      prazoRank = diffDias<0 ? 0 : 1;
+      prazoValor = diffDias;
+    }
+  }
+  return { prazoRank, prazoValor, dias };
+}
+function ordenarPorUrgencia(comps){
+  return comps.slice().sort((a,b)=>{
+    const ka=chavePrioridade(a), kb=chavePrioridade(b);
+    if(ka.prazoRank!==kb.prazoRank) return ka.prazoRank-kb.prazoRank;
+    if(ka.prazoRank<2 && ka.prazoValor!==kb.prazoValor) return ka.prazoValor-kb.prazoValor;
+    return kb.dias-ka.dias;
+  });
+}
+
+// filtro de texto (mesmo campo que cria lote) — só esmaece, nunca esconde
+function cardBateFiltro(item){
+  if(!_filtroTexto) return true;
+  if(!item) return false;
+  const cod = String(item.codigo_peca||"").toUpperCase();
+  const ped = String(item.pedido||"").toUpperCase();
+  const os  = String(item.os||"").toUpperCase();
+  return cod.includes(_filtroTexto) || ped.includes(_filtroTexto) || os.includes(_filtroTexto);
+}
+// filtro dos contadores Andon da toolbar
+function cardBateAndon(comp){
+  if(!_andonFiltro) return true;
+  const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
+  if(_andonFiltro==="parados"){
+    const d = diasParado(comp.id);
+    return d!==null && d>=3 && ordemAtual(comp.id)<maxOrdem;
+  }
+  if(_andonFiltro==="compra"){
+    const compraCol = ESTAGIOS.find(e=>/compra/i.test(e.descricao));
+    return !!compraCol && ordemAtual(comp.id)===compraCol.ordem;
+  }
+  if(_andonFiltro==="prontos"){
+    const lote = loteDoComponente(comp);
+    const item = lote ? itemDoLote(lote) : null;
+    if(!item) return false;
+    const r = materialResumoItem(item.id, {lotes:LOTES, componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS});
+    return !!(r && r.completo);
+  }
+  return true;
+}
+function calcAndon(){
+  const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
+  let kitsProntos = 0;
+  const itensComLote = new Set(LOTES.map(l=>l.item_id));
+  itensComLote.forEach(itemId=>{
+    const r = materialResumoItem(itemId, {lotes:LOTES, componentes:COMPONENTES, ultimos:ULTIMOS, estagios:ESTAGIOS});
+    if(r && r.completo) kitsProntos++;
+  });
+  const parados = COMPONENTES.filter(c=>{
+    const d = diasParado(c.id);
+    return d!==null && d>=3 && ordemAtual(c.id)<maxOrdem;
+  }).length;
+  const compraCol = ESTAGIOS.find(e=>/compra/i.test(e.descricao));
+  const emCompra = compraCol ? COMPONENTES.filter(c=>ordemAtual(c.id)===compraCol.ordem).length : 0;
+  return { kitsProntos, parados, emCompra };
+}
+function renderAndon(){
+  const box = document.getElementById("andonBar");
+  if(!box) return;
+  const a = calcAndon();
+  box.innerHTML = `
+    <button class="andon-chip ok${_andonFiltro==='prontos'?' active':''}" onclick="toggleAndonFiltro('prontos')" title="Itens com todos os lotes prontos p/ roteiro">✓ ${a.kitsProntos} pronto(s) p/ roteiro</button>
+    <button class="andon-chip warn${_andonFiltro==='parados'?' active':''}" onclick="toggleAndonFiltro('parados')" title="Cartões sem movimento há 3 dias ou mais">⏱ ${a.parados} parado(s) ≥3d</button>
+    <button class="andon-chip${_andonFiltro==='compra'?' active':''}" onclick="toggleAndonFiltro('compra')" title="Cartões parados na etapa de Compra">🛒 ${a.emCompra} em compra</button>
+  `;
+}
+function toggleAndonFiltro(tipo){
+  _andonFiltro = (_andonFiltro===tipo) ? null : tipo;
+  renderBoard();
+}
+
 let _mostrarConcluidos = false;
 function toggleConcluidos(){
   _mostrarConcluidos = !_mostrarConcluidos;
@@ -271,6 +381,7 @@ function toggleConcluidos(){
 
 // ---- BOARD ----
 function renderBoard(){
+  renderAndon();
   const cols = colunas();
   const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
   const wrap = document.getElementById("boardWrap");
@@ -283,7 +394,7 @@ function renderBoard(){
     return;
   }
   wrap.innerHTML = cols.map(col=>{
-    let comps = COMPONENTES.filter(c=>ordemAtual(c.id)===col.ordem);
+    let comps = ordenarPorUrgencia(COMPONENTES.filter(c=>ordemAtual(c.id)===col.ordem));
     let concluidosCount = 0;
     // coluna Pronto: cartão cujo lote já está 100% completo "sai" da vista por padrão (kit já pode ir pro Roteiro)
     if(col.ordem===maxOrdem){
@@ -299,8 +410,9 @@ function renderBoard(){
       ? `<button class="col-cnt" style="cursor:pointer;background:rgba(45,191,126,.15);color:var(--ok);border:none" onclick="toggleConcluidos()">${_mostrarConcluidos?'ocultar':'✓'} ${concluidosCount} concluído(s)</button>`
       : "";
     const cor = col.ordem===0 ? "var(--text3)" : (col.ordem>=maxOrdem ? "var(--ok)" : "var(--warn)");
+    const sub = subLabelColuna(col);
     return `<div class="col${col.ordem===0?' aguardando':''}" data-ordem="${col.ordem}">
-      <div class="col-hdr"><div class="col-stripe" style="background:${cor}"></div><div class="col-name">${escHtml(col.descricao)}</div><div class="col-cnt">${comps.length}</div>${toggleHtml}</div>
+      <div class="col-hdr"><div class="col-stripe" style="background:${cor}"></div><div style="flex:1;min-width:0"><div class="col-name">${escHtml(col.descricao)}</div>${sub?`<div class="col-sub">${sub}</div>`:''}</div><div class="col-cnt">${comps.length}</div>${toggleHtml}</div>
       <div class="col-body" data-ordem="${col.ordem}" ondragover="onDragOver(event,${col.ordem})" ondragleave="onDragLeave(event)" ondrop="onDrop(event,${col.ordem})">${body}</div>
     </div>`;
   }).join("");
@@ -331,16 +443,33 @@ function renderCard(comp){
     const cls = pz<hojeISO ? " atrasado" : (pz===hojeISO ? " hoje" : "");
     prazoHtml = `<span class="mc-prazo${cls}">📅 ${new Date(pz+"T00:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}</span>`;
   }
-  return `<div class="mat-card" draggable="true" data-comp-id="${comp.id}"
+  const dimCls = (cardBateFiltro(item) && cardBateAndon(comp)) ? "" : " mc-dim";
+  return `<div class="mat-card${dimCls}" draggable="true" data-comp-id="${comp.id}" data-lote-id="${comp.lote_id}"
       ondragstart="onDragStart(event,${comp.id},'${comp.tipo_material}')" ondragend="onDragEnd(event)"
+      onmouseenter="destacarLote(${comp.lote_id})" onmouseleave="limparDestaqueLote()"
       onclick="abrirComponente(${comp.id})">
     <div class="mc-top"><div class="mc-cod">${escHtml(cod)}</div><span class="mc-pos ${comp.posicao}">${POS_LABEL[comp.posicao]}</span></div>
     <div class="mc-meta">${item?("Pedido "+escHtml(item.pedido||"—")+" · OS "+escHtml(item.os||"—")):""}${loteTag}</div>
     <div class="mc-bottom"><span class="mc-mat">${MATERIAL_LABEL[comp.tipo_material]}</span><span class="mc-qtd">${lote?lote.quantidade:"—"} pç</span>${prazoHtml}${diasHtml}</div>
+    ${trilhaHtml(comp)}
     ${aguardandoHtml}
     ${completo ? '<div class="mc-completo">✓ kit completo</div>' : ''}
     ${lotesResumoHtml}
   </div>`;
+}
+// pontinhos com as etapas aplicáveis ao material do cartão, preenchidos até a etapa atual
+function trilhaHtml(comp){
+  const aplicaveis = ESTAGIOS.filter(e=>colunaAplica(e, comp.tipo_material)).sort((a,b)=>a.ordem-b.ordem);
+  if(aplicaveis.length<2) return "";
+  const atual = ordemAtual(comp.id);
+  return `<div class="mc-trilha">${aplicaveis.map(e=>`<span class="mc-dot${e.ordem<=atual?' filled':''}"></span>`).join("")}</div>`;
+}
+// realça no board os cartões irmãos do mesmo lote (revela a hierarquia item→lote→componente sob demanda)
+function destacarLote(loteId){
+  document.querySelectorAll(`.mat-card[data-lote-id="${loteId}"]`).forEach(el=>el.classList.add("mc-lote-hover"));
+}
+function limparDestaqueLote(){
+  document.querySelectorAll(".mat-card.mc-lote-hover").forEach(el=>el.classList.remove("mc-lote-hover"));
 }
 
 // ---- DRAG AND DROP ----
@@ -348,11 +477,27 @@ function onDragStart(ev, compId, tipo){
   _dragCompId = compId; _dragTipo = tipo;
   ev.target.classList.add("dragging");
   ev.dataTransfer.effectAllowed = "move";
+  destacarColunasDrag(tipo, ordemAtual(compId));
 }
 function onDragEnd(ev){
   ev.target.classList.remove("dragging");
   _dragEndedAt = Date.now();
   _dragCompId = null; _dragTipo = null;
+  limparDestaqueColunasDrag();
+}
+// ao começar o arraste, mostra de cara em quais colunas o cartão pode ser solto (evita descobrir só tentando)
+function destacarColunasDrag(tipo, ordemDoAtual){
+  document.querySelectorAll(".col-body").forEach(el=>{
+    const ordem = parseInt(el.dataset.ordem,10);
+    const col = colunas().find(c=>c.ordem===ordem);
+    if(!col || ordem===ordemDoAtual){ el.classList.remove("drag-valid","drag-invalid"); return; }
+    const valida = colunaAplica(col, tipo);
+    el.classList.toggle("drag-valid", valida);
+    el.classList.toggle("drag-invalid", !valida);
+  });
+}
+function limparDestaqueColunasDrag(){
+  document.querySelectorAll(".col-body").forEach(el=>el.classList.remove("drag-valid","drag-invalid"));
 }
 function onDragOver(ev, ordem){
   const col = colunas().find(c=>c.ordem===ordem);
@@ -396,6 +541,8 @@ async function registrarEvento(comp, col){
 let _suggTimer=null;
 function onBusca(){
   const q = document.getElementById("buscaInput").value.trim();
+  _filtroTexto = q.toUpperCase();
+  renderBoard(); // mesmo campo também esmaece no board os cartões que não batem, sem precisar de outro controle
   clearTimeout(_suggTimer);
   if(q.length<2){ document.getElementById("sugg").style.display="none"; return; }
   _suggTimer = setTimeout(()=>buscarSugg(q), 180);
@@ -430,6 +577,8 @@ document.addEventListener("click", e=>{
 function abrirCriarLote(itemId){
   document.getElementById("sugg").style.display="none";
   document.getElementById("buscaInput").value="";
+  _filtroTexto = "";
+  renderBoard();
   const item = ITENS_CAD.find(i=>i.id===itemId);
   if(!item) return;
   const lotesDoItem = LOTES.filter(l=>l.item_id===itemId);
@@ -575,8 +724,10 @@ async function abrirComponente(compId){
   const excluirLoteBtn = (lote && outrosComps.length)
     ? `<button class="btn-g" style="color:var(--danger);border-color:var(--danger)" onclick="excluirLoteInteiro(${lote.id})">🗑 Excluir lote inteiro (${outrosComps.length+1} cartões)</button>` : "";
   const adicionarHtml = lote ? renderAdicionarComponente(lote.id) : "";
+  const moverHtml = botoesMoverHtml(comp);
 
   document.getElementById("spBody").innerHTML = `
+    ${moverHtml}
     <div class="comp-block"><div class="sp-l" style="margin-bottom:6px">Histórico</div><div class="mat-hist">${histHtml}</div></div>
     ${outrosHtml}
     ${outrosLotesHtml}
@@ -585,6 +736,26 @@ async function abrirComponente(compId){
     ${excluirLoteBtn}
   `;
   abrirPainel();
+}
+
+// botões "mover para" no painel — alternativa ao arrastar (tablet/touch não dispara drag-and-drop HTML5)
+function botoesMoverHtml(comp){
+  const atual = ordemAtual(comp.id);
+  const opts = colunas().filter(c=>colunaAplica(c, comp.tipo_material) && c.ordem!==atual);
+  if(!opts.length) return "";
+  return `<div class="comp-block"><div class="sp-l" style="margin-bottom:8px">Mover para</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${opts.map(c=>`<button class="btn-g" onclick="moverComponente(${comp.id},${c.id})">${escHtml(c.ordem===0?"Aguardando":c.descricao)}</button>`).join("")}
+    </div>
+  </div>`;
+}
+async function moverComponente(compId, estagioId){
+  const comp = COMPONENTES.find(c=>c.id===compId);
+  const col = ESTAGIOS.find(e=>e.id===estagioId);
+  if(!comp || !col) return;
+  await registrarEvento(comp, col);
+  toast("Movido para "+col.descricao);
+  abrirComponente(compId);
 }
 
 // posições (núcleo/carcaça/luva) que esse lote ainda não tem cartão

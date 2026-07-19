@@ -83,13 +83,13 @@ atrasos antes que aconteçam, e só liberar o roteiro quando o kit de material e
 ## 4. Dados (linguagem simples — a tradução para tabelas é papel da `modelagem-dados-mes` /
 `arquiteto-modulo`)
 
-- **Lote**: pertence a um item (pedido+código+OS, do `itens`); tem uma quantidade própria
-  (pode ser menor que a quantidade total do item, se dividido); numerado automaticamente
-  (1, 2, 3... quando dividido) — o PCP nunca digita esse número.
-- **Componente**: uma peça física dentro de um lote — sua **posição** (núcleo/carcaça/luva) e
-  o **material real** dela (Metal Duro ou Aço). O material **não é fixo por posição**: só o
-  núcleo varia entre os dois; carcaça e luva são sempre Aço. Cada componente é um cartão do
-  kanban, com sua própria linha do tempo, independente dos outros componentes do mesmo lote.
+- **Lote = componente** (revisão 19/07/2026, ver seção 10): cada linha já é um lote de UMA
+  posição (núcleo/carcaça/luva) de um item — não existe mais um "lote" separado agrupando as
+  três posições. Tem sua própria **quantidade**, número automático **escopado por posição**
+  (o núcleo tem sua numeração 1,2,3..., a carcaça tem a dela, independente) e o **material
+  real** dela (Metal Duro ou Aço — só o núcleo varia; carcaça e luva são sempre Aço). Cada
+  lote é um cartão do kanban, com sua própria linha do tempo, totalmente independente das
+  outras posições do mesmo item — o núcleo pode ter 2 lotes enquanto a carcaça tem só 1.
 - **Evento**: um registro por movimento de um componente para uma coluna/estágio (o arraste em
   si) — tipo de estágio + data. **Imutável** — não se edita, só se registra um novo (mesmo
   padrão de `producao_eventos`).
@@ -160,12 +160,14 @@ nenhum material separado. A partir de 19/07/2026:
 
 - **PCP é o único ator** que mexe nisso — não precisa de sincronização entre múltiplos
   usuários editando o mesmo lote (diferente da Demanda Cliente).
-- **Um item pode ter mais de um lote** — quantidade dividida quando parte já tinha material
-  adiantado de antes. Número do lote é **sempre automático**.
+- **Cada posição do item pode ter mais de um lote, de forma independente das outras**
+  (revisão 19/07/2026, seção 10) — quantidade dividida quando parte já tinha material
+  adiantado de antes, sem forçar as outras posições a dividir junto. Número do lote é
+  **sempre automático**, escopado por posição.
 - **Núcleo pode ser Metal Duro ou Aço** — não é fixo; Carcaça e Luva, quando existem, são
   sempre Aço.
-- **Um cartão do kanban = um componente (posição física)**, nunca um lote inteiro — evita
-  travar dois processos de material diferentes num cartão só.
+- **Um cartão do kanban = um lote (posição física)**, sempre — evita travar dois processos de
+  material diferentes num cartão só.
 - **Trilha de colunas única e compartilhada** entre Metal Duro e Aço (não um catálogo por
   material) — cartão de Metal Duro pula direto as colunas que não se aplicam a ele.
 - **Arrastar o cartão é a forma de registrar o evento** — sem formulário/botão intermediário,
@@ -190,9 +192,11 @@ nenhum material separado. A partir de 19/07/2026:
 4. **Mesa de Planejamento ✅ (19/07/2026)**: ver seção 9 — substitui o formulário "Novo lote"
    por um planejamento consolidado de todos os lotes do item antes de qualquer cartão existir
    no Kanban.
-5. *(Futuro)* Fornecedor/terceiro por evento.
-6. *(Futuro)* Saldo de estoque de fato (quantidade, não só estágio).
-7. *(Futuro)* Se o volume de histórico justificar: tendência, ranking por cliente e gargalo
+5. **Lote por posição, não por item ✅ (19/07/2026)**: ver seção 10 — corrige a Mesa pra
+   permitir que núcleo, carcaça e luva tenham cada um sua própria quantidade de lotes.
+6. *(Futuro)* Fornecedor/terceiro por evento.
+7. *(Futuro)* Saldo de estoque de fato (quantidade, não só estágio).
+8. *(Futuro)* Se o volume de histórico justificar: tendência, ranking por cliente e gargalo
    por etapa na tela de Relatório (hoje ela só tem contagem, de propósito — ver análise
    estratégica da conversa de 18/07/2026).
 
@@ -238,3 +242,43 @@ mesma busca, por item, ANTES de qualquer cartão existir no Kanban:
 **Kanban**: zero mudança de comportamento — trilha de colunas, drag = evento, card =
 componente, status calculado, tudo como antes. A Mesa só passou a ser a origem dos cartões
 (no lugar do formulário antigo).
+
+## 10. Lote por posição, não por item (19/07/2026)
+
+**Dor** (achada em uso real logo após a Mesa v1 acima entrar no ar): o "lote" amarrava
+núcleo+carcaça+luva num pacote único com uma quantidade só. Dividir o núcleo em 2 lotes
+(2+4, trajetórias diferentes) dividia a carcaça junto — mesmo quando a carcaça era, na
+prática, uma barra de aço só, cortada em 6 depois, sem nenhuma razão pra acompanhar a
+divisão do núcleo. "Eu queria dois lotes de núcleo e um lote só de carcaça" — pedido direto
+do usuário, e o sistema não permitia.
+
+**Causa raiz**: o modelo original (`material_lotes` + `material_lote_componentes`) tratava
+"lote" como um contêiner de posições, presumindo que núcleo/carcaça/luva de uma mesma peça
+sempre andam juntos em quantidade — o que é comum, mas não é regra. Cada material tem sua
+própria cadeia de fornecimento (o núcleo de metal duro vem picado em pedidos diferentes; o
+aço da carcaça pode ser uma barra só usinada em lote).
+
+**Correção**: `material_lote_componentes` passou a carregar `item_id`, `quantidade`,
+`observacao` e `lote_numero` diretamente — cada linha já É um lote, de uma posição só.
+`lote_numero` é **escopado por item+posição** (não por item): o núcleo tem sua sequência
+1,2,3..., a carcaça tem a dela, totalmente independente. A tabela `material_lotes` foi
+**apagada** — nada mais dependia dela além dos campos que ela guardava.
+
+- **Mesa**: virou uma seção independente por posição ativa (núcleo, carcaça, luva), cada
+  uma com sua própria barra de alocação e sua própria lista de lotes — dividir/duplicar
+  numa posição não afeta as outras. Reabrir a Mesa de um item que já tem lotes salvos
+  recompõe os chips de estrutura a partir do que existe (não força re-marcar); desligar um
+  chip com lotes reais mantém a seção visível em modo só-consulta (nunca "esconde" dado
+  real).
+- **`materialResumoItem`** (status.js): completude passou a ser por item — "todos os lotes
+  (de todas as posições) chegaram em Pronto" —, sem depender de pareamento núcleo↔carcaça↔
+  luva, que nunca existiu de verdade no processo real.
+- **Kanban**: card e trilha continuam idênticos — cada card já era 1 componente/1 posição
+  desde o MVP, isso não mudou. Só o rótulo "lote N" passou a ser escopado por posição
+  ("lote 2 de 3" conta só os lotes daquela posição, não do item inteiro).
+- **Relatório e Roteiro**: atualizados pra ler os campos direto do componente (sem mais
+  join com `material_lotes`); a regra de bloqueio do Roteiro (seção 6.1) não mudou de
+  comportamento, só a consulta por trás.
+- **Migração**: os dados existentes (todos ainda de teste) foram preservados 1:1 — cada
+  par núcleo+carcaça do modelo antigo virou 2 lotes independentes com a mesma numeração,
+  sem perda de histórico de eventos.

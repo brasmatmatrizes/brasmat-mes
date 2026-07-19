@@ -677,8 +677,16 @@ function abrirMesa(itemId){
   const item = ITENS_CAD.find(i=>i.id===itemId);
   if(!item) return;
   _mesaItem = item;
-  _mesaEstrutura = { nucleo:null, carcaca:false, luva:false };
+  // a estrutura já reflete o que o item já tem salvo — reabrir a Mesa não pode "esconder" carcaça/luva já criadas
+  const existentesDoItem = COMPONENTES.filter(c=>c.item_id===itemId);
+  const nucleoExistente = existentesDoItem.find(c=>c.posicao==="nucleo");
+  _mesaEstrutura = {
+    nucleo: nucleoExistente ? nucleoExistente.tipo_material : null,
+    carcaca: existentesDoItem.some(c=>c.posicao==="carcaca"),
+    luva: existentesDoItem.some(c=>c.posicao==="luva")
+  };
   _mesaPosicoes = {};
+  mesaSincronizar(); // garante os arrays vazios pra "+ novo lote" já funcionar sem precisar re-clicar nos chips
   _mesaConcluirChecked = !!item.plano_separacao_concluido;
   renderMesa();
   abrirMesaPainel();
@@ -865,17 +873,27 @@ function mesaLoteExistenteHtml(comp){
 // uma seção inteira por posição (núcleo/carcaça/luva) — cada uma com sua própria barra de alocação e lista de lotes
 function mesaSecaoPosicaoHtml(pos){
   const ativo = pos==="nucleo" ? !!_mesaEstrutura.nucleo : !!_mesaEstrutura[pos];
-  if(!ativo) return "";
+  const existentes = COMPONENTES.filter(c=>c.item_id===_mesaItem.id && c.posicao===pos).sort((a,b)=>a.lote_numero-b.lote_numero);
+  // a seção fica visível se o chip está ligado OU se já existem lotes reais dessa posição — desligar o chip
+  // nunca pode "esconder" um lote que já foi criado de verdade, só evita planejar lote NOVO daquela posição
+  if(!ativo && !existentes.length) return "";
   const tipoMaterial = pos==="nucleo" ? _mesaEstrutura.nucleo : "aco";
   const linhas = _mesaPosicoes[pos] || [];
   const total = parseInt(_mesaItem.quantidade,10)||0;
   const alocado = mesaAlocado(pos);
   const pct = total>0 ? Math.min(100, alocado/total*100) : 0;
 
-  const existentes = COMPONENTES.filter(c=>c.item_id===_mesaItem.id && c.posicao===pos).sort((a,b)=>a.lote_numero-b.lote_numero);
   const existentesHtml = existentes.length
     ? `<div class="sp-l" style="margin-top:6px">Lotes já criados (${existentes.length})</div><div class="mesa-existentes">${existentes.map(mesaLoteExistenteHtml).join("")}</div>`
     : "";
+
+  if(!ativo){
+    // desligado, mas com lotes reais: modo só-consulta — sem barra de alocação nem "+ novo lote" (religar o chip pra planejar mais)
+    return `<div class="mesa-sec mesa-pos-sec">
+      <div class="mesa-sec-hdr"><div class="sp-l">${POS_LABEL[pos]} <span class="mesa-comp-mat">(desligado — religue o chip acima pra planejar mais)</span></div></div>
+      ${existentesHtml}
+    </div>`;
+  }
 
   const linhasHtml = linhas.length
     ? linhas.map((l,i)=>mesaLinhaHtml(pos,l,i,tipoMaterial)).join("")
@@ -909,10 +927,13 @@ function renderMesa(){
     </div>
   </div>`;
 
-  const semNada = !_mesaEstrutura.nucleo && !_mesaEstrutura.carcaca && !_mesaEstrutura.luva;
-  const posicoesHtml = semNada
-    ? `<div class="mesa-hint">Escolha ao menos o material do núcleo acima para começar a planejar.</div>`
-    : ["nucleo","carcaca","luva"].map(mesaSecaoPosicaoHtml).join("");
+  const algumaSecao = ["nucleo","carcaca","luva"].some(p=>{
+    const ativo = p==="nucleo" ? !!_mesaEstrutura.nucleo : !!_mesaEstrutura[p];
+    return ativo || COMPONENTES.some(c=>c.item_id===item.id && c.posicao===p);
+  });
+  const posicoesHtml = algumaSecao
+    ? ["nucleo","carcaca","luva"].map(mesaSecaoPosicaoHtml).join("")
+    : `<div class="mesa-hint">Escolha ao menos o material do núcleo acima para começar a planejar.</div>`;
 
   const totalLinhasNovas = ["nucleo","carcaca","luva"].reduce((s,p)=>s+((_mesaPosicoes[p]||[]).length),0);
   const concluirMudou = _mesaConcluirChecked !== !!item.plano_separacao_concluido;

@@ -114,6 +114,27 @@
 .comp-block{border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--bg3)}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);color:var(--text);padding:9px 18px;border-radius:9px;font-size:12px;font-family:var(--mono);z-index:300;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 .toast-erro{border:2px solid var(--danger);color:var(--danger);font-size:14px;font-weight:600;padding:13px 22px;box-shadow:0 8px 28px rgba(240,69,69,.4)}
+
+/* MODO TV — monitor fixo na parede, só leitura, fonte maior, sem drag/clique */
+body.tv-mode .search-wrap,body.tv-mode .hint{display:none}
+body.tv-mode .toolbar{height:auto;padding:16px 28px}
+body.tv-mode .tt{font-size:20px}
+body.tv-mode .andon{gap:10px;margin-left:auto}
+body.tv-mode .andon-chip{font-size:15px;padding:8px 18px}
+body.tv-mode .board-wrap{height:calc(100vh - 88px);padding:18px 28px}
+body.tv-mode .col{width:310px;min-width:310px}
+body.tv-mode .col.aguardando{width:270px;min-width:270px}
+body.tv-mode .col-hdr{padding:13px 15px}
+body.tv-mode .col-name{font-size:14.5px}
+body.tv-mode .col-sub{font-size:11px}
+body.tv-mode .col-cnt{font-size:12px;padding:2px 9px}
+body.tv-mode .mat-card{padding:13px 14px;cursor:default}
+body.tv-mode .mc-cod{font-size:15px}
+body.tv-mode .mc-pos{font-size:11px;padding:2px 8px}
+body.tv-mode .mc-meta{font-size:12px}
+body.tv-mode .mc-mat,body.tv-mode .mc-qtd,body.tv-mode .mc-dias,body.tv-mode .mc-prazo{font-size:11.5px}
+body.tv-mode .mc-completo,body.tv-mode .mc-aguardando,body.tv-mode .mc-lotes{font-size:12px;padding:5px 8px;margin-top:8px}
+body.tv-mode .mc-dot{width:7px;height:7px}
 </style>
 </head>
 <body>
@@ -163,6 +184,7 @@
     </div>
   </div>
   <div class="tr-right">
+    <button class="btn-g" id="tvToggleBtn" onclick="toggleTvMode()">📺 Modo TV</button>
     <div class="sync-dot"></div>
     <span class="sync-lbl" id="slbl">carregando...</span>
   </div>
@@ -218,6 +240,22 @@ let _dragTipo = null;
 let _dragEndedAt = 0;
 let _filtroTexto = "";     // texto da busca, também usado pra esmaecer cartões no board
 let _andonFiltro = null;   // 'prontos' | 'parados' | 'compra' | null — clique nos contadores da toolbar
+let _tvMode = false;       // modo TV: monitor fixo na parede, só leitura, sem drag/clique
+
+// modo TV — liga/desliga sem recarregar; a URL guarda o estado (?tv=1) pra uma TV fixa poder só abrir o link salvo
+function toggleTvMode(){
+  _tvMode = !_tvMode;
+  aplicarTvMode();
+  renderBoard();
+}
+function aplicarTvMode(){
+  document.body.classList.toggle("tv-mode", _tvMode);
+  const btn = document.getElementById("tvToggleBtn");
+  if(btn) btn.textContent = _tvMode ? "✕ Sair do modo TV" : "📺 Modo TV";
+  const url = new URL(location.href);
+  if(_tvMode) url.searchParams.set("tv","1"); else url.searchParams.delete("tv");
+  history.replaceState(null, "", url.toString());
+}
 
 async function supaWrite(path, method, body, prefer){
   const r = await fetch(SUPA_URL + path, {
@@ -444,10 +482,12 @@ function renderCard(comp){
     prazoHtml = `<span class="mc-prazo${cls}">📅 ${new Date(pz+"T00:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}</span>`;
   }
   const dimCls = (cardBateFiltro(item) && cardBateAndon(comp)) ? "" : " mc-dim";
-  return `<div class="mat-card${dimCls}" draggable="true" data-comp-id="${comp.id}" data-lote-id="${comp.lote_id}"
+  // modo TV: sem drag, sem clique, sem hover — só leitura, pra monitor fixo na parede
+  const interAttrs = _tvMode ? "" : `draggable="true"
       ondragstart="onDragStart(event,${comp.id},'${comp.tipo_material}')" ondragend="onDragEnd(event)"
       onmouseenter="destacarLote(${comp.lote_id})" onmouseleave="limparDestaqueLote()"
-      onclick="abrirComponente(${comp.id})">
+      onclick="abrirComponente(${comp.id})"`;
+  return `<div class="mat-card${dimCls}" data-comp-id="${comp.id}" data-lote-id="${comp.lote_id}" ${interAttrs}>
     <div class="mc-top"><div class="mc-cod">${escHtml(cod)}</div><span class="mc-pos ${comp.posicao}">${POS_LABEL[comp.posicao]}</span></div>
     <div class="mc-meta">${item?("Pedido "+escHtml(item.pedido||"—")+" · OS "+escHtml(item.os||"—")):""}${loteTag}</div>
     <div class="mc-bottom"><span class="mc-mat">${MATERIAL_LABEL[comp.tipo_material]}</span><span class="mc-qtd">${lote?lote.quantidade:"—"} pç</span>${prazoHtml}${diasHtml}</div>
@@ -881,6 +921,8 @@ function fecharPainel(){
 // ---- INIT ----
 async function init(){
   setSync("carregando...");
+  _tvMode = new URLSearchParams(location.search).get("tv")==="1";
+  aplicarTvMode();
   const [itensCad, estagios, lotes, componentes, ultimos] = await Promise.all([
     supaFetch("/rest/v1/itens?select=*&order=created_at.desc&limit=2000"),
     supaFetch("/rest/v1/material_estagios?select=*&ativo=eq.true&order=ordem&limit=20"),

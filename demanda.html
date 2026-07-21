@@ -108,6 +108,9 @@ table.itens-tbl tr.critico td:first-child{box-shadow:inset 3px 0 0 #DC2626}
 .seq-row .seq-status{flex-shrink:0;font-size:11px}
 .seq-row .seq-cod{width:82px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
 .seq-row .seq-tipo{width:12px;flex-shrink:0;text-align:center;font-weight:700;font-size:10px}
+.seq-row .seq-flags{width:26px;flex-shrink:0;display:flex;align-items:center;gap:3px}
+.seq-row .seq-obs-ico{font-size:10px;line-height:1}
+.seq-row .seq-crit-dot{width:7px;height:7px;border-radius:50%;background:#DC2626;flex-shrink:0;box-shadow:0 0 0 2px rgba(220,38,38,0.25)}
 .seq-row .seq-prazo{color:var(--text);flex-shrink:0;font-size:10px;width:54px;text-align:center;white-space:nowrap}
 .seq-row .seq-prazo.hoje{color:var(--warn);font-weight:700}
 .seq-row .seq-prazo.atrasado{color:var(--danger);font-weight:700}
@@ -1163,6 +1166,7 @@ function renderSeqPanel(){
       <span class="seq-num">${i+1}ª</span>
       <span class="seq-status" title="${stTitle}">${stIco}</span>
       <span class="seq-cod" title="${escHtml(it.codigo_peca)}">${escHtml(it.codigo_peca||"(sem código)")}</span>
+      <span class="seq-flags">${it.observacao?`<span class="seq-obs-ico" title="Tem observação">⚠️</span>`:""}${it.critico?`<span class="seq-crit-dot" title="Item crítico"></span>`:""}</span>
       ${tipoBadge}
       ${it.pedido?`<span class="seq-ped">${escHtml(it.pedido)}</span>`:""}
       ${it.prazo_confirmado

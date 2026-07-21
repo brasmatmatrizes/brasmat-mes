@@ -134,26 +134,36 @@ function renderTipoBadge(row){
   return `<span style="font-size:10px;font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:6px;background:${t.bg};color:${t.cor};border:1px solid ${t.cor}44">${t.label} · ${t.full}</span>`;
 }
 
-// Busca anexos (desenho/roteiro) cadastrados na Demanda do Cliente para esta peça
+// Busca anexos (desenho/roteiro) e presença na Demanda do Cliente para esta peça
 async function buscarAnexosDemanda(pedido, codigo){
   const c = encodeURIComponent(codigo||"");
   const ped = pedido ? `&pedido=eq.${encodeURIComponent(pedido)}` : "";
   try{
-    const rows = await supaFetch(`/rest/v1/demanda_itens?select=desenho_url,fluxo_url&codigo_peca=eq.${c}${ped}&order=id.desc`);
-    if(Array.isArray(rows)){
-      for(const r of rows){ if(r.desenho_url||r.fluxo_url) return {desenho_url:r.desenho_url||null, fluxo_url:r.fluxo_url||null}; }
+    const rows = await supaFetch(`/rest/v1/demanda_itens?select=cliente,desenho_url,fluxo_url&codigo_peca=eq.${c}${ped}&order=id.desc`);
+    if(Array.isArray(rows) && rows.length){
+      const comUrl = rows.find(r=>r.desenho_url||r.fluxo_url);
+      return {
+        desenho_url: comUrl ? (comUrl.desenho_url||null) : null,
+        fluxo_url:   comUrl ? (comUrl.fluxo_url||null)   : null,
+        emDemanda: true,
+        cliente: rows[0].cliente || null
+      };
     }
   }catch(e){}
-  return {desenho_url:null, fluxo_url:null};
+  return {desenho_url:null, fluxo_url:null, emDemanda:false, cliente:null};
 }
 
-// Renderiza os ícones de anexo (só aparecem quando existe o arquivo)
-function renderAnexosIcons(a){
-  if(!a || (!a.desenho_url && !a.fluxo_url)) return "";
+// Renderiza os ícones de anexo (só aparecem quando existe o arquivo) e o atalho para a Demanda Cliente
+function renderAnexosIcons(a, pedido, codigo){
+  if(!a || (!a.desenho_url && !a.fluxo_url && !a.emDemanda)) return "";
   const base = "display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);padding:4px 10px;border-radius:6px;text-decoration:none";
   let h = '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">';
   if(a.desenho_url) h += `<a href="${a.desenho_url}" target="_blank" rel="noopener" title="Abrir desenho (PDF)" style="${base};background:rgba(59,127,255,0.12);color:var(--accent);border:1px solid rgba(59,127,255,0.3)">📐 Desenho</a>`;
   if(a.fluxo_url)   h += `<a href="${a.fluxo_url}" target="_blank" rel="noopener" title="Abrir roteiro (PDF)" style="${base};background:rgba(45,191,126,0.12);color:var(--ok);border:1px solid rgba(45,191,126,0.3)">📋 Roteiro</a>`;
+  if(a.emDemanda){
+    const url = `demanda.html?cliente=${encodeURIComponent(a.cliente||"")}&codigo=${encodeURIComponent(codigo||"")}&pedido=${encodeURIComponent(pedido||"")}`;
+    h += `<a href="${url}" title="Ver na Demanda Cliente" style="${base};background:rgba(155,93,229,0.12);color:#9B5DE5;border:1px solid rgba(155,93,229,0.3)">🔔 Em Demanda</a>`;
+  }
   h += '</div>';
   return h;
 }
@@ -259,7 +269,7 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
         ${renderTipoBadge(ultimo)}
       </div>
       <div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px">Pedido: ${pedido}${ultimo.os&&String(ultimo.os).trim()?' · OS: '+String(ultimo.os).trim():''}</div>
-      ${renderAnexosIcons(anexos)}
+      ${renderAnexosIcons(anexos, pedido, codigo)}
     </div>
     <div style="display:flex;gap:8px;flex-shrink:0">
       <div style="text-align:center;padding:0 12px">
@@ -272,11 +282,10 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
       </div>
     </div>`;
 
-  const tl = eventos.map((ev,i)=>{
-    const isUlt = i===eventos.length-1;
+  // Conteúdo do card de um evento — usado tanto na linha do tempo quanto no resumo fixo do último evento
+  function renderTlCard(ev, i, isUlt){
     const evtS  = String(ev.evento||"").trim().toUpperCase();
     const isEnt = evtS==="ENTRADA";
-    const dot   = isUlt&&isEnt?"atual":isEnt?"entrada":"saida";
     const sub   = getSubop(ev);
     let dur="";
     if(!isEnt&&i>0){
@@ -295,9 +304,7 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
     const dataCor = dataVencida ? "var(--danger)" : "var(--text3)";
     const dataIco = dataVencida ? "⚠" : "📅";
 
-    return `<li class="tl-item">
-      <div class="tl-dot ${dot}"></div>
-      <div class="tl-card${isUlt&&isEnt?" atual":""}">
+    return `<div class="tl-card${isUlt&&isEnt?" atual":""}">
         <div class="tl-top">
           <span class="tl-proc">${ev.processo||"—"}</span>
           <span class="tl-evt ${isEnt?"ent":"sai"}">${evtS}</span>
@@ -314,7 +321,16 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
           ${dur}
         </div>
         ${ev.observacao&&String(ev.observacao).trim()?`<div class="tl-obs">${ev.observacao}</div>`:""}
-      </div>
+      </div>`;
+  }
+
+  const tl = eventos.map((ev,i)=>{
+    const isUlt = i===eventos.length-1;
+    const isEnt = String(ev.evento||"").trim().toUpperCase()==="ENTRADA";
+    const dot   = isUlt&&isEnt?"atual":isEnt?"entrada":"saida";
+    return `<li class="tl-item">
+      <div class="tl-dot ${dot}"></div>
+      ${renderTlCard(ev, i, isUlt)}
     </li>`;
   }).join("");
 
@@ -332,6 +348,8 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
       <div style="flex:1"><div class="ml">posição atual</div><div style="font-size:14px;font-weight:500;color:var(--text)">${ultimo.processo||"—"}</div><div style="font-size:11px;color:var(--text2);margin-top:2px">${getSubop(ultimo)}</div></div>
       <div style="text-align:right"><div style="font-size:16px;font-weight:500;font-family:var(--mono);color:var(--${dc})">${diasStr(dias)}</div><div class="ml">neste setor</div></div>
     </div>`:""}
+    <div class="tl-lbl">última operação registrada</div>
+    ${renderTlCard(ultimo, eventos.length-1, true)}
     <div class="tl-lbl">linha do tempo</div>
     <ul class="timeline">${tl}</ul>`;
 }

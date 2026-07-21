@@ -379,7 +379,7 @@ async function abrirPeca(pedido, codigo){
           ${renderTipoBadge(ultimo)}
         </div>
         <div class="det-pedido">Pedido: ${pedido||"(sem pedido)"}${osNum!=="—"?" · OS: "+osNum:""}</div>
-        ${renderAnexosIcons(anexos)}
+        ${renderAnexosIcons(anexos, pedido, codigo)}
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <span style="font-size:12px;padding:6px 14px;border-radius:20px;border:1px solid ${st.cor}44;background:${st.cor}22;color:${st.cor}">${st.ico} ${st.label}</span>

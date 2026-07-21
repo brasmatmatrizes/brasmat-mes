@@ -386,6 +386,25 @@ async function init(){
     document.getElementById("cliente-sel").innerHTML = `<option value="">Erro ao carregar clientes</option>`;
   }
   renderResumoClientes();
+  await abrirViaLink();
+}
+
+// Vindo do ícone "🔔 Em Demanda" da linha do tempo (status.js) — pula direto pro cliente e localiza o item na lista
+async function abrirViaLink(){
+  const params = new URLSearchParams(location.search);
+  const cliAlvo = params.get("cliente");
+  const codAlvo = params.get("codigo");
+  if(!cliAlvo) return;
+  const pedAlvo = params.get("pedido") || "";
+  const sel = document.getElementById("cliente-sel");
+  const opt = [...sel.options].find(o=>o.value===cliAlvo);
+  if(!opt) return;
+  sel.value = cliAlvo;
+  await selecionarCliente();
+  if(codAlvo){
+    const idx = ITENS.findIndex(it=>String(it.codigo_peca).toUpperCase()===codAlvo.toUpperCase() && (!pedAlvo || String(it.pedido||"")===pedAlvo));
+    if(idx>=0) scrollToItemCard(idx);
+  }
 }
 
 // Cabeçalho: cards dos clientes que já têm demanda (com qtd de itens), ou lista de todos os itens juntos

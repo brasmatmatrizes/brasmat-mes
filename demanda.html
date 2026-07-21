@@ -745,9 +745,9 @@ function renderSugg(lista, q){
       const linha2 = [ped?("Pedido: "+ped):"", os?("OS: "+os):"", qtd?("Qtd: "+qtd+" pç"):""].filter(Boolean).join(" · ");
       const posIdx = ITENS.findIndex(it=>String(it.codigo_peca).toUpperCase()===cod.toUpperCase() && String(it.pedido||"")===ped);
       const jaNaLista = posIdx>=0;
-      const clickH = jaNaLista ? `onclick="flash('Item já está na demanda')"` : `onclick="lancarItem('${esc(cod)}','${esc(ped)}','${esc(os)}',false)"`;
+      const clickH = jaNaLista ? `onclick="irParaItemDaLista(${posIdx})"` : `onclick="lancarItem('${esc(cod)}','${esc(ped)}','${esc(os)}',false)"`;
       const dupTag = jaNaLista ? `<span style="font-size:9px;font-family:var(--mono);font-weight:600;padding:2px 7px;border-radius:8px;background:rgba(45,191,126,0.15);color:var(--ok);white-space:nowrap">✓ já na demanda · ${posIdx+1}ª</span>` : `<span style="font-size:9px;padding:2px 7px;border-radius:8px;background:${st.cor}22;color:${st.cor};white-space:nowrap">${st.ico} ${st.label.split("—")[0].trim()}</span>`;
-      return `<div class="sugg-item" style="${jaNaLista?'opacity:0.55;cursor:default':''}" ${clickH}>
+      return `<div class="sugg-item" style="${jaNaLista?'opacity:0.55;cursor:pointer':''}" ${clickH}>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
           <div style="display:flex;align-items:center;gap:6px"><div class="sugg-cod">${cod}</div><span id="sgt-${idx}"></span></div>
           ${dupTag}
@@ -784,6 +784,13 @@ async function fetchTipoRow(codigo, pedido){
 }
 
 function hideSugg(){ const b=document.getElementById("sugg"); b.style.display="none"; b.innerHTML=""; }
+
+// Item da sugestão já está na demanda: só pula pra ele na lista à direita
+function irParaItemDaLista(idx){
+  document.getElementById("item-input").value = "";
+  hideSugg();
+  scrollToItemCard(idx);
+}
 
 function lancarDigitado(){
   const q = document.getElementById("item-input").value.trim();

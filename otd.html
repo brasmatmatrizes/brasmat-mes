@@ -86,10 +86,12 @@
 .tend-legend{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap}
 .tend-leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
 .tend-leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.tend-pct-lbl{font-size:11px;font-family:var(--mono);font-weight:500}
 
 /* RANKING POR CLIENTE */
 .rank-section{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:20px}
-.rank-row{display:grid;grid-template-columns:1fr 90px 130px;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)}
+.rank-row{display:grid;grid-template-columns:1fr 90px 130px;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s}
+.rank-row:hover{background:var(--bg3)}
 .rank-row:last-child{border-bottom:none}
 .rank-cli{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rank-barwrap{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
@@ -254,6 +256,14 @@
     </div>
   </div>
 
+  <!-- TENDÊNCIA ANO: entregue no prazo -->
+  <div class="tend-section">
+    <div class="tend-title">OTD entregue no prazo — evolução mensal (<span id="ano-atual-lbl"></span>)</div>
+    <div class="tend-chart" id="tend-chart-ano">
+      <div class="loading"><div class="spinner"></div>calculando...</div>
+    </div>
+  </div>
+
   <!-- OTD POR ETAPA (onde furou) -->
   <div class="tend-title" style="margin-bottom:12px">OTD por etapa — onde o atraso começa</div>
   <!-- OTD CARDS -->
@@ -349,6 +359,7 @@
 <script src="status.js"></script>
 <script>
 let TODOS = [];
+let ANO_TODOS = []; // ano corrente inteiro, independente do filtro De/até — alimenta o gráfico de evolução mensal
 let filtroOTD = null; // 'plan'|'prod'|'qual'|'est'|'exp'|null
 let filtroTipo = "V"; // 'V'|'I'|'' (Todos) — default Vendas (compromisso com cliente)
 
@@ -377,6 +388,7 @@ function fmtD(d){ return d.toISOString().slice(0,10); }
 document.getElementById("di").value = fmtD(iniMes);
 document.getElementById("df").value = fmtD(hoje);
 document.querySelector('#seg-tipo button[data-tipo="V"]').classList.add("on");
+document.getElementById("ano-atual-lbl").textContent = hoje.getFullYear();
 
 async function init(){
   const overlay = document.getElementById("loadingOverlay");
@@ -386,25 +398,37 @@ async function init(){
   inDi.disabled = true; inDf.disabled = true;
   document.getElementById("slbl").textContent = "carregando...";
   try{
-    // Busca só o período selecionado (padrão: mês corrente) — evita baixar o histórico inteiro
+    // Busca só o período selecionado (padrão: mês corrente) — evita baixar o histórico inteiro.
+    // Em paralelo, busca o ano corrente inteiro (independente do filtro De/até) só para
+    // alimentar o gráfico "entregue no prazo — evolução mensal".
+    const COLS="id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,prazo_entrega,operacao_qualidade,operacao_administrativo,classificacao_fiscal,razao_social";
+    async function buscarIntervalo(gte,lte){
+      let todos=[], offset=0;
+      while(true){
+        const chunk = await supaFetch(
+          `/rest/v1/producao_eventos?select=${COLS}&data_evento=gte.${gte}&data_evento=lte.${lte}&order=id.asc&limit=1000&offset=${offset}`
+        );
+        if(!Array.isArray(chunk)||chunk.length===0) break;
+        todos=todos.concat(chunk);
+        if(chunk.length<1000) break;
+        offset+=1000;
+      }
+      return todos;
+    }
     const di = inDi.value;
     const df = inDf.value;
     const diUTC = di + "T03:00:00.000Z";
     const dfUTC = df + "T23:59:59-03:00";
-    let todos=[], offset=0;
-    while(true){
-      const chunk = await supaFetch(
-        `/rest/v1/producao_eventos?select=id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,prazo_entrega,operacao_qualidade,operacao_administrativo,classificacao_fiscal,razao_social&data_evento=gte.${diUTC}&data_evento=lte.${dfUTC}&order=id.asc&limit=1000&offset=${offset}`
-      );
-      if(!Array.isArray(chunk)||chunk.length===0) break;
-      todos=todos.concat(chunk);
-      if(chunk.length<1000) break;
-      offset+=1000;
-    }
-    TODOS=todos;
+    const ano = hoje.getFullYear();
+    const [periodo, anoTodo] = await Promise.all([
+      buscarIntervalo(diUTC, dfUTC),
+      buscarIntervalo(`${ano}-01-01T03:00:00.000Z`, `${ano}-12-31T23:59:59-03:00`)
+    ]);
+    TODOS=periodo;
+    ANO_TODOS=anoTodo;
     popularFiltros();
     render();
-    document.getElementById("slbl").textContent=`${todos.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
+    document.getElementById("slbl").textContent=`${periodo.length} eventos · ${new Date().toLocaleTimeString("pt-BR")}`;
   } finally {
     overlay.classList.remove("show");
     inDi.disabled = false; inDf.disabled = false;
@@ -431,8 +455,11 @@ function dadosFiltrados(){
 function getPrazo(r){ return r.prazo_entrega?new Date(r.prazo_entrega):null; }
 function antesDoP(data, prazo){ if(!data||!prazo) return null; return data<=prazo; }
 
-// Para cada pedido+codigo, monta o perfil OTD
-function calcularOTDs(dados){
+// Para cada pedido+codigo, monta o perfil OTD.
+// fullSet: base onde busca o histórico completo da peça (prazo, demais etapas) —
+// TODOS por padrão; ANO_TODOS quando calculado a partir do gráfico anual.
+function calcularOTDs(dados, fullSet){
+  fullSet = fullSet || TODOS;
   const minDias = parseInt(document.getElementById("cfg-dias").value)||5;
 
   // Agrupa por pedido+codigo usando dados filtrados (período)
@@ -450,7 +477,7 @@ function calcularOTDs(dados){
     // Para análise completa, usa TODOS os eventos da peça (não só do período)
     // Assim captura prazo e eventos de outras etapas fora do período filtrado
     const [pedido,codigo]=k.split("||");
-    const todosEvs=TODOS.filter(r=>r.pedido===pedido&&r.codigo_peca===codigo);
+    const todosEvs=fullSet.filter(r=>r.pedido===pedido&&r.codigo_peca===codigo);
     const evs=todosEvs.sort((a,b)=>new Date(a.data_evento)-new Date(b.data_evento));
 
     // Filtro Vendas/Industrialização por grupo (pula quando não é "Todos")
@@ -653,7 +680,7 @@ function renderRanking(resultados){
   if(!linhas.length){ body.innerHTML=`<div style="padding:14px 0;color:var(--text3);font-size:12px">Nenhum pedido entregue no período.</div>`; return; }
   body.innerHTML=linhas.map(l=>{
     const cor=corOTD(l.pctReal);
-    return `<div class="rank-row">
+    return `<div class="rank-row" onclick="filtrarPorCliente('${esc(l.cli)}')" title="clique para filtrar por este cliente">
       <div class="rank-cli" title="${esc(l.cli)}">${esc(l.cli)}</div>
       <div class="rank-barwrap"><div class="rank-bar" style="width:${l.pctReal}%;background:${cor}"></div></div>
       <div>
@@ -711,6 +738,7 @@ function render(){
   renderCard("exp","expOK",_resultados,"var(--roxo)");
 
   renderTendencia(dados);
+  renderTendenciaAno();
   renderRanking(_resultados);
   renderTabela(exibidos);
 
@@ -759,6 +787,41 @@ function renderTendencia(dados){
   document.getElementById("tend-chart").innerHTML=colunas;
 }
 
+// Evolução mensal do OTD Cliente "entregue no prazo" (mesmo cálculo do hero) —
+// sempre Jan-Dez do ano corrente, a partir de ANO_TODOS (independente do filtro De/até).
+// Respeita o filtro de cliente (fcli) e Vendas/Industrialização (calcularOTDs já filtra por tipo).
+function renderTendenciaAno(){
+  const ano=hoje.getFullYear();
+  const cli=document.getElementById("fcli").value.trim();
+  const mesesNomes=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+  const colunas=mesesNomes.map((nome,i)=>{
+    const inicio=new Date(ano,i,1);
+    const fim=new Date(ano,i+1,0,23,59,59);
+    const dadosMes=ANO_TODOS.filter(r=>{
+      const dt=r.data_evento?new Date(r.data_evento):null;
+      if(!dt||dt<inicio||dt>fim) return false;
+      if(cli&&String(r.cliente||"").trim()!==cli) return false;
+      return true;
+    });
+    const res=calcularOTDs(dadosMes, ANO_TODOS);
+    const g=calcOTDGlobal(res);
+    const pct=g.pctReal;
+    const h=pct!==null?Math.max(4,Math.round(pct*0.9)):4;
+    const cor=corOTD(pct);
+    const lbl=pct!==null?pct+"%":"—";
+    const tip=pct!==null?`${g.noPrazo}/${g.entregues} no prazo`:"sem entregas";
+
+    return `<div class="tend-col">
+      <div class="tend-pct-lbl" style="color:${cor}">${lbl}</div>
+      <div class="tend-bars"><div class="tend-bar" style="height:${h}px;width:22px;background:${cor}" data-tip="${tip}"></div></div>
+      <div class="tend-mes">${nome}</div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("tend-chart-ano").innerHTML=colunas;
+}
+
 function chip(val){
   if(val===null) return `<span class="otd-chip chip-nd">—</span>`;
   return val
@@ -794,6 +857,11 @@ function renderTabela(resultados){
       <div class="td">${chip(r.expOK)}</div>
     </div>`;
   }).join("");
+}
+
+function filtrarPorCliente(cli){
+  document.getElementById("fcli").value=cli;
+  render();
 }
 
 function toggleFiltroOTD(tipo){

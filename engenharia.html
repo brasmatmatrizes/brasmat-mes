@@ -169,7 +169,7 @@
   #printArea{display:block;position:absolute;top:0;left:0;width:100%;background:#fff;color:#000;font-family:Arial,sans-serif;padding:10mm}
   .p-top{display:flex;justify-content:space-between;align-items:flex-start;border:2px solid #000;padding:8px 12px}
   .p-logo{font-size:20px;font-weight:700;letter-spacing:0.05em}
-  .p-logo img{height:26px;display:block}
+  .p-logo img{height:42px;display:block}
   .p-title{font-size:15px;font-weight:700;text-align:center;flex:1;align-self:center}
   .p-hdr{display:grid;grid-template-columns:1fr 1fr;border:2px solid #000;border-top:none}
   .p-hf{display:flex;border-right:1px solid #000;padding:5px 10px;font-size:12px;gap:6px}
@@ -877,6 +877,7 @@ function imprimir(){
       <div class="p-hf"><b>PEDIDO:</b> ${escHtml(R.pedido)}</div>
       <div class="p-hf"><b>QTD:</b> ${escHtml(R.quantidade||"")}</div>
       <div class="p-hf"><b>OS:</b> ${escHtml(R.os||"")}</div>
+      <div class="p-hf" style="grid-column:1/-1;border-right:none"><b>PRAZO:</b> ${R.prazo_entrega ? fmtDataPrazo(R.prazo_entrega) : "—"}</div>
     </div>
     <table class="p-tbl">
       <tr><th style="width:52px">Sequência</th><th style="width:60px">Cód.</th><th>Processo</th><th style="width:110px">Visto operador</th><th style="width:32%">Observações</th></tr>

@@ -1166,8 +1166,8 @@ function renderSeqPanel(){
       <span class="seq-num">${i+1}ª</span>
       <span class="seq-status" title="${stTitle}">${stIco}</span>
       <span class="seq-cod" title="${escHtml(it.codigo_peca)}">${escHtml(it.codigo_peca||"(sem código)")}</span>
-      <span class="seq-flags"><span class="seq-obs-ico" title="Tem observação" style="${it.observacao?'':'visibility:hidden'}">⚠️</span><span class="seq-crit-dot" title="Item crítico" style="${it.critico?'':'visibility:hidden'}"></span></span>
       ${tipoBadge}
+      <span class="seq-flags"><span class="seq-obs-ico" title="Tem observação" style="${it.observacao?'':'visibility:hidden'}">⚠️</span><span class="seq-crit-dot" title="Item crítico" style="${it.critico?'':'visibility:hidden'}"></span></span>
       ${it.pedido?`<span class="seq-ped">${escHtml(it.pedido)}</span>`:""}
       ${it.prazo_confirmado
         ? `<span class="seq-prazo${prazoCls}" title="${prazoTitle}">📅 ${new Date(it.prazo_confirmado+"T00:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})}</span>`

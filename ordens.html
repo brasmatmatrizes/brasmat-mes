@@ -11,7 +11,7 @@
 *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
 .topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:8px;flex-shrink:0}
 .brand{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.bm{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:#fff;flex-shrink:0}
+.bm{width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0}
 .bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:9px;color:var(--text3);font-family:var(--mono)}
 .nav{display:flex;gap:4px;flex:1;justify-content:center}
 .nav::-webkit-scrollbar{height:0}
@@ -87,7 +87,7 @@
 <body>
 <div style="display:grid;grid-template-rows:56px 1fr;height:100vh">
 <div class="topbar">
-  <div class="brand"><div class="bm">BM</div><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="brand"><img class="bm" src="assets/logo-icone.jpg" alt="Brasmat"><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
   <div class="nav">
     <button class="nb" data-href="index.html" onclick="navTo('index.html')">Buscar Peça</button>
     <div class="nav-group">

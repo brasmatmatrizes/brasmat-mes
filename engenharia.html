@@ -1018,15 +1018,20 @@ function imprimir(){
   // link manual sobrescreve; senão monta automático a partir dos dados do roteiro
   const override = String(R.forms_link||"").trim();
   const formsLink = override || montarLinkForms(R, ITENS.length);
-  // O QR é lido por tablets antigos de câmera fraca, então o que decide é o tamanho físico
-  // de cada módulo no papel — não a resolução do arquivo. O link do Forms tem ~378 caracteres,
-  // o que dá um QR denso (69 módulos em ECC L, 77 em M), daí precisar de bastante área impressa.
-  //   size=1000x1000 → teto da API; pedir mais faz ela cair calada pra 250x250 (pior que o padrão)
+  // O QR é lido por tablets antigos de câmera fraca. Dois fatores decidem: o tamanho físico
+  // de cada módulo no papel e a nitidez da borda entre preto e branco (é nela que a câmera
+  // fraca erra o limiar). O link do Forms tem ~378 caracteres, o que dá 77 módulos em ECC M.
+  //   format=svg     → vetor: a impressora desenha na resolução nativa dela (600/1200 dpi),
+  //                    com borda exata. Como imagem de 1000px o desenho saía reamostrado
+  //                    (~436 dpi efetivos) e cada módulo ficava com a borda levemente borrada.
   //   qzone=4        → borda branca da norma; sem ela o leitor não engata (o padrão vinha com ~0)
   //   ecc=M          → tolera sujeira/vinco do chão de fábrica (15% de recuperação contra 7% do L)
+  //   size=1000x1000 → em SVG vira só a escala do desenho (1020 = 85 módulos x 12 unidades).
+  //                    Mantido porque em PNG 1000 é o teto da API: pedir mais faz ela cair
+  //                    calada pra 250x250, pior que o padrão. Não aumentar esse número.
   // Com 220px de largura impressa (58mm) e 77+8 módulos, cada módulo fica com 0,68mm —
   // antes eram 0,42mm sem borda branca nenhuma. Ver .p-qr no CSS de impressão.
-  const qrSrc = "https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&ecc=M&qzone=4&data="+encodeURIComponent(formsLink);
+  const qrSrc = "https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&ecc=M&qzone=4&format=svg&data="+encodeURIComponent(formsLink);
   const temSub = ITENS.some(it=>String(it.subcomponente||"").trim());
   let linhas = "";
   if(temSub){

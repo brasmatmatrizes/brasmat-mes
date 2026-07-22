@@ -108,8 +108,12 @@ tamanho no banco engana: em JSON o nome de cada coluna se repete em toda linha):
 select pg_size_pretty(sum(length(row_to_json(t)::text))::bigint) from posicao_atual t;
 ```
 
-Referência 22/07/2026: **914 kB** por chamada de `buscarPosicao()` (1.242 linhas).
-Regra de bolso: `egress_do_dia ÷ 0,914 MB` ≈ número de recargas completas no dia.
+Referência 22/07/2026, **depois** do enxugamento de colunas: **~405 kB** por página de
+1000 linhas de `buscarPosicao()` (era 782 kB com `select=*`). Regra de bolso:
+`egress_do_dia ÷ 0,4 MB` ≈ número de recargas completas no dia.
+
+Se esse número voltar a subir, cheque se alguma tela nova passou a usar `select=*` em
+`posicao_atual` em vez de `POS_COLS` (`status.js`).
 
 ## Passo 4 — relatar
 
@@ -143,6 +147,12 @@ folga.
   e exibindo dado atrasado sem avisar. Corrigido no commit `537dcf6` com reconexão
   automática (backoff 2s→30s), fallback afrouxado para 180s e handler leve para
   `demanda_itens` na Expedição. **Se o egress voltar a subir, cheque isto primeiro.**
+- **22/07/2026 — payload com metade de campo vazio.** As 13 colunas `operacao_*` de
+  `posicao_atual` são mutuamente exclusivas (só uma tem valor por peça), mas em JSON o
+  nome das 13 ia em toda linha — ~48% da carga. Resolvido no commit `f5eca9b` com a
+  coluna calculada `suboperacao` na view + `POS_COLS` no `buscarPosicao()`. Mudança
+  aditiva: as 13 continuam existindo, então versões antigas do site em cache seguem
+  funcionando.
 
 ## O que esta skill nunca deve fazer
 

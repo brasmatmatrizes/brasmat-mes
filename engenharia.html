@@ -164,37 +164,59 @@
   .seq-hd,.seq-row{grid-template-columns:30px 44px 1fr 90px 90px 66px}
 }
 
-/* IMPRESSÃO — só a área de impressão aparece */
-#printArea{display:none}
+/* IMPRESSÃO
+   A folha é dobrada ao meio 3 vezes alternando direção (altura/largura/altura — confirmado
+   com o usuário 22/07/2026), o que divide a A4 física em 8 painéis de 105x74,25mm: 3 vincos
+   horizontais (74,25/148,5/222,75mm) e 1 vertical (105mm). O rodapé (observações+QR) é travado
+   no painel de baixo-direita — sempre no mesmo lugar físico, não importa quantas operações o
+   roteiro tem — e a tabela para de crescer antes do vinco de 222,75mm; se não couber, o
+   imprimir() (JS) já divide em página 2 antes de imprimir. Ver TABLE_MAX_BOTTOM_MM no JS.
+   @page{margin:0} é obrigatório: sem isso, a margem do driver de impressão do usuário
+   (variável, fora do nosso controle) desloca tudo e o cálculo do vinco vira papel higiênico.
+
+   O layout abaixo NÃO fica dentro de @media print: fica sempre "ligado", só que fora da tela
+   (position:fixed;left:-9999px). É assim que o imprimir() consegue medir em milímetros reais
+   ANTES de chamar window.print() — @media print só passa a valer depois que a impressão já
+   disparou, tarde demais pra decidir se cabe 1 página ou precisa de 2. @media print, no fim
+   do bloco, só troca a posição de fora-da-tela pra visível. */
+#printArea{position:fixed;left:-9999px;top:0;width:210mm;box-sizing:border-box;background:#fff;color:#000;font-family:Arial,sans-serif;padding:10mm}
+.p-top{display:flex;justify-content:space-between;align-items:flex-start;border:2px solid #000;padding:8px 12px}
+.p-logo{font-size:20px;font-weight:700;letter-spacing:0.05em}
+.p-logo img{height:42px;display:block}
+.p-title{font-size:15px;font-weight:700;text-align:center;flex:1;align-self:center}
+.p-hdr{display:grid;grid-template-columns:1fr 1fr;border:2px solid #000;border-top:none}
+.p-hf{display:flex;border-right:1px solid #000;padding:5px 10px;font-size:12px;gap:6px}
+.p-hf:nth-child(2n){border-right:none}
+.p-hf b{min-width:64px}
+.p-tbl{width:100%;border-collapse:collapse;margin-top:8px}
+.p-tbl th{border:1px solid #000;background:#e8e8e8;font-size:10px;padding:5px 6px;text-transform:uppercase}
+.p-tbl td{border:1px solid #000;font-size:11px;padding:6px;height:26px;vertical-align:middle}
+.p-tbl thead{display:table-header-group} /* repete o cabeçalho de colunas se a página 2 estourar pra 3, 4... */
+.p-tbl tr{page-break-inside:avoid}
+.p-sub{background:#f0f0f0;font-weight:700;font-size:11px;text-transform:uppercase}
+/* rodapé travado no painel de baixo-direita (222,75-297mm de altura, 105-210mm de largura) —
+   posição fixa em relação à folha, nunca em relação ao fim da tabela */
+.p-foot{position:absolute;left:10mm;top:229mm;height:63mm;display:flex;gap:20mm;align-items:stretch}
+.p-obs{width:85mm;border:2px solid #000;padding:6px 10px;box-sizing:border-box;overflow:hidden}
+.p-obs-t{font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px}
+.p-obs-x{font-size:11px;white-space:pre-wrap}
+.p-qr{width:85mm;border:2px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;gap:4px;box-sizing:border-box}
+.p-qr img{width:200px;height:200px}
+.p-qr span{font-size:8px;text-align:center}
+/* página(s) de continuação — sem rodapé/QR (já apareceu na página 1); o vinco não importa
+   aqui porque não tem nada pra escanear, só texto, que sobrevive à dobra numa boa */
+.p-page2{page-break-before:always;padding-top:10mm}
+.p-page2-hdr{font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:6px}
 @media print{
-  body *{visibility:hidden}
-  #printArea,#printArea *{visibility:visible}
-  #printArea{display:block;position:absolute;top:0;left:0;width:100%;background:#fff;color:#000;font-family:Arial,sans-serif;padding:10mm}
-  .p-top{display:flex;justify-content:space-between;align-items:flex-start;border:2px solid #000;padding:8px 12px}
-  .p-logo{font-size:20px;font-weight:700;letter-spacing:0.05em}
-  .p-logo img{height:42px;display:block}
-  .p-title{font-size:15px;font-weight:700;text-align:center;flex:1;align-self:center}
-  .p-hdr{display:grid;grid-template-columns:1fr 1fr;border:2px solid #000;border-top:none}
-  .p-hf{display:flex;border-right:1px solid #000;padding:5px 10px;font-size:12px;gap:6px}
-  .p-hf:nth-child(2n){border-right:none}
-  .p-hf b{min-width:64px}
-  .p-tbl{width:100%;border-collapse:collapse;margin-top:8px}
-  .p-tbl th{border:1px solid #000;background:#e8e8e8;font-size:10px;padding:5px 6px;text-transform:uppercase}
-  .p-tbl td{border:1px solid #000;font-size:11px;padding:6px;height:26px;vertical-align:middle}
-  .p-sub{background:#f0f0f0;font-weight:700;font-size:11px;text-transform:uppercase}
-  .p-foot{display:flex;gap:10px;margin-top:10px;align-items:stretch}
-  .p-obs{flex:1;border:2px solid #000;padding:6px 10px;min-height:120px}
-  .p-obs-t{font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px}
-  .p-obs-x{font-size:11px;white-space:pre-wrap}
-  .p-qr{width:250px;border:2px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;gap:4px}
-  .p-qr img{width:220px;height:220px}
-  .p-qr span{font-size:8px;text-align:center}
+  @page{ size:A4; margin:0; }
+  #appRoot, .modal-bg, .toast{ display:none !important; }
+  #printArea{ position:relative; left:0; top:0; }
 }
 </style>
 </head>
 <body>
 
-<div style="display:grid;grid-template-rows:56px 1fr;height:100vh">
+<div id="appRoot" style="display:grid;grid-template-rows:56px 1fr;height:100vh">
 
 <!-- TOPBAR -->
 <div class="topbar">
@@ -1013,6 +1035,37 @@ async function excluirRoteiro(){
 }
 
 // ---- IMPRESSÃO ----
+// Geometria da dobra (confirmada com o usuário 22/07/2026): folha dobrada ao meio 3 vezes,
+// alternando altura/largura/altura — fatia a A4 física em 8 painéis de 105x74,25mm, com
+// vincos horizontais em 74,25/148,5/222,75mm. TABLE_MAX_BOTTOM_MM é onde a tabela de operações
+// tem que parar na página 1 pra não flertar com o vinco de 222,75mm (6,75mm de folga); o
+// rodapé (.p-foot no CSS) fica travado logo depois disso, sempre no mesmo painel físico —
+// nunca em cima de vinco, não importa quantas operações o roteiro tem.
+const TABLE_MAX_BOTTOM_MM = 216;
+
+// uma entrada por linha física da tabela (cabeçalho de subcomponente OU operação), nessa ordem —
+// permite cortar exatamente entre linhas na hora de decidir onde a página 1 termina
+function montarLinhasArray(){
+  const arr = [];
+  const temSub = ITENS.some(it=>String(it.subcomponente||"").trim());
+  if(temSub){
+    const grupos = [];
+    ITENS.forEach(it=>{
+      const s = String(it.subcomponente||"").trim()||"—";
+      let g = grupos.find(x=>x.nome===s && x===grupos[grupos.length-1]);
+      if(!g){ g = {nome:s, itens:[]}; grupos.push(g); }
+      g.itens.push(it);
+    });
+    grupos.forEach(g=>{
+      arr.push(`<tr><td class="p-sub" colspan="5">${escHtml(g.nome)}</td></tr>`);
+      g.itens.forEach(it=>arr.push(linhaPrint(it)));
+    });
+  }else{
+    ITENS.forEach(it=>arr.push(linhaPrint(it)));
+  }
+  return arr;
+}
+
 function imprimir(){
   if(!R) return;
   // link manual sobrescreve; senão monta automático a partir dos dados do roteiro
@@ -1026,31 +1079,16 @@ function imprimir(){
   //                    (~436 dpi efetivos) e cada módulo ficava com a borda levemente borrada.
   //   qzone=4        → borda branca da norma; sem ela o leitor não engata (o padrão vinha com ~0)
   //   ecc=M          → tolera sujeira/vinco do chão de fábrica (15% de recuperação contra 7% do L)
-  //   size=1000x1000 → em SVG vira só a escala do desenho (1020 = 85 módulos x 12 unidades).
-  //                    Mantido porque em PNG 1000 é o teto da API: pedir mais faz ela cair
-  //                    calada pra 250x250, pior que o padrão. Não aumentar esse número.
-  // Com 220px de largura impressa (58mm) e 77+8 módulos, cada módulo fica com 0,68mm —
-  // antes eram 0,42mm sem borda branca nenhuma. Ver .p-qr no CSS de impressão.
+  //   size=1000x1000 → em SVG vira só a escala do desenho. Mantido porque em PNG 1000 é o teto
+  //                    da API: pedir mais faz ela cair calada pra 250x250. Não aumentar.
+  // Imagem 200px (52,9mm) — um pouco menor que os 220px validados no teste físico de 22/07/2026
+  // — pra caber nos 63mm de altura do painel reservado no rodapé (ver TABLE_MAX_BOTTOM_MM acima
+  // e .p-foot no CSS). Módulo continua em 0,62mm, bem longe do 0,42mm que não lia.
   const qrSrc = "https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&ecc=M&qzone=4&format=svg&data="+encodeURIComponent(formsLink);
-  const temSub = ITENS.some(it=>String(it.subcomponente||"").trim());
-  let linhas = "";
-  if(temSub){
-    // agrupa por subcomponente, mantendo a ordem da sequência
-    const grupos = [];
-    ITENS.forEach(it=>{
-      const s = String(it.subcomponente||"").trim()||"—";
-      let g = grupos.find(x=>x.nome===s && x===grupos[grupos.length-1]);
-      if(!g){ g = {nome:s, itens:[]}; grupos.push(g); }
-      g.itens.push(it);
-    });
-    grupos.forEach(g=>{
-      linhas += `<tr><td class="p-sub" colspan="5">${escHtml(g.nome)}</td></tr>`;
-      linhas += g.itens.map(linhaPrint).join("");
-    });
-  }else{
-    linhas = ITENS.map(linhaPrint).join("");
-  }
-  document.getElementById("printArea").innerHTML = `
+  const linhas = montarLinhasArray();
+
+  const theadHtml = `<thead><tr><th style="width:52px">Sequência</th><th style="width:60px">Cód.</th><th>Processo</th><th style="width:110px">Visto operador</th><th style="width:32%">Observações</th></tr></thead>`;
+  const cabecalhoHtml = `
     <div class="p-top"><div class="p-logo"><img src="assets/logo-horizontal.png" alt="BRASMAT"></div><div class="p-title">PROCESSO PRODUTIVO</div><div style="font-size:10px">${new Date().toLocaleDateString("pt-BR")}</div></div>
     <div class="p-hdr">
       <div class="p-hf"><b>CÓDIGO:</b> ${escHtml(R.codigo_peca)}</div>
@@ -1058,15 +1096,35 @@ function imprimir(){
       <div class="p-hf"><b>QTD:</b> ${escHtml(R.quantidade||"")}</div>
       <div class="p-hf"><b>OS:</b> ${escHtml(R.os||"")}</div>
       <div class="p-hf" style="grid-column:1/-1;border-right:none"><b>PRAZO:</b> ${R.prazo_entrega ? fmtDataPrazo(R.prazo_entrega) : "—"}</div>
-    </div>
-    <table class="p-tbl">
-      <tr><th style="width:52px">Sequência</th><th style="width:60px">Cód.</th><th>Processo</th><th style="width:110px">Visto operador</th><th style="width:32%">Observações</th></tr>
-      ${linhas}
-    </table>
+    </div>`;
+  const rodapeHtml = `
     <div class="p-foot">
       <div class="p-obs"><div class="p-obs-t">Orientações e observações</div><div class="p-obs-x">${escHtml(R.observacao||"")}</div></div>
       <div class="p-qr"><img src="${qrSrc}" alt="QR"><span>escaneie para abrir o formulário de apontamento</span></div>
     </div>`;
+
+  const area = document.getElementById("printArea");
+  // 1ª tentativa: tudo numa tabela só, pra medir se cabe antes do vinco de 222,75mm
+  area.innerHTML = `${cabecalhoHtml}<table class="p-tbl">${theadHtml}<tbody>${linhas.join("")}</tbody></table>${rodapeHtml}`;
+
+  const mm = px => px/(96/25.4);
+  const areaTop = area.getBoundingClientRect().top;
+  const rows = Array.from(area.querySelectorAll(".p-tbl tbody tr"));
+  const corte = rows.findIndex(tr => mm(tr.getBoundingClientRect().bottom - areaTop) > TABLE_MAX_BOTTOM_MM);
+
+  if(corte !== -1){
+    // não coube antes do vinco — página 1 fica só com o que cabe; o resto continua na
+    // página 2 (sem rodapé/QR, que já apareceu na página 1 e não pode se repetir fora do painel seguro)
+    area.innerHTML = `
+      ${cabecalhoHtml}
+      <table class="p-tbl">${theadHtml}<tbody>${linhas.slice(0,corte).join("")}</tbody></table>
+      ${rodapeHtml}
+      <div class="p-page2">
+        <div class="p-page2-hdr">Continuação — ${escHtml(R.codigo_peca)} · Pedido ${escHtml(R.pedido)}</div>
+        <table class="p-tbl">${theadHtml}<tbody>${linhas.slice(corte).join("")}</tbody></table>
+      </div>`;
+  }
+
   // espera logo + QR carregarem antes de abrir a impressão
   const imgs = Array.from(document.querySelectorAll("#printArea img"));
   const pendentes = imgs.filter(img=>!img.complete);

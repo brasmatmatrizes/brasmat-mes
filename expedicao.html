@@ -576,22 +576,60 @@ function imprimir(){
   win.focus();
 }
 
+// Recarga leve: só a lista da demanda, reaproveitando o POSMAP já em memória.
+// É o que responde à marcação/edição de outra pessoa — que precisa aparecer na hora —
+// sem arrastar junto as 1240 linhas de posicao_atual, que só mudam com apontamento.
+async function recarregarItens(){
+  try{
+    const [itens, cfg] = await Promise.all([
+      supaFetch("/rest/v1/demanda_itens?select=*&order=id.asc"),
+      supaFetch("/rest/v1/demanda_clientes?select=*")
+    ]);
+    ITENS = Array.isArray(itens)?itens:[];
+    (Array.isArray(cfg)?cfg:[]).forEach(r=>{ if(r.cliente) CFG[r.cliente]={nome_fantasia:r.nome_fantasia||"",cor:r.cor||""}; });
+    popularFiltroClientes();
+    render();
+    await enriquecerTipos();
+    render();
+  }catch(e){}
+}
+
 // Realtime: atualiza quando a produção concluir peça ou a demanda mudar
-let _rtTimer=null;
+let _rtTimer=null, _rtTimerItens=null;
 let _rtConectado=false;
+let _rtSb=null, _rtCanal=null, _rtTentativa=0, _rtReconnect=null, _rtJaConectou=false;
 function refreshDebounced(){ clearTimeout(_rtTimer); _rtTimer=setTimeout(init,3000); }
+function refreshItensDebounced(){ clearTimeout(_rtTimerItens); _rtTimerItens=setTimeout(recarregarItens,1000); }
+// Reconecta sozinho quando o canal cai (rede, máquina suspensa, queda do Supabase).
+// Sem isto a aba ficava presa no polling para sempre: gastava banda e mostrava dado
+// atrasado sem avisar ninguém.
+function agendarReconexao(){
+  clearTimeout(_rtReconnect);
+  const espera = Math.min(30000, 2000 * Math.pow(2, _rtTentativa++));   // 2s, 4s, 8s... teto de 30s
+  _rtReconnect = setTimeout(iniciarRealtime, espera);
+}
 function iniciarRealtime(){
   try{
     if(!window.supabase) return;
-    const sb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
-    sb.channel("exp-rt")
+    if(!_rtSb) _rtSb=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+    if(_rtCanal){ try{ _rtSb.removeChannel(_rtCanal); }catch(e){} _rtCanal=null; }
+    _rtCanal = _rtSb.channel("exp-rt")
       .on("postgres_changes",{event:"*",schema:"public",table:"producao_eventos"},refreshDebounced)
-      .on("postgres_changes",{event:"*",schema:"public",table:"demanda_itens"},refreshDebounced)
-      .subscribe((status)=>{ _rtConectado = (status==="SUBSCRIBED"); });
-  }catch(e){}
+      .on("postgres_changes",{event:"*",schema:"public",table:"demanda_itens"},refreshItensDebounced)
+      .subscribe((status)=>{
+        _rtConectado = (status==="SUBSCRIBED");
+        if(_rtConectado){
+          _rtTentativa = 0;
+          if(_rtJaConectou) init();   // reconexão: busca o que passou enquanto esteve fora
+          _rtJaConectou = true;
+        }else if(status==="CLOSED"||status==="CHANNEL_ERROR"||status==="TIMED_OUT"){
+          agendarReconexao();
+        }
+      });
+  }catch(e){ agendarReconexao(); }
 }
 iniciarRealtime();
-setInterval(()=>{ if(!_rtConectado) init(); }, 60000);   // só recarrega no polling se o realtime não estiver conectado
+setInterval(()=>{ if(!_rtConectado) init(); }, 180000);   // só recarrega no polling se o realtime não estiver conectado
 init();
 </script>
 </body>

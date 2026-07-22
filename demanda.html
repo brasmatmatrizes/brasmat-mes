@@ -1490,15 +1490,33 @@ function onDemandaChange(payload){
   }
 }
 
+// Reconecta sozinho quando o canal cai (rede, máquina suspensa, queda do Supabase).
+// Aqui é crítico: esta tela não tem polling de segurança nenhum, então um canal caído
+// deixava a edição de duas pessoas sem sincronizar, silenciosamente.
+let _rtSb = null, _rtCanal = null, _rtTentativa = 0, _rtReconnect = null, _rtJaConectou = false;
+function agendarReconexao(){
+  clearTimeout(_rtReconnect);
+  const espera = Math.min(30000, 2000 * Math.pow(2, _rtTentativa++));   // 2s, 4s, 8s... teto de 30s
+  _rtReconnect = setTimeout(iniciarRealtime, espera);
+}
 function iniciarRealtime(){
   try{
     if(!window.supabase) return;
-    const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
-    sb.channel("demanda-apont")
+    if(!_rtSb) _rtSb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+    if(_rtCanal){ try{ _rtSb.removeChannel(_rtCanal); }catch(e){} _rtCanal = null; }
+    _rtCanal = _rtSb.channel("demanda-apont")
       .on("postgres_changes", { event:"*", schema:"public", table:"producao_eventos" }, refreshApontamentos)
       .on("postgres_changes", { event:"*", schema:"public", table:"demanda_itens" }, onDemandaChange)
-      .subscribe();
-  }catch(e){}
+      .subscribe((status)=>{
+        if(status==="SUBSCRIBED"){
+          _rtTentativa = 0;
+          if(_rtJaConectou) refreshApontamentos();   // reconexão: busca o que passou (respeita quem está digitando)
+          _rtJaConectou = true;
+        }else if(status==="CLOSED"||status==="CHANNEL_ERROR"||status==="TIMED_OUT"){
+          agendarReconexao();
+        }
+      });
+  }catch(e){ agendarReconexao(); }
 }
 iniciarRealtime();
 

@@ -1036,13 +1036,17 @@ async function excluirRoteiro(){
 }
 
 // ---- IMPRESSÃO ----
-// Geometria da dobra (confirmada com o usuário 22/07/2026): folha dobrada ao meio 3 vezes,
-// alternando altura/largura/altura — fatia a A4 física em 8 painéis de 105x74,25mm, com
-// vincos horizontais em 74,25/148,5/222,75mm. TABLE_MAX_BOTTOM_MM é onde a tabela de operações
-// tem que parar na página 1 pra não flertar com o vinco de 222,75mm (6,75mm de folga); o
-// rodapé (.p-foot no CSS) fica travado logo depois disso, sempre no mesmo painel físico —
-// nunca em cima de vinco, não importa quantas operações o roteiro tem.
-const TABLE_MAX_BOTTOM_MM = 216;
+// Geometria da dobra (confirmada com o usuário 22/07/2026, validada no papel): folha dobrada
+// ao meio 3 vezes, alternando altura/largura/altura — fatia a A4 física em 8 painéis de
+// 105x74,25mm, com vincos horizontais em 74,25/148,5/222,75mm. O rodapé (.p-foot no CSS,
+// observações+QR) fica travado no painel de baixo (top:229mm) — sempre no mesmo lugar físico,
+// não importa quantas operações o roteiro tem. TABLE_MAX_BOTTOM_MM é onde a tabela de
+// operações tem que parar na página 1: **não precisa respeitar o vinco de 222,75mm** — vinco
+// em cima de texto normal não atrapalha em nada, só em cima do QR importa, e o QR já está
+// protegido pela posição fixa. O único limite real é não encostar visualmente no rodapé
+// (229mm) — por isso o corte é bem mais generoso que a 1ª versão (216mm), cabendo ~25 linhas
+// de operação na página 1 em vez de ~23.
+const TABLE_MAX_BOTTOM_MM = 225;
 
 // uma entrada por linha física da tabela (cabeçalho de subcomponente OU operação), nessa ordem —
 // permite cortar exatamente entre linhas na hora de decidir onde a página 1 termina

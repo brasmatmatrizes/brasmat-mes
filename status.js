@@ -68,11 +68,17 @@ async function buscarPosicao(){
 }
 
 // Busca histórico completo de UMA peça (chamado só ao abrir detalhe)
+// Histórico de UMA peça (linha do tempo). Lê a view `historico_peca`, não a tabela:
+// ela já descarta os apontamentos duplicados no servidor (11.934 registros gravados 2x
+// pelo script do Forms antes da correção de 03/07/2026 — a peça CF117110/2604315-1
+// baixava 138 eventos sendo 82 reais) e entrega só as 18 colunas que a linha do tempo
+// usa, com `suboperacao` já resolvida. Medido: 128 kB -> 39 kB nessa peça.
+// Os registros originais continuam intactos em producao_eventos.
 async function buscarHistorico(pedido, codigo){
   const p = encodeURIComponent(pedido);
   const c = encodeURIComponent(codigo);
   const r = await supaFetch(
-    `/rest/v1/producao_eventos?select=*&pedido=eq.${p}&codigo_peca=eq.${c}&order=id.asc`
+    `/rest/v1/historico_peca?select=*&pedido=eq.${p}&codigo_peca=eq.${c}&order=id.asc`
   );
   return Array.isArray(r) ? r : [];
 }

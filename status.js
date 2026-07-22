@@ -43,6 +43,13 @@ async function supaFetch(path){
   return r.json();
 }
 
+// Colunas pedidas de posicao_atual. Explícitas em vez de select=*: as 13 colunas
+// operacao_* estão fora porque a view já entrega o mesmo valor resolvido em
+// `suboperacao` (só uma delas tem valor por linha, as outras 12 vêm sempre vazias —
+// e em JSON o nome de cada coluna se repete em TODA linha). Corta o payload de
+// 963 kB para ~496 kB por chamada, sem perder informação nenhuma.
+const POS_COLS = "id,pedido,codigo_peca,cliente,processo,operador,evento,data_evento,prazo_entrega,retrabalho,os,quantidade_solicitada,suboperacao";
+
 // Busca posição atual via view (rápido — um registro por peça)
 // Pagina em blocos de 1000: o Supabase limita toda resposta REST a 1000 linhas
 // por padrão (db-max-rows), então um só fetch com limit=10000 é truncado em silêncio
@@ -51,7 +58,7 @@ async function buscarPosicao(){
   let all = [], offset = 0;
   const pageSize = 1000;
   while(true){
-    const r = await supaFetch(`/rest/v1/posicao_atual?select=*&order=id.asc&limit=${pageSize}&offset=${offset}`);
+    const r = await supaFetch(`/rest/v1/posicao_atual?select=${POS_COLS}&order=id.asc&limit=${pageSize}&offset=${offset}`);
     const page = Array.isArray(r) ? r : [];
     all = all.concat(page);
     if(page.length < pageSize) break;
@@ -72,6 +79,12 @@ async function buscarHistorico(pedido, codigo){
 
 // ---- HELPERS ----
 function getSubop(row){
+  if(!row) return "—";
+  // Linhas de posicao_atual já vêm resolvidas na coluna calculada da view. Linhas de
+  // producao_eventos (histórico, painel de detalhe, apontamentos) não têm essa coluna —
+  // para elas as 13 colunas originais continuam sendo o caminho. Também serve de rede:
+  // se a view voltasse ao formato antigo, isto segue funcionando sem nenhuma alteração.
+  if(row.suboperacao !== undefined) return String(row.suboperacao||"").trim() || "—";
   const cols=["operacao_retifica_plana","operacao_retifica_cilindrica_interna","operacao_retifica_cilindrica_externa","operacao_erosao_fio","operacao_forma","operacao_polimento","operacao_brunidora","operacao_prensa","operacao_torno","operacao_qualidade","operacao_administrativo","operacao_servico_externo","operacao_erosao_penetracao"];
   for(const c of cols){ if(row[c]&&String(row[c]).trim()) return String(row[c]).trim(); }
   return "—";

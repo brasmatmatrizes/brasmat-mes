@@ -147,6 +147,9 @@
 .cat-row .c-atv.off{background:var(--bg3);color:var(--text3)}
 .sc-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
 .sc-row:last-child{border-bottom:none}
+.cfg-item{display:flex;align-items:center;gap:8px;padding:6px 2px;font-size:12px;color:var(--text2);cursor:pointer;border-bottom:1px solid var(--border)}
+.cfg-item:last-child{border-bottom:none}
+.cfg-item input{cursor:pointer}
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);color:var(--text);padding:9px 18px;border-radius:9px;font-size:12px;font-family:var(--mono);z-index:300;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.5)}
 .toast-erro{border:2px solid var(--danger);color:var(--danger);font-size:14px;font-weight:600;padding:13px 22px;box-shadow:0 8px 28px rgba(240,69,69,0.4)}
@@ -277,12 +280,14 @@
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn-g" onclick="abrirCatalogo()">⚙ Catálogo</button>
+        <button class="btn-g" onclick="abrirCfgLanc()">⚙ Lançadores</button>
         <button class="btn-g" onclick="excluirRoteiro()" style="color:var(--danger)">🗑 Excluir roteiro</button>
         <button class="btn-g btn-acc" onclick="imprimir()">🖨 Imprimir / PDF</button>
       </div>
     </div>
 
     <div id="edMatSt"></div>
+    <div id="edLancSt"></div>
 
     <div class="ed-hdr">
       <div class="ed-f"><span class="ed-l">Pedido</span><span class="ed-v" id="edPedido">—</span></div>
@@ -351,6 +356,23 @@
   </div>
 </div>
 
+<!-- MODAL LANÇADORES DO 1º APONTAMENTO -->
+<div class="modal-bg" id="lancCfgModal">
+  <div class="modal" style="width:min(420px,94vw)">
+    <div class="modal-hd">
+      <div class="modal-t">Quem pode lançar o 1º apontamento (11.3)</div>
+      <button class="ib" style="font-size:16px" onclick="fecharCfgLanc()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input class="pal-filter" id="lancCfgSearch" placeholder="buscar operador..." style="width:100%;margin-bottom:10px" oninput="filtrarCfgLanc()">
+      <div id="lancCfgList"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:12px">
+        <button class="btn-g btn-acc" onclick="salvarCfgLanc()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ÁREA DE IMPRESSÃO -->
 <div id="printArea"></div>
 
@@ -388,6 +410,10 @@ let ROTS = [];       // lista de roteiros
 let R = null;        // roteiro aberto (cabeçalho)
 let ITENS = [];      // itens do roteiro aberto
 let SUB_ATUAL = "";  // subcomponente aplicado às novas linhas
+let LANCADORES = []; // roteiro_lancadores — quem pode lançar o 1º apontamento (11.3) pelo botão
+let TODOS_OPS_LANC = []; // cache de operadores_distintos p/ o modal de config dos lançadores
+let _lancCfgSel = new Set();
+let _lancFormOpen = false; // mostra o mini-form de "quem está lançando" no lugar do botão
 let _suggTimer = null, _hdrTimer = null;
 const OBS_TIMERS = {};
 
@@ -451,7 +477,7 @@ function fmtDataPrazo(v){
 // ---- init ----
 async function init(){
   setSync("carregando...");
-  const [ops, fams, subs, rots, pos, itensCad, matComponentes, matEstagios, matUltimos] = await Promise.all([
+  const [ops, fams, subs, rots, pos, itensCad, matComponentes, matEstagios, matUltimos, lanc] = await Promise.all([
     supaFetch("/rest/v1/roteiro_operacoes?select=id,codigo,descricao,familia,ativo&order=codigo&limit=1000"),
     supaFetch("/rest/v1/roteiro_familias?select=id,nome,ordem&order=ordem&limit=100"),
     supaFetch("/rest/v1/roteiro_subcomponentes?select=id,nome,ordem&order=ordem&limit=100"),
@@ -460,7 +486,8 @@ async function init(){
     supaFetch("/rest/v1/itens?select=*&order=created_at.desc&limit=2000"),
     supaFetch("/rest/v1/material_lote_componentes?select=id,item_id&limit=2000"),
     supaFetch("/rest/v1/material_estagios?select=id,ordem&ativo=eq.true&limit=20"),
-    supaFetch("/rest/v1/material_ultimo_evento?select=componente_id,estagio_ordem&limit=5000")
+    supaFetch("/rest/v1/material_ultimo_evento?select=componente_id,estagio_ordem&limit=5000"),
+    supaFetch("/rest/v1/roteiro_lancadores?select=nome&order=ordem")
   ]);
   OPS  = Array.isArray(ops)  ? ops.sort((a,b)=>cmpCod(a.codigo,b.codigo)) : [];
   FAMS = Array.isArray(fams) ? fams : [];
@@ -471,6 +498,7 @@ async function init(){
   MAT_COMPONENTES = Array.isArray(matComponentes) ? matComponentes : [];
   MAT_ESTAGIOS = Array.isArray(matEstagios) ? matEstagios : [];
   MAT_ULTIMOS = Array.isArray(matUltimos) ? matUltimos : [];
+  LANCADORES = Array.isArray(lanc) ? lanc.map(r=>r.nome) : [];
   renderRoteiros();
   document.getElementById("homeSub").textContent =
     ROTS.length + " roteiro(s) · catálogo com " + OPS.filter(o=>o.ativo).length + " operações";
@@ -617,6 +645,141 @@ function renderMatBanner(item, resumo){
   return `<div class="mat-banner danger"><span class="mat-banner-ico">🔒</span><div><div class="mat-banner-title">Nenhum material pronto ainda</div><div class="mat-banner-detail">${detalheHtml}</div></div><a class="mat-banner-link" href="separacao-material.html">ver Separação de Material →</a></div>`;
 }
 
+// ---- 1º apontamento (11.3 Elaboração do Processo) direto pelo MES ----
+// Hoje esse apontamento é feito escaneando o QR/link do Forms pré-preenchido (montarLinkForms).
+// Como quem monta o roteiro já está no MES, este botão grava o mesmo registro direto em
+// producao_eventos — só esse 1º lançamento; os apontamentos seguintes continuam pelo QR na máquina.
+async function checkLancado(){
+  if(!R) return;
+  R._lancInfo = undefined; // carregando — evita mostrar o botão por um instante antes de saber
+  try{
+    const rows = await supaFetch(`/rest/v1/producao_eventos?select=operador,data_evento&pedido=eq.${encodeURIComponent(R.pedido)}&codigo_peca=eq.${encodeURIComponent(R.codigo_peca)}&operacao_administrativo=ilike.*Elabora*&order=data_evento.desc&limit=1`);
+    R._lancInfo = (Array.isArray(rows) && rows[0]) ? rows[0] : null;
+  }catch(e){ R._lancInfo = null; }
+  renderLancPainel();
+}
+
+function renderLancPainel(){
+  const el = document.getElementById("edLancSt");
+  if(!el || !R) return;
+  if(R._lancInfo===undefined){ el.innerHTML=""; return; } // ainda checando duplicidade
+  if(R._lancInfo){
+    const info = R._lancInfo;
+    el.innerHTML = `<div class="mat-banner ok"><span class="mat-banner-ico">✅</span><div><div class="mat-banner-title">1º apontamento (11.3) já lançado</div><div class="mat-banner-detail">por ${escHtml(String(info.operador||"").replace(/^\d+_/,""))} em ${fmtDt(info.data_evento)}</div></div></div>`;
+    return;
+  }
+  if(!ITENS.length){ el.innerHTML = ""; return; } // só libera com pelo menos 1 operação (senão quantidade_operacoes fica 0)
+  if(_lancFormOpen){
+    const opts = LANCADORES.map(n=>`<option value="${escHtml(n)}">${escHtml(n.replace(/^\d+_/,""))}</option>`).join("");
+    el.innerHTML = `<div class="mat-banner warn">
+      <span class="mat-banner-ico">🚀</span>
+      <div><div class="mat-banner-title">Quem está lançando?</div><div class="mat-banner-detail">grava o 1º apontamento (11.3) direto, sem passar pelo Forms</div></div>
+      <div style="display:flex;gap:8px;margin-left:auto;align-items:center">
+        <select class="ed-inp" id="lancSel" style="width:220px">${opts||'<option value="">nenhum lançador configurado</option>'}</select>
+        <button class="btn-g btn-acc" id="lancConfirmBtn" onclick="confirmarLancamento()" ${LANCADORES.length?"":"disabled"}>Confirmar</button>
+        <button class="btn-g" onclick="cancelarLancamento()">Cancelar</button>
+      </div>
+    </div>`;
+    const salvo = localStorage.getItem("brasmatRoteiroLancador")||"";
+    const sel = document.getElementById("lancSel");
+    if(sel && salvo && LANCADORES.includes(salvo)) sel.value = salvo;
+    return;
+  }
+  el.innerHTML = `<div class="mat-banner warn">
+    <span class="mat-banner-ico">🚀</span>
+    <div><div class="mat-banner-title">1º apontamento (11.3) ainda não foi lançado</div><div class="mat-banner-detail">libera a peça pra produção — hoje normalmente feito pelo QR do Forms</div></div>
+    <button class="btn-g btn-acc" style="margin-left:auto" onclick="abrirLancamento()">🚀 Lançar 1º apontamento</button>
+  </div>`;
+}
+function abrirLancamento(){ _lancFormOpen = true; renderLancPainel(); }
+function cancelarLancamento(){ _lancFormOpen = false; renderLancPainel(); }
+
+let _lancBusy = false;
+async function confirmarLancamento(){
+  if(!R || _lancBusy) return;
+  const sel = document.getElementById("lancSel");
+  const nome = sel ? sel.value : "";
+  if(!nome){ toast("Selecione quem está lançando"); return; }
+  _lancBusy = true;
+  const btn = document.getElementById("lancConfirmBtn");
+  if(btn){ btn.disabled = true; btn.textContent = "Lançando..."; }
+  const agora = new Date().toISOString();
+  try{
+    await supaWrite("/rest/v1/producao_eventos","POST",{
+      pedido: R.pedido,
+      codigo_peca: R.codigo_peca,
+      os: R.os,
+      processo: "11 – ADMINISTRATIVO",
+      operacao_administrativo: "11.3  Elaboração do Processo",
+      evento: "Saída",
+      sequencial_operacao: "0ª",
+      quantidade_operacoes: String(ITENS.length),
+      quantidade_solicitada: R.quantidade!=null ? String(R.quantidade) : "",
+      quantidade_produzida: R.quantidade!=null ? String(R.quantidade) : "",
+      razao_social: R.razao_social||"",
+      classificacao_fiscal: R.classificacao_fiscal||"",
+      cliente: R.cliente||"",
+      prazo_entrega: R.prazo_entrega||"",
+      retrabalho: "",
+      operador: nome,
+      data_evento: agora,
+      chave_unica: R.pedido + "_" + R.codigo_peca + "_0ª"
+    },"return=minimal");
+    localStorage.setItem("brasmatRoteiroLancador", nome);
+    R._lancInfo = {operador:nome, data_evento:agora};
+    _lancFormOpen = false;
+    toast("1º apontamento lançado — peça liberada pra produção");
+  }catch(e){
+    toast("Erro ao lançar: "+e.message, "erro");
+  }
+  _lancBusy = false;
+  renderLancPainel();
+}
+
+// ---- config: quem pode lançar (roteiro_lancadores) ----
+async function abrirCfgLanc(){
+  if(!TODOS_OPS_LANC.length){
+    try{
+      const rows = await supaFetch("/rest/v1/operadores_distintos?select=operador&limit=1000");
+      const set = new Set();
+      (Array.isArray(rows)?rows:[]).forEach(r=>{ const o=String(r.operador||"").trim(); if(o) set.add(o); });
+      TODOS_OPS_LANC = [...set].sort((a,b)=>a.replace(/^\d+_/,"").localeCompare(b.replace(/^\d+_/,""),"pt-BR"));
+    }catch(e){}
+  }
+  _lancCfgSel = new Set(LANCADORES);
+  document.getElementById("lancCfgSearch").value = "";
+  renderCfgLancList("");
+  document.getElementById("lancCfgModal").classList.add("show");
+}
+function fecharCfgLanc(){ document.getElementById("lancCfgModal").classList.remove("show"); }
+function filtrarCfgLanc(){ renderCfgLancList(document.getElementById("lancCfgSearch").value.trim().toUpperCase()); }
+function renderCfgLancList(q){
+  const lista = TODOS_OPS_LANC.filter(o=> !q || o.toUpperCase().includes(q));
+  document.getElementById("lancCfgList").innerHTML = lista.map(o=>
+    `<label class="cfg-item"><input type="checkbox" ${_lancCfgSel.has(o)?"checked":""} onchange="toggleSelLanc('${esc(o)}',this.checked)"> ${escHtml(o.replace(/^\d+_/,""))}</label>`
+  ).join("") || `<div style="padding:14px;color:var(--text3);font-size:12px">Nenhum operador encontrado.</div>`;
+}
+function toggleSelLanc(o,on){ if(on) _lancCfgSel.add(o); else _lancCfgSel.delete(o); }
+async function salvarCfgLanc(){
+  const novos = TODOS_OPS_LANC.filter(o=>_lancCfgSel.has(o));
+  try{
+    await fetch(`${SUPA_URL}/rest/v1/roteiro_lancadores?nome=neq.__none__`, {
+      method:"DELETE", headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY }
+    });
+    if(novos.length){
+      await fetch(`${SUPA_URL}/rest/v1/roteiro_lancadores`, {
+        method:"POST",
+        headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer:"return=minimal" },
+        body: JSON.stringify(novos.map((o,i)=>({nome:o,ordem:i})))
+      });
+    }
+    LANCADORES = novos;
+    fecharCfgLanc();
+    toast("Lista de lançadores salva");
+    renderLancPainel();
+  }catch(e){ toast("Erro ao salvar: "+e.message, "erro"); }
+}
+
 // ---- EDITOR ----
 async function abrirRoteiro(id){
   R = ROTS.find(x=>x.id===id);
@@ -653,6 +816,9 @@ async function abrirRoteiro(id){
   const its = await supaFetch(`/rest/v1/roteiro_itens?select=*&roteiro_id=eq.${R.id}&order=sequencia&limit=500`);
   ITENS = Array.isArray(its)?its:[];
   renderSeq();
+  _lancFormOpen = false;
+  renderLancPainel();
+  checkLancado();
 }
 
 function voltarHome(){
@@ -832,6 +998,7 @@ function tocarHdr(){
   if(!R) return;
   supaWrite(`/rest/v1/roteiros?id=eq.${R.id}`,"PATCH",{updated_at:new Date().toISOString()},"return=minimal").catch(()=>{});
   setSync("salvo "+new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));
+  renderLancPainel(); // nº de operações mudou — botão do 1º apontamento aparece/some
 }
 
 async function excluirRoteiro(){

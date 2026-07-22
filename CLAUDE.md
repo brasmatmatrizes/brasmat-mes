@@ -8,6 +8,7 @@ Sistema de execução de manufatura (MES) para a Brasmat — ferramentaria de ma
 - **`status.js`** — lógica central compartilhada por todas as páginas: fetch ao Supabase, `status()`, helpers de progresso/tipo, e o painel de linha do tempo (`abrirPainelDetalhe`).
 - **Supabase** (PostgreSQL na nuvem) é o backend. O front usa **só a chave pública (publishable)** definida no topo do `status.js` (`SUPA_URL`, `SUPA_KEY`). Project ref: `hjvlznijsgdwurtsyukl`.
 - Deploy automático via **Vercel** (`brasmat-mes.vercel.app`) a cada push no `main` — **mas o webhook já falhou silenciosamente uma vez (18/07/2026)**: push confirmado no GitHub, Vercel não buildou nada, site ficou no ar com a versão antiga sem nenhum erro visível. **Sempre confirmar o deploy** (ver Convenções de trabalho), nunca assumir que push = no ar. Após mudança confirmada, lembrar de Ctrl+F5 (cache).
+- **Consumo de dados (egress)** é a única cota do plano gratuito que aperta. Antes de mexer em qualquer coisa que altere volume de fetch/Realtime, ler `docs/otimizacao-egress-jul2026.md` — traz as medições, o padrão obrigatório do canal Realtime e os caminhos já descartados (com o motivo). Para medir/diagnosticar, usar a skill `verificar-uso-supabase`.
 
 ## Páginas (17)
 

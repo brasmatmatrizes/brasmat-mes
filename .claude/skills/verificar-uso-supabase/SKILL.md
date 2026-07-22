@@ -140,6 +140,9 @@ folga.
 
 ## Histórico de causas já diagnosticadas
 
+> Registro completo do episódio de julho/2026 (sintoma, diagnóstico errado, causa real,
+> o que foi aplicado e o que foi descartado): **`docs/otimizacao-egress-jul2026.md`**.
+
 - **22/07/2026 — polling de emergência preso ligado.** O canal Realtime caía e nunca
   reconectava (o `subscribe` só registrava o status, sem tratar
   `CLOSED`/`CHANNEL_ERROR`/`TIMED_OUT`), então a aba ficava permanentemente no

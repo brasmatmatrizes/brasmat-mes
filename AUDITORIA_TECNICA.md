@@ -161,6 +161,7 @@ Esta seção lista os gargalos técnicos centrais; o detalhe formal (evidência,
 **Vale a pena?** **Sim.** Recomendo (A)+(C) como correção imediata (baixo risco, baixo esforço) e (B) como evolução estrutural quando houver tempo — não precisa ser tudo de uma vez.
 
 > **Atualização 22/07/2026 — a causa real era outra, e (B) foi descartada.**
+> *(registro completo do episódio, com as medições e o que foi descartado: `docs/otimizacao-egress-jul2026.md`)*
 >
 > A solução (A) foi aplicada (o `setInterval` passou a rodar só com `!_rtConectado`), mas o consumo continuou subindo — chegou a ~237 MB/dia. Ao medir a composição do egress no painel, **95% era PostgREST** (não Storage, não Realtime), e nos logs da API as recargas de `posicao_atual` apareciam em intervalos de **exatamente 60,0 segundos**.
 >

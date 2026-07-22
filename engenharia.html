@@ -186,8 +186,8 @@
   .p-obs{flex:1;border:2px solid #000;padding:6px 10px;min-height:120px}
   .p-obs-t{font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px}
   .p-obs-x{font-size:11px;white-space:pre-wrap}
-  .p-qr{width:130px;border:2px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px;gap:4px}
-  .p-qr img{width:110px;height:110px}
+  .p-qr{width:250px;border:2px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;gap:4px}
+  .p-qr img{width:220px;height:220px}
   .p-qr span{font-size:8px;text-align:center}
 }
 </style>
@@ -1018,7 +1018,15 @@ function imprimir(){
   // link manual sobrescreve; senão monta automático a partir dos dados do roteiro
   const override = String(R.forms_link||"").trim();
   const formsLink = override || montarLinkForms(R, ITENS.length);
-  const qrSrc = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data="+encodeURIComponent(formsLink);
+  // O QR é lido por tablets antigos de câmera fraca, então o que decide é o tamanho físico
+  // de cada módulo no papel — não a resolução do arquivo. O link do Forms tem ~378 caracteres,
+  // o que dá um QR denso (69 módulos em ECC L, 77 em M), daí precisar de bastante área impressa.
+  //   size=1000x1000 → teto da API; pedir mais faz ela cair calada pra 250x250 (pior que o padrão)
+  //   qzone=4        → borda branca da norma; sem ela o leitor não engata (o padrão vinha com ~0)
+  //   ecc=M          → tolera sujeira/vinco do chão de fábrica (15% de recuperação contra 7% do L)
+  // Com 220px de largura impressa (58mm) e 77+8 módulos, cada módulo fica com 0,68mm —
+  // antes eram 0,42mm sem borda branca nenhuma. Ver .p-qr no CSS de impressão.
+  const qrSrc = "https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&ecc=M&qzone=4&data="+encodeURIComponent(formsLink);
   const temSub = ITENS.some(it=>String(it.subcomponente||"").trim());
   let linhas = "";
   if(temSub){

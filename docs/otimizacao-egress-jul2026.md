@@ -93,6 +93,7 @@ Storage     0,8%     2,0 MB   ← imagens/anexos: irrelevantes
 | 2 | **Fallback de 60s → 180s.** Com a reconexão funcionando, ele vira último recurso real (Supabase inalcançável), cenário em que insistir mais rápido não ajudaria | `537dcf6` | limita o pior caso |
 | 3 | **Expedição: handler separado por tabela.** `demanda_itens` (edição concorrente, ~50 kB) tem recarga leve própria, reaproveitando o `POSMAP` em memória; só `producao_eventos` dispara a recarga completa. Antes, marcar 1 item como separado puxava as 1.246 peças | `537dcf6` | 8-20% |
 | 4 | **Coluna calculada `suboperacao`** na view + `POS_COLS` explícito no `buscarPosicao()` | `f5eca9b` | **48% de cada carga** |
+| 5 | **View `historico_peca`** para a linha do tempo: descarta duplicatas e corta colunas no servidor | `dd22be1` | **70% por abertura** |
 
 ### Detalhe da mudança #4
 
@@ -123,6 +124,46 @@ versões convivem — ninguém precisou recarregar nada.** Aplicado com a fábri
 
 ---
 
+### Detalhe da mudança #5 — a linha do tempo
+
+Investigando por que o Forms mostrava 18.868 apontamentos e o banco 30.641, a conta
+fechou quase exata:
+
+| | Registros |
+|---|---|
+| No banco | 30.641 |
+| Duplicatas excedentes | −11.934 |
+| Sobra | 18.707 |
+| No Forms | 18.868 |
+| Resíduo não explicado | 161 (0,5%) |
+
+São o **mesmo apontamento gravado duas vezes** (mesma peça, pedido, processo, evento,
+operador e instante) pelo script do Forms antes da correção do `LockService`. **Zero
+duplicatas novas desde 04/07/2026** — problema resolvido na origem; o que sobrou é
+histórico de abril a 03/07.
+
+Onde isso pesava: **não** em `posicao_atual` (o `DISTINCT ON` da view já colapsa tudo em
+uma linha por peça — todo o caminho principal está limpo), mas **sim** na linha do tempo,
+que buscava todos os eventos da peça sem filtro. 851 pares peça+pedido (~2 em cada 3)
+exibiam passos repetidos na tela, com média de 14 repetições. Além da banda, isso induz
+a erro: parece que a peça passou duas vezes pelo mesmo processo.
+
+> **Filtrar no navegador não resolveria o consumo** — os dados já teriam sido baixados;
+> só ficariam escondidos. Economiza banda quem **não envia**. Por isso a dedução foi
+> feita no servidor, via view.
+
+`historico_peca` também corta as colunas: `producao_eventos` tem 33, a linha do tempo lê
+17 (as 13 `operacao_*` viram `suboperacao`). Combinado com o dedupe: **128 kB → 39 kB**
+numa peça de 138 eventos. O `EXPLAIN` confirma que o filtro por pedido+código continua
+usando o índice `idx_producao_eventos_pedido_codigo` — o `DISTINCT ON` roda sobre as
+linhas daquela peça, não sobre a tabela toda.
+
+Os 11.934 registros duplicados **continuam no banco**, por decisão: mexer em dado de
+produção sem PITR tem risco desnecessário, e a view resolve o efeito prático. Indicadores
+que somam volume no período abr–jun seguem inflados; os painéis que contam volume já
+tinham dedução própria como proteção. Status, posição, progresso e OTD nunca foram
+afetados — olham o *último* evento, e repetir não muda qual é o último.
+
 ## 5. O que foi deliberadamente descartado
 
 **Merge incremental** (atualizar só a linha que mudou, em vez de recarregar tudo) —
@@ -139,6 +180,14 @@ dela se resolve reduzindo *frequência* e *tamanho* — que foi o caminho seguid
 
 **Espaçar o debounce** foi descartado depois da medição da seção 2: pouco ganho real, e
 custaria justamente o instantâneo que o negócio precisa.
+
+**Apagar os 11.934 apontamentos duplicados:** decidido manter. O plano gratuito não tem
+restauração point-in-time, então apagar 11.934 linhas de produção é irreversível se algo
+der errado — e a view `historico_peca` já elimina o efeito prático (banda e confusão
+visual) sem tocar em nada. Se um dia for feito, exige backup completo antes.
+
+**Deduplicar no navegador** em vez de no servidor: resolveria a confusão visual, mas
+**zero economia de banda** — os dados já teriam trafegado.
 
 **Remover as 13 colunas `operacao_*` da view:** desnecessário. O ganho vem de o site
 *pedir* menos, não de a view *ter* menos. Manter as 13 custa nada e preserva a

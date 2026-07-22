@@ -160,6 +160,16 @@ Esta seção lista os gargalos técnicos centrais; o detalhe formal (evidência,
 
 **Vale a pena?** **Sim.** Recomendo (A)+(C) como correção imediata (baixo risco, baixo esforço) e (B) como evolução estrutural quando houver tempo — não precisa ser tudo de uma vez.
 
+> **Atualização 22/07/2026 — a causa real era outra, e (B) foi descartada.**
+>
+> A solução (A) foi aplicada (o `setInterval` passou a rodar só com `!_rtConectado`), mas o consumo continuou subindo — chegou a ~237 MB/dia. Ao medir a composição do egress no painel, **95% era PostgREST** (não Storage, não Realtime), e nos logs da API as recargas de `posicao_atual` apareciam em intervalos de **exatamente 60,0 segundos**.
+>
+> Essa regularidade denuncia o `setInterval`, não o Realtime: o canal estava caindo e **nunca reconectando**, porque o callback do `subscribe` apenas registrava o status e não tratava `CLOSED`/`CHANNEL_ERROR`/`TIMED_OUT`. A aba ficava presa no fallback o dia inteiro — 914 kB por minuto mesmo com a fábrica parada — e, pior que o gasto, **exibia dado atrasado sem qualquer sinal ao usuário**. O fallback nunca foi projetado para ser o estado permanente.
+>
+> Corrigido no commit `537dcf6`: reconexão automática com backoff (2s dobrando até 30s) nas 5 páginas com Realtime, refetch único ao *re*conectar (recupera o que passou), fallback afrouxado de 60s para 180s, e handler leve para `demanda_itens` na Expedição (marcar 1 item puxava as 1242 linhas).
+>
+> **(B) — merge incremental — foi descartada deliberadamente.** A recarga total funciona como autocorreção: se um evento de Realtime se perder para a peça X, o próximo apontamento de qualquer peça traz X de volta ao estado correto. Com merge incremental essa rede some, e a falha passa a ser invisível (a peça aparece normal, só que errada). Dado que o canal já provou que cai, a recarga total é a escolha resiliente — o custo dela se resolve reduzindo *frequência* e *tamanho*, não abrindo mão da correção automática.
+
 ---
 
 ## 8. Problemas do Supabase

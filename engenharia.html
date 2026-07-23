@@ -1297,25 +1297,28 @@ function imprimir(){
     // 1ª passada: mede a altura real de cada linha (varia com texto que quebra em 2 linhas) e
     // onde a tabela começa — envolve em .p-page pra medir já com o padding de 10mm da folha (o
     // mesmo do render final), senão tableStartMM sairia 10mm curto e a paginação erraria o corte
-    area.innerHTML = `<div class="p-page">${cabecalhoHtml(1,1)}<table class="p-tbl">${theadHtml}<tbody>${linhas.join("")}</tbody></table></div>`;
+    // a linha vazia entra na medição (no fim) só pra saber a altura dela; sai de alturasMM logo
+    // depois, pra não contar como se fosse uma operação de verdade na paginação
+    area.innerHTML = `<div class="p-page">${cabecalhoHtml(1,1)}<table class="p-tbl">${theadHtml}<tbody>${linhas.join("")}${linhaPrintVazia()}</tbody></table></div>`;
     const areaTop = area.getBoundingClientRect().top;
     const tabelaEl = area.querySelector(".p-tbl");
     const tableStartMM = tabelaEl ? mm(tabelaEl.getBoundingClientRect().top - areaTop) : 48;
     const alturasMM = Array.from(area.querySelectorAll(".p-tbl tbody tr")).map(tr => mm(tr.getBoundingClientRect().height));
+    const alturaVaziaMM = alturasMM.pop() || 0;
 
     // 2ª passada: decide o corte de cada página, em JS puro (sem precisar re-renderizar a cada
     // tentativa) — a 1ª página usa o limite que reserva o rodapé, as seguintes usam o limite maior
     const paginas = [];
     if(!linhas.length){
-      paginas.push({inicio:0, fim:0});
+      paginas.push({inicio:0, fim:0, brancos:brancosQueCabem(tableStartMM, TABLE_MAX_BOTTOM_MM, alturaVaziaMM)});
     }else{
       let i = 0;
       while(i < linhas.length){
         const limite = paginas.length===0 ? TABLE_MAX_BOTTOM_MM : TABLE_MAX_BOTTOM_MM_CONT;
         let y = tableStartMM, j = i;
         while(j < linhas.length && (y + alturasMM[j]) <= limite){ y += alturasMM[j]; j++; }
-        if(j === i) j = i + 1; // garante progresso mesmo se uma linha sozinha já estourasse a página
-        paginas.push({inicio:i, fim:j});
+        if(j === i){ j = i + 1; y += alturasMM[i]; } // garante progresso mesmo se uma linha sozinha já estourasse a página
+        paginas.push({inicio:i, fim:j, brancos:brancosQueCabem(y, limite, alturaVaziaMM)});
         i = j;
       }
     }
@@ -1325,10 +1328,11 @@ function imprimir(){
     area.innerHTML = paginas.map((p,idx)=>{
       const num = idx+1;
       const classe = idx>0 ? "p-page p-pagebreak" : "p-page";
-      const corpo = `<table class="p-tbl">${theadHtml}<tbody>${linhas.slice(p.inicio,p.fim).join("")}</tbody></table>`;
+      const corpo = `<table class="p-tbl">${theadHtml}<tbody>${linhas.slice(p.inicio,p.fim).join("")}${linhaPrintVazia().repeat(p.brancos)}</tbody></table>`;
       const rodape = num===1 ? rodapeHtml : "";
       return `<div class="${classe}">${cabecalhoHtml(num,totalPaginas)}${corpo}${rodape}</div>`;
     }).join("");
+    podarBrancos(area);
   }else{
     const bannerHtml = (nome, idx, total) => `<div class="p-conjunto">
       <div class="p-conjunto-titulo">Conjunto — ${escHtml(nome)} (peça ${idx} de ${total})</div>
@@ -1338,11 +1342,12 @@ function imprimir(){
     // mede com o banner presente (ele aparece em toda página no modo conjunto, então desloca
     // o início da tabela igual em todas), medindo todas as linhas de todos os blocos de uma vez
     const linhasTeste = gruposSub.flatMap(g=>g.itens.map(linhaPrint));
-    area.innerHTML = `<div class="p-page">${cabecalhoHtml(1,1)}${bannerHtml(gruposSub[0].nome,1,gruposSub.length)}<table class="p-tbl">${theadHtml}<tbody>${linhasTeste.join("")}</tbody></table></div>`;
+    area.innerHTML = `<div class="p-page">${cabecalhoHtml(1,1)}${bannerHtml(gruposSub[0].nome,1,gruposSub.length)}<table class="p-tbl">${theadHtml}<tbody>${linhasTeste.join("")}${linhaPrintVazia()}</tbody></table></div>`;
     const areaTop = area.getBoundingClientRect().top;
     const tabelaEl = area.querySelector(".p-tbl");
     const tableStartMM = tabelaEl ? mm(tabelaEl.getBoundingClientRect().top - areaTop) : 60;
     const alturasFlatMM = Array.from(area.querySelectorAll(".p-tbl tbody tr")).map(tr => mm(tr.getBoundingClientRect().height));
+    const alturaVaziaMM = alturasFlatMM.pop() || 0; // idem: última linha medida é a vazia de referência
 
     // separa as alturas de volta por bloco (mesma ordem da medição) e pagina cada bloco isolado
     // — página 1 de cada bloco reserva o rodapé, as seguintes do mesmo bloco usam o limite maior
@@ -1358,11 +1363,11 @@ function imprimir(){
         const limite = paginas.length===0 ? TABLE_MAX_BOTTOM_MM : TABLE_MAX_BOTTOM_MM_CONT;
         let y = tableStartMM, j = i;
         while(j < linhasHtml.length && (y + alturas[j]) <= limite){ y += alturas[j]; j++; }
-        if(j === i) j = i + 1;
-        paginas.push({inicio:i, fim:j});
+        if(j === i){ j = i + 1; y += alturas[i]; }
+        paginas.push({inicio:i, fim:j, brancos:brancosQueCabem(y, limite, alturaVaziaMM)});
         i = j;
       }
-      if(!paginas.length) paginas.push({inicio:0, fim:0});
+      if(!paginas.length) paginas.push({inicio:0, fim:0, brancos:brancosQueCabem(tableStartMM, TABLE_MAX_BOTTOM_MM, alturaVaziaMM)});
       return {nome:g.nome, linhasHtml, paginas};
     });
 
@@ -1371,10 +1376,11 @@ function imprimir(){
     area.innerHTML = gruposPag.map((g,gi)=> g.paginas.map((p,pi)=>{
       numGlobal++;
       const classe = numGlobal>1 ? "p-page p-pagebreak" : "p-page";
-      const corpo = `<table class="p-tbl">${theadHtml}<tbody>${g.linhasHtml.slice(p.inicio,p.fim).join("")}</tbody></table>`;
+      const corpo = `<table class="p-tbl">${theadHtml}<tbody>${g.linhasHtml.slice(p.inicio,p.fim).join("")}${linhaPrintVazia().repeat(p.brancos)}</tbody></table>`;
       const rodape = pi===0 ? rodapeHtml : "";
       return `<div class="${classe}">${cabecalhoHtml(numGlobal,totalPaginas)}${bannerHtml(g.nome, gi+1, gruposPag.length)}${corpo}${rodape}</div>`;
     }).join("")).join("");
+    podarBrancos(area);
   }
 
   // espera logo + QR carregarem antes de abrir a impressão
@@ -1388,6 +1394,38 @@ function imprimir(){
 }
 function linhaPrint(it){
   return `<tr><td style="text-align:center">${it.sequencia}ª</td><td style="text-align:center">${escHtml(it.operacao_codigo)}</td><td>${escHtml(it.operacao_descricao)}</td><td></td><td>${escHtml(it.observacao||"")}</td></tr>`;
+}
+// Linha em branco de sobra: o pessoal da produção rasura e reescreve na linha de baixo, então a
+// tabela é preenchida até o limite da página com linhas vazias (pedido do usuário 23/07/2026).
+// Não desloca nada — o rodapé/QR é absolute na folha e o cabeçalho fica acima da tabela.
+function linhaPrintVazia(){
+  return `<tr><td></td><td></td><td></td><td></td><td></td></tr>`;
+}
+// quantas linhas vazias ainda cabem entre o fim das linhas reais (usadoMM) e o limite da página.
+// A folga de 3mm existe porque a medição por linha ignora a borda de 2px da tabela e o
+// arredondamento de cada célula: sem ela a última linha em branco encostava no rodapé (medido
+// 226,3mm contra os 229mm do .p-foot).
+const BRANCO_FOLGA_MM = 3;
+function brancosQueCabem(usadoMM, limiteMM, alturaVaziaMM){
+  if(!(alturaVaziaMM > 0)) return 0;
+  return Math.max(0, Math.floor((limiteMM - BRANCO_FOLGA_MM - usadoMM) / alturaVaziaMM));
+}
+// A estimativa acima soma altura por altura, e cada linha perde uma fração de milímetro no
+// arredondamento — em 25 linhas o erro já passou de 4mm no teste, empurrando a última linha em
+// branco pra cima do rodapé. Aqui a folha já está montada, então dá pra medir de verdade e tirar
+// do fim as linhas em branco que estouraram. Só mexe em linha vazia: para na primeira com texto.
+function podarBrancos(area){
+  const mm = px => px/(96/25.4);
+  area.querySelectorAll(".p-page").forEach(pg=>{
+    const limite = (pg.querySelector(".p-foot") ? TABLE_MAX_BOTTOM_MM : TABLE_MAX_BOTTOM_MM_CONT) - BRANCO_FOLGA_MM;
+    const top = pg.getBoundingClientRect().top;
+    const trs = Array.from(pg.querySelectorAll(".p-tbl tbody tr"));
+    for(let k=trs.length-1; k>=0; k--){
+      if(trs[k].textContent.trim()) break;
+      if(mm(trs[k].getBoundingClientRect().bottom - top) <= limite) break;
+      trs[k].remove();
+    }
+  });
 }
 
 // ---- CATÁLOGO (modal) ----

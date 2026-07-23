@@ -154,6 +154,29 @@
     </div>
   </div>
 
+  <!-- FILTROS DA LISTA -->
+  <div class="ed-hdr" style="margin-bottom:12px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="ed-f" style="flex:1;min-width:220px"><span class="ed-l">Buscar (código, pedido ou OS)</span>
+        <input class="ed-inp" id="fBusca" style="width:100%" placeholder="digite para filtrar..." oninput="renderLista()">
+      </div>
+      <div class="ed-f"><span class="ed-l">Tipo</span>
+        <select class="ed-inp" id="fTipo" style="width:150px" onchange="renderLista()">
+          <option value="">Todos</option>
+          <option value="V">Vendas (V)</option>
+          <option value="I">Industrialização (I)</option>
+        </select>
+      </div>
+      <div class="ed-f" style="flex:1;min-width:200px"><span class="ed-l">Cliente</span>
+        <select class="ed-inp" id="fCliente" style="width:100%" onchange="renderLista()"><option value="">Todos</option></select>
+      </div>
+      <div class="ed-f"><span class="ed-l">&nbsp;</span>
+        <label style="display:flex;align-items:center;gap:6px;height:32px;font-size:12px;color:var(--text2);white-space:nowrap"><input type="checkbox" id="fSemDesenho" onchange="renderLista()"> 📐 só sem desenho</label>
+      </div>
+      <button class="btn-g" onclick="limparFiltros()">limpar</button>
+    </div>
+  </div>
+
   <!-- LISTA -->
   <div id="lista"><div class="empty">carregando...</div></div>
 </div>
@@ -381,11 +404,53 @@ function fmtData(v){
   return isNaN(d) ? "" : d.toLocaleDateString("pt-BR");
 }
 
+// ---- Filtros da lista (a base cresce rápido — busca client-side sobre o que já foi carregado) ----
+let _cliSig = "";   // assinatura da lista de clientes, p/ só reconstruir o select quando mudar
+function preencherFiltroClientes(){
+  const sel = document.getElementById("fCliente"); if(!sel) return;
+  const nomes = [...new Set(ITENS.map(i=>String(i.cliente||"").trim()).filter(Boolean))].sort();
+  const sig = nomes.join("|");
+  if(sig === _cliSig) return;
+  _cliSig = sig;
+  const atual = sel.value;
+  sel.innerHTML = '<option value="">Todos</option>' + nomes.map(n=>`<option value="${escHtml(n)}">${escHtml(n)}</option>`).join("");
+  sel.value = atual;   // preserva a seleção do usuário
+}
+
+function itensFiltrados(){
+  const g = id=>document.getElementById(id);
+  const q    = String((g("fBusca")||{}).value||"").trim().toUpperCase();
+  const tipo = (g("fTipo")||{}).value || "";
+  const cli  = (g("fCliente")||{}).value || "";
+  const semDes = !!(g("fSemDesenho")||{}).checked;
+  return ITENS.filter(it=>{
+    if(tipo && tipoDoItem(it) !== tipo) return false;
+    if(cli && String(it.cliente||"").trim() !== cli) return false;
+    if(semDes && it.desenho_url) return false;
+    if(q){
+      const alvo = [it.codigo_peca, it.pedido, it.os].map(v=>String(v||"").toUpperCase()).join(" ");
+      if(!alvo.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+function limparFiltros(){
+  ["fBusca","fTipo","fCliente"].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=""; });
+  const s = document.getElementById("fSemDesenho"); if(s) s.checked = false;
+  renderLista();
+}
+
 function renderLista(){
   const el = document.getElementById("lista");
-  document.getElementById("pageSub").textContent = ITENS.length + " item(ns) cadastrado(s)";
+  preencherFiltroClientes();
+  const lista = itensFiltrados();
+  const filtrando = lista.length !== ITENS.length;
+  document.getElementById("pageSub").textContent =
+    ITENS.length + " item(ns) cadastrado(s)" + (filtrando ? ` · ${lista.length} no filtro` : "");
   if(!ITENS.length){ el.innerHTML = '<div class="empty">Nenhum item cadastrado ainda.</div>'; return; }
-  const linhas = ITENS.map(it=>{
+  if(!lista.length){ el.innerHTML = '<div class="empty">Nenhum item encontrado com esse filtro.</div>'; return; }
+  const linhas = lista.map(it=>{
     const t = tipoDoItem(it);
     const badge = t ? `<span class="badge badge-${t}">${t}</span>` : "";
     const badgeFerramenta = it.ferramenta_interna ? ` <span class="badge" style="background:rgba(124,58,237,0.16);color:var(--roxo)" title="Ferramenta interna — não passa pelo controle de material">🔧</span>` : "";

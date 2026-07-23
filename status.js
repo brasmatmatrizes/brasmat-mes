@@ -407,6 +407,7 @@ const AP_EDIT_CAMPOS = [
   {campo:"data_evento",          label:"Data e hora",            tipo:"datetime"}
 ];
 let _apEditRow = null;
+let _apEditPendingId = null;
 let _apEditBusy = false;
 let _apOperadores = null;
 
@@ -474,14 +475,28 @@ function _ensureEdicaoModal(){
   div.id = "apEdModal"; div.className = "aped-ov";
   div.innerHTML = `<div class="aped-box">
     <div class="aped-head"><div class="aped-title">✎ Editar apontamento</div><button class="aped-x" onclick="fecharEdicaoApontamento()">✕</button></div>
-    <div class="aped-ctx" id="apEdCtx"></div>
-    <div class="aped-body" id="apEdBody"></div>
-    <div class="aped-foot">
-      <div class="aped-f"><label>Senha para confirmar a edição</label><input type="password" class="aped-inp" id="apEdSenha" autocomplete="off"></div>
-      <div class="aped-err" id="apEdErr"></div>
-      <div class="aped-actions">
-        <button class="aped-btn" onclick="fecharEdicaoApontamento()">Cancelar</button>
-        <button class="aped-btn aped-btn-acc" id="apEdSalvar" onclick="_salvarEdicaoApontamento()">Salvar edição</button>
+    <div id="apEdGate">
+      <div class="aped-body">
+        <div style="font-size:12px;color:var(--text2);line-height:1.6">🔒 Digite a senha para editar o apontamento.</div>
+        <div class="aped-f"><label>Senha</label><input type="password" class="aped-inp" id="apEdSenha" autocomplete="off" onkeydown="if(event.key==='Enter')_desbloquearEdicaoApontamento()"></div>
+        <div class="aped-err" id="apEdGateErr"></div>
+      </div>
+      <div class="aped-foot">
+        <div class="aped-actions">
+          <button class="aped-btn" onclick="fecharEdicaoApontamento()">Cancelar</button>
+          <button class="aped-btn aped-btn-acc" onclick="_desbloquearEdicaoApontamento()">Continuar</button>
+        </div>
+      </div>
+    </div>
+    <div id="apEdEdit" style="display:none">
+      <div class="aped-ctx" id="apEdCtx"></div>
+      <div class="aped-body" id="apEdBody"></div>
+      <div class="aped-foot">
+        <div class="aped-err" id="apEdErr"></div>
+        <div class="aped-actions">
+          <button class="aped-btn" onclick="fecharEdicaoApontamento()">Cancelar</button>
+          <button class="aped-btn aped-btn-acc" id="apEdSalvar" onclick="_salvarEdicaoApontamento()">Salvar edição</button>
+        </div>
       </div>
     </div>
   </div>`;
@@ -491,14 +506,34 @@ function _ensureEdicaoModal(){
 function _apEdErr(msg){ const e=document.getElementById("apEdErr"); if(e) e.textContent=msg||""; }
 function fecharEdicaoApontamento(){ const m=document.getElementById("apEdModal"); if(m) m.classList.remove("show"); }
 
-async function abrirEdicaoApontamento(id){
+// Passo 1: clicar no ✎ abre só a tela de senha (não carrega/mostra os campos ainda).
+function abrirEdicaoApontamento(id){
   _ensureEdicaoModal();
   _apEditRow = null;
+  _apEditPendingId = id;
+  document.getElementById("apEdSenha").value = "";
+  const ge = document.getElementById("apEdGateErr"); if(ge) ge.textContent = "";
+  document.getElementById("apEdGate").style.display = "";
+  document.getElementById("apEdEdit").style.display = "none";
+  document.getElementById("apEdModal").classList.add("show");
+  const inp = document.getElementById("apEdSenha"); if(inp) setTimeout(()=>inp.focus(), 30);
+}
+
+// Passo 2: senha correta → mostra os campos e carrega o apontamento.
+async function _desbloquearEdicaoApontamento(){
+  const senha = document.getElementById("apEdSenha").value;
+  const ge = document.getElementById("apEdGateErr");
+  if(!senha){ if(ge) ge.textContent = "Digite a senha."; return; }
+  if(await _sha256Hex(senha) !== AP_EDIT_HASH){ if(ge) ge.textContent = "Senha incorreta."; return; }
+  document.getElementById("apEdGate").style.display = "none";
+  document.getElementById("apEdEdit").style.display = "";
+  await _carregarFormEdicao(_apEditPendingId);
+}
+
+async function _carregarFormEdicao(id){
   document.getElementById("apEdCtx").innerHTML = "";
   document.getElementById("apEdBody").innerHTML = `<div style="color:var(--text3);font-size:12px;padding:8px 0">carregando…</div>`;
-  document.getElementById("apEdSenha").value = "";
   _apEdErr("");
-  document.getElementById("apEdModal").classList.add("show");
   let row, ops;
   try{
     [row, ops] = await Promise.all([
@@ -535,9 +570,7 @@ async function abrirEdicaoApontamento(id){
 
 async function _salvarEdicaoApontamento(){
   if(!_apEditRow || _apEditBusy) return;
-  const senha = document.getElementById("apEdSenha").value;
-  if(!senha){ _apEdErr("Digite a senha para confirmar."); return; }
-  if(await _sha256Hex(senha) !== AP_EDIT_HASH){ _apEdErr("Senha incorreta."); return; }
+  // senha já validada no passo 1 (_desbloquearEdicaoApontamento)
   // monta o diff só com o que mudou
   const patch = {}, campos = {};
   document.querySelectorAll("#apEdBody [data-campo]").forEach(el=>{

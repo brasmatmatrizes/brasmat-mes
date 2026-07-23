@@ -282,3 +282,39 @@ aço da carcaça pode ser uma barra só usinada em lote).
 - **Migração**: os dados existentes (todos ainda de teste) foram preservados 1:1 — cada
   par núcleo+carcaça do modelo antigo virou 2 lotes independentes com a mesma numeração,
   sem perda de histórico de eventos.
+
+## 11. Mesa em etapas — assistente (23/07/2026)
+
+**Dor**: a Mesa mostrava tudo de uma vez (chips de estrutura + todas as posições + todos os
+lotes + trilhas na mesma tela). Quem planeja precisava decidir várias coisas ao mesmo tempo,
+com a informação de cada posição competindo pela atenção. Era a parte do módulo que mais
+consumiu tempo e continuava difícil de usar.
+
+**Solução**: a mesma Mesa, uma decisão por tela — um **assistente** com barra de progresso:
+
+- **Etapa 1 — Estrutura da peça**: "Do que essa peça é feita?". Cartões grandes de escolha
+  (não mais chips): Núcleo Metal Duro / Núcleo Aço (exclusivos entre si) e, opcionais,
+  Carcaça de Aço / Luva de Aço. Posição que **já tem lote salvo** aparece travada (🔒) —
+  não dá pra tirar da estrutura uma parte que já virou cartão no Kanban.
+- **Etapas 2..N — uma por posição escolhida**, na ordem núcleo → carcaça → luva. Cada tela
+  pergunta "**em quantos lotes novos** essa parte vai ser separada?" (botões 0–5 e "+ mais",
+  `mesaDefinirNLotes`/`mesaRepartir` repartem automaticamente a quantidade que falta alocar),
+  mostra a barra de alocação da posição e um cartão por lote com quantidade, observação,
+  dividir/duplicar/remover e a trilha "**onde este lote está agora?**" — agora com botões
+  rotulados e ícone por etapa, no lugar das bolinhas mudas. Lote ainda em Aguardando mostra
+  os chips de intenção ("deve entrar por"). Lotes já criados aparecem no fim da tela da
+  própria posição.
+- **Etapa final — Revisão**: resumo por posição (nº de lotes novos, quantidades somadas,
+  aviso quando a soma ≠ quantidade do item), checkbox "planejamento concluído" e o botão
+  "✓ Criar N lotes". Nada é gravado antes disso — todas as etapas anteriores são rascunho
+  em memória.
+- **Croqui da peça** (aside fixo, `mesaCroquiSvg`): camadas concêntricas (luva → carcaça →
+  núcleo) coloridas com as mesmas cores das posições no Kanban, destacando a posição da
+  etapa atual, com legenda contando os lotes de cada parte. Some abaixo de 880px de largura.
+- **Navegação**: "← Voltar" em todas as etapas (na primeira, "Cancelar") e "Próximo →"
+  bloqueado enquanto o núcleo não tem material escolhido.
+
+**Sem mudança de banco e sem mudança no Kanban** — `mesaSalvar` grava exatamente como antes
+(lotes em sequência + evento inicial de quem foi marcado como fato). O modo "só-consulta"
+de posição desligada com lotes reais (seção 10) deixou de existir: a posição agora fica
+travada ligada, que é mais simples de entender e impossível de errar.

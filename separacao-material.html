@@ -115,50 +115,114 @@
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--bg4);border:1px solid var(--border2);color:var(--text);padding:9px 18px;border-radius:9px;font-size:12px;font-family:var(--mono);z-index:300;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 .toast-erro{border:2px solid var(--danger);color:var(--danger);font-size:14px;font-weight:600;padding:13px 22px;box-shadow:0 8px 28px rgba(240,69,69,.4)}
 
-/* MESA DE PLANEJAMENTO */
-.mesa-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-48%) scale(.98);width:min(1080px,92vw);max-height:88vh;background:var(--bg2);border:1px solid var(--border2);border-radius:14px;z-index:170;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;display:flex;flex-direction:column;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+/* MESA DE PLANEJAMENTO — assistente em etapas (estrutura → 1 tela por posição → revisão) */
+.mesa-panel{position:fixed;top:50%;left:50%;transform:translate(-50%,-48%) scale(.98);width:min(1000px,94vw);height:min(88vh,760px);background:var(--bg2);border:1px solid var(--border2);border-radius:16px;z-index:170;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;display:flex;flex-direction:column;box-shadow:0 24px 70px rgba(0,0,0,.55)}
 .mesa-panel.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
-.mesa-sec{display:flex;flex-direction:column;gap:8px}
-.mesa-sec-hdr{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.mesa-chips{display:flex;flex-wrap:wrap;gap:7px}
-.mesa-chip{background:var(--bg3);border:1px solid var(--border);border-radius:999px;padding:6px 13px;font-size:11.5px;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all .12s}
-.mesa-chip:hover{border-color:var(--border2);color:var(--text)}
-.mesa-chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
-.mesa-chip.mini{padding:3px 9px;font-size:10px}
-.mesa-alloc-track{height:9px;background:var(--bg3);border:1px solid var(--border);border-radius:999px;overflow:hidden}
-.mesa-alloc-fill{height:100%;background:var(--accent);border-radius:999px;transition:width .15s}
+.wz-hdr{padding:13px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-shrink:0}
+.wz-hdr-txt{flex:1;min-width:0}
+.wz-title{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wz-sub{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wz-steps{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.wz-seg{width:30px;height:7px;border-radius:999px;background:var(--bg4);transition:background .25s}
+.wz-seg.done{background:var(--ok)}
+.wz-seg.cur{background:var(--accent)}
+.wz-stepnum{font-size:10px;font-family:var(--mono);color:var(--text3);margin-left:5px}
+
+.wz-body{flex:1;display:flex;min-height:0}
+.wz-main{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.wz-aside{width:220px;flex-shrink:0;border-left:1px solid var(--border);background:var(--bg3);padding:16px 14px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.wz-aside-l{font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em}
+.wz-croqui{width:100%;max-width:170px;align-self:center}
+.wz-legend{display:flex;flex-direction:column;gap:7px}
+.wz-leg{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text2)}
+.wz-leg.off{opacity:.28}
+.wz-leg.foco{color:var(--text);font-weight:600}
+.wz-leg-sw{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.wz-leg-q{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap}
+
+.wz-q{font-size:20px;font-weight:600;line-height:1.28}
+.wz-q-sub{font-size:12.5px;color:var(--text3);margin-top:-7px;line-height:1.45}
+.wz-sec-l{font-size:12.5px;font-weight:600;color:var(--text2)}
+
+.wz-opts{display:flex;flex-direction:column;gap:10px}
+.wz-opt{display:flex;align-items:center;gap:13px;width:100%;border:2px solid var(--border);border-radius:14px;padding:12px 15px;background:var(--bg3);cursor:pointer;text-align:left;font-family:var(--sans);color:var(--text);transition:transform .1s,border-color .12s,background .12s;box-shadow:0 3px 0 var(--border)}
+.wz-opt:hover{border-color:var(--border2);transform:translateY(-1px)}
+.wz-opt:active{transform:translateY(2px);box-shadow:none}
+.wz-opt.lock{cursor:default;transform:none}
+.wz-opt.c-acc.on{border-color:var(--accent);background:rgba(59,127,255,.12);box-shadow:0 3px 0 var(--accent)}
+.wz-opt.c-aco.on{border-color:var(--text3);background:rgba(142,154,176,.14);box-shadow:0 3px 0 var(--text3)}
+.wz-opt.c-roxo.on{border-color:var(--roxo);background:rgba(124,58,237,.14);box-shadow:0 3px 0 var(--roxo)}
+.wz-opt.c-orange.on{border-color:var(--orange);background:rgba(249,115,22,.14);box-shadow:0 3px 0 var(--orange)}
+.wz-opt-ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;background:var(--bg4);flex-shrink:0}
+.wz-opt-tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wz-opt-t{font-size:14.5px;font-weight:500}
+.wz-opt-d{font-size:11.5px;color:var(--text3);line-height:1.35}
+.wz-opt-ck{margin-left:auto;font-size:17px;opacity:0;transition:opacity .12s;flex-shrink:0}
+.wz-opt.on .wz-opt-ck{opacity:1}
+.wz-opt.lock .wz-opt-ck{opacity:.55}
+
+.wz-nlotes{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.wz-nbtn{width:50px;height:50px;border-radius:14px;border:2px solid var(--border);background:var(--bg3);color:var(--text);font-size:17px;font-weight:600;cursor:pointer;font-family:var(--sans);box-shadow:0 3px 0 var(--border);transition:transform .1s,border-color .12s}
+.wz-nbtn:hover{border-color:var(--border2)}
+.wz-nbtn:active{transform:translateY(2px);box-shadow:none}
+.wz-nbtn.on{border-color:var(--accent);background:rgba(59,127,255,.14);box-shadow:0 3px 0 var(--accent)}
+.wz-nbtn.mais{width:auto;padding:0 14px;font-size:13px;color:var(--text2)}
+
+.mesa-alloc-track{height:11px;background:var(--bg3);border:1px solid var(--border);border-radius:999px;overflow:hidden}
+.mesa-alloc-fill{height:100%;background:var(--ok);border-radius:999px;transition:width .18s}
 .mesa-alloc-fill.over{background:var(--warn)}
-.mesa-alloc-lbl{font-size:10.5px;color:var(--text3);font-family:var(--mono);margin-top:4px}
-.mesa-hint{font-size:12px;color:var(--text3);font-family:var(--mono);padding:14px;text-align:center;background:var(--bg3);border-radius:10px}
-.mesa-linhas{display:flex;flex-direction:column;gap:10px}
-.mesa-lote{border:1px solid var(--border);border-radius:10px;padding:11px 13px;background:var(--bg3)}
-.mesa-lote-hdr{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.mesa-lote-tag{font-size:11px;font-family:var(--mono);color:var(--text2);font-weight:500;background:var(--bg4);border-radius:999px;padding:3px 10px}
-.mesa-qtd-inp{width:64px;text-align:right}
-.mesa-qtd-suf{font-size:10.5px;color:var(--text3);font-family:var(--mono)}
-.mesa-obs-inp{flex:1;min-width:120px}
-.mesa-lote-acoes{display:flex;gap:5px;margin-left:auto}
-.mesa-lote-acoes .danger{color:var(--danger);border-color:var(--danger)}
-.mesa-lote-comps{display:flex;gap:14px;flex-wrap:wrap}
-.mesa-comp{min-width:150px;flex:1}
-.mesa-comp-lbl{font-size:10.5px;color:var(--text2);font-family:var(--mono);margin-bottom:6px}
-.mesa-comp-mat{color:var(--text3)}
-.mesa-trilha{display:flex;align-items:center;gap:5px;margin-bottom:6px}
-.mesa-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);background:var(--bg2);cursor:pointer;flex-shrink:0;transition:all .12s}
-.mesa-dot:hover{border-color:var(--accent)}
-.mesa-dot.filled{background:var(--ok);border-color:var(--ok)}
-.mesa-comp-status{font-size:10px;font-family:var(--mono);color:var(--ok)}
-.mesa-intencao{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
-.mesa-intencao-lbl{font-size:9.5px;color:var(--text3);font-family:var(--mono)}
+.mesa-alloc-lbl{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:5px}
+
+.wz-lote{border:2px solid var(--border);border-radius:14px;padding:12px 14px;background:var(--bg3);display:flex;flex-direction:column;gap:11px}
+.wz-lote-hdr{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.wz-lote-tag{font-size:12px;font-family:var(--mono);font-weight:600;color:var(--text);background:var(--bg4);border-radius:999px;padding:4px 12px;flex-shrink:0}
+.wz-qtd-inp{width:80px;text-align:center;font-size:15px;padding:8px 6px}
+.wz-qtd-suf{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.wz-obs-inp{flex:1;min-width:110px}
+.wz-lote-acoes{display:flex;gap:5px;margin-left:auto}
+.wz-lote-acoes .btn-g{padding:4px 9px;height:30px;font-size:12px}
+.wz-lote-acoes .danger{color:var(--danger);border-color:var(--danger)}
+.wz-pergunta{font-size:11.5px;color:var(--text2)}
+.wz-trilha{display:flex;gap:6px;flex-wrap:wrap}
+.wz-st{border:2px solid var(--border);background:var(--bg2);border-radius:11px;padding:7px 9px;min-width:78px;font-size:10.5px;color:var(--text2);cursor:pointer;font-family:var(--sans);display:flex;flex-direction:column;align-items:center;gap:3px;transition:transform .1s,border-color .12s}
+.wz-st:hover{border-color:var(--border2);color:var(--text)}
+.wz-st:active{transform:translateY(2px)}
+.wz-st-ic{font-size:15px;line-height:1}
+.wz-st.done{border-color:rgba(45,191,126,.5);background:rgba(45,191,126,.10);color:var(--ok)}
+.wz-st.cur{border-color:var(--ok);background:var(--ok);color:#fff;font-weight:600}
+.wz-st.intent{border-color:var(--warn);border-style:dashed;color:var(--warn)}
+.mesa-intencao{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mesa-intencao-lbl{font-size:10.5px;color:var(--text3);font-family:var(--mono)}
+.mesa-chip{background:var(--bg2);border:1px solid var(--border);border-radius:999px;padding:5px 11px;font-size:10.5px;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all .12s}
+.mesa-chip:hover{border-color:var(--border2);color:var(--text)}
+.mesa-chip.on{background:var(--warn);border-color:var(--warn);color:#111}
+
+.mesa-hint{font-size:12px;color:var(--text3);font-family:var(--mono);padding:16px;text-align:center;background:var(--bg3);border-radius:12px}
 .mesa-existentes{display:flex;flex-direction:column;gap:5px}
-.mesa-existente-row{display:flex;align-items:center;gap:10px;font-size:11px;font-family:var(--mono);color:var(--text2);padding:6px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer}
+.mesa-existente-row{display:flex;align-items:center;gap:10px;font-size:11px;font-family:var(--mono);color:var(--text2);padding:8px 11px;border:1px solid var(--border);border-radius:9px;cursor:pointer}
 .mesa-existente-row:hover{border-color:var(--border2)}
 .mesa-existente-row.ok{border-color:rgba(45,191,126,.3)}
 .mesa-existente-num{color:var(--text)}
 .mesa-existente-status{color:var(--text3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mesa-existente-badge{color:var(--ok)}
-.mesa-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:6px;border-top:1px solid var(--border)}
-.mesa-pos-sec{border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+
+.wz-rev{display:flex;flex-direction:column;gap:8px}
+.wz-rev-row{display:flex;align-items:center;gap:10px;border:2px solid var(--border);border-radius:12px;padding:11px 13px;background:var(--bg3);font-size:12.5px;color:var(--text2)}
+.wz-rev-row.alerta{border-color:rgba(245,166,35,.5)}
+.wz-rev-sw{width:11px;height:11px;border-radius:3px;flex-shrink:0}
+.wz-rev-t{color:var(--text);font-weight:500}
+.wz-rev-q{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text3);text-align:right}
+.wz-rev-warn{font-size:11px;color:var(--warn);font-family:var(--mono)}
+.wz-final{display:flex;align-items:center;gap:10px;font-size:19px;font-weight:600}
+
+.wz-footer{flex-shrink:0;border-top:1px solid var(--border);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg2);border-radius:0 0 16px 16px}
+.wz-btn{border-radius:12px;padding:11px 22px;font-size:13.5px;font-weight:600;font-family:var(--sans);cursor:pointer;border:2px solid var(--border);background:transparent;color:var(--text2);box-shadow:0 3px 0 var(--border);transition:transform .1s,opacity .12s}
+.wz-btn:hover{color:var(--text);border-color:var(--border2)}
+.wz-btn:active{transform:translateY(3px);box-shadow:none}
+.wz-btn.prim{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 3px 0 #1F5AD6}
+.wz-btn.go{background:var(--ok);border-color:var(--ok);color:#fff;box-shadow:0 3px 0 #1E8F5C}
+.wz-btn:disabled{opacity:.35;cursor:not-allowed;box-shadow:none;transform:none}
+@media(max-width:880px){.wz-aside{display:none}.wz-main{padding:16px}}
 
 /* MODO TV — monitor fixo na parede, só leitura, fonte maior, sem drag/clique */
 body.tv-mode .search-wrap,body.tv-mode .hint{display:none}
@@ -269,14 +333,19 @@ body.tv-mode .mc-dot{width:7px;height:7px}
 
 <!-- MESA DE PLANEJAMENTO -->
 <div class="mesa-panel" id="mesaPanel">
-  <div class="sp-hdr">
-    <div>
-      <div class="sp-title" id="mesaTitle">—</div>
-      <div class="sp-sub" id="mesaSub">—</div>
+  <div class="wz-hdr">
+    <div class="wz-hdr-txt">
+      <div class="wz-title" id="mesaTitle">—</div>
+      <div class="wz-sub" id="mesaSub">—</div>
     </div>
+    <div class="wz-steps" id="mesaSteps"></div>
     <button class="sp-close" onclick="fecharMesa()">✕</button>
   </div>
-  <div class="sp-body" id="mesaBody"></div>
+  <div class="wz-body">
+    <div class="wz-main" id="mesaBody"></div>
+    <div class="wz-aside" id="mesaAside"></div>
+  </div>
+  <div class="wz-footer" id="mesaFooter"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -659,16 +728,19 @@ document.addEventListener("click", e=>{
   if(!e.target.closest(".search-wrap")) document.getElementById("sugg").style.display="none";
 });
 
-// ---- MESA DE PLANEJAMENTO ----
-// Planeja os lotes de um item ANTES de qualquer cartão existir no Kanban. Cada posição (núcleo/carcaça/
-// luva) planeja sua PRÓPRIA lista de lotes, independente das outras — o núcleo pode ter 2 lotes enquanto
-// a carcaça tem só 1, por exemplo, porque cada material tem sua própria lógica de fornecimento.
-// Estado é só rascunho em memória até salvar — nada é gravado antes disso.
+// ---- MESA DE PLANEJAMENTO (assistente em etapas) ----
+// Planeja os lotes de um item ANTES de qualquer cartão existir no Kanban, uma decisão por tela:
+//   etapa 0 = estrutura da peça (quais posições existem) → 1..N = uma tela por posição ativa → N+1 = revisão.
+// Cada posição (núcleo/carcaça/luva) planeja sua PRÓPRIA lista de lotes, independente das outras — o núcleo
+// pode ter 2 lotes enquanto a carcaça tem só 1, porque cada material tem sua própria lógica de fornecimento.
+// Estado é só rascunho em memória até confirmar na última etapa — nada é gravado antes disso.
 let _mesaItem = null;
 let _mesaEstrutura = { nucleo:null, carcaca:false, luva:false }; // molde: quais posições existem na peça
 let _mesaPosicoes = {};    // { nucleo:[linha,...], carcaca:[...], luva:[...] } — só existe a chave se a posição está ativa
 let _mesaTempSeq = 1;
 let _mesaConcluirChecked = false; // estado do checkbox "planejamento concluído" — em variável pra sobreviver a um clique sem precisar re-renderizar tudo
+let _mesaStep = 0;         // etapa atual do assistente
+let _mesaStepRenderizado = -1; // qual etapa está desenhada — troca de etapa volta o scroll pro topo, re-render da mesma etapa preserva
 
 function abrirMesa(itemId){
   document.getElementById("sugg").style.display="none";
@@ -689,6 +761,8 @@ function abrirMesa(itemId){
   _mesaPosicoes = {};
   mesaSincronizar(); // garante os arrays vazios pra "+ novo lote" já funcionar sem precisar re-clicar nos chips
   _mesaConcluirChecked = !!item.plano_separacao_concluido;
+  _mesaStep = 0;
+  _mesaStepRenderizado = -1;
   renderMesa();
   abrirMesaPainel();
 }
@@ -701,16 +775,38 @@ function fecharMesa(){
   document.getElementById("mesaPanel").classList.remove("open");
 }
 
+// posições ativas, na ordem em que viram etapa do assistente
+function mesaPassos(){
+  return ["nucleo","carcaca","luva"].filter(p => p==="nucleo" ? !!_mesaEstrutura.nucleo : !!_mesaEstrutura[p]);
+}
+function mesaTotalSteps(){ return mesaPassos().length + 2; } // estrutura + posições + revisão
+// posição já tem lote salvo de verdade? então a estrutura dela não pode mais ser desmarcada aqui
+function mesaTemLoteSalvo(pos){
+  return !!(_mesaItem && COMPONENTES.some(c=>c.item_id===_mesaItem.id && c.posicao===pos));
+}
+function mesaTotalLinhasNovas(){
+  return ["nucleo","carcaca","luva"].reduce((s,p)=>s+((_mesaPosicoes[p]||[]).length),0);
+}
+function mesaProximo(){
+  if(_mesaStep===0 && !_mesaEstrutura.nucleo){ toast("Escolha o material do núcleo para continuar","erro"); return; }
+  if(_mesaStep < mesaTotalSteps()-1){ _mesaStep++; renderMesa(); }
+}
+function mesaVoltar(){
+  if(_mesaStep>0){ _mesaStep--; renderMesa(); }
+}
+
 function mesaNovaLinhaObj(qtd){
   return { tempId:_mesaTempSeq++, quantidade:qtd, observacao:"", fato:0, intencao:null };
 }
 // quanto já está alocado numa posição (lotes já salvos + rascunho) — cada posição soma só a si mesma
 function mesaAlocado(pos){
   const drafts = (_mesaPosicoes[pos]||[]).reduce((s,l)=>s+(parseInt(l.quantidade,10)||0),0);
-  const existentes = _mesaItem
+  return drafts + mesaAlocadoSalvo(pos);
+}
+function mesaAlocadoSalvo(pos){
+  return _mesaItem
     ? COMPONENTES.filter(c=>c.item_id===_mesaItem.id && c.posicao===pos).reduce((s,c)=>s+(parseInt(c.quantidade,10)||0),0)
     : 0;
-  return drafts+existentes;
 }
 // garante que exista (ou não) a lista de rascunho de cada posição, conforme a estrutura da peça
 function mesaSincronizar(){
@@ -720,30 +816,39 @@ function mesaSincronizar(){
     if(!ativo && _mesaPosicoes[pos]) delete _mesaPosicoes[pos];
   });
 }
-// ao ativar uma posição pela primeira vez, já cria a primeira linha com o restante não alocado — fluxo mínimo
-function mesaAtivarPosicaoSeVazia(pos){
-  if(_mesaPosicoes[pos] && _mesaPosicoes[pos].length===0){
-    const total = parseInt(_mesaItem.quantidade,10)||0;
-    const restante = Math.max(0, total-mesaAlocado(pos));
-    _mesaPosicoes[pos].push(mesaNovaLinhaObj(restante||1));
-  }
-}
 function mesaSetNucleo(tipo){
+  if(mesaTemLoteSalvo("nucleo")){ toast("O núcleo já tem lote criado — o material não pode mudar","erro"); return; }
   _mesaEstrutura.nucleo = (_mesaEstrutura.nucleo===tipo) ? null : tipo;
   mesaSincronizar();
-  if(_mesaEstrutura.nucleo) mesaAtivarPosicaoSeVazia('nucleo');
   renderMesa();
 }
 function mesaToggle(pos){
+  if(mesaTemLoteSalvo(pos)){ toast(POS_LABEL[pos]+" já tem lote criado — não dá pra remover da estrutura aqui","erro"); return; }
   _mesaEstrutura[pos] = !_mesaEstrutura[pos];
   mesaSincronizar();
-  if(_mesaEstrutura[pos]) mesaAtivarPosicaoSeVazia(pos);
   renderMesa();
+}
+
+// "em quantos lotes?" — cria/remove linhas de rascunho e reparte a quantidade que falta alocar entre elas
+function mesaDefinirNLotes(pos, n){
+  const linhas = _mesaPosicoes[pos] || (_mesaPosicoes[pos] = []);
+  if(n < linhas.length) linhas.splice(n);
+  else while(linhas.length < n) linhas.push(mesaNovaLinhaObj(1));
+  mesaRepartir(pos);
+  renderMesa();
+}
+function mesaRepartir(pos){
+  const linhas = _mesaPosicoes[pos] || [];
+  if(!linhas.length) return;
+  const total = parseInt(_mesaItem.quantidade,10)||0;
+  const restante = Math.max(0, total - mesaAlocadoSalvo(pos));
+  const base = Math.floor(restante/linhas.length), resto = restante - base*linhas.length;
+  linhas.forEach((l,i)=>{ l.quantidade = Math.max(1, base + (i<resto?1:0)); });
 }
 function mesaAdicionarLinha(pos){
   const total = parseInt(_mesaItem.quantidade,10)||0;
   const restante = Math.max(0, total-mesaAlocado(pos));
-  _mesaPosicoes[pos].push(mesaNovaLinhaObj(restante||1));
+  (_mesaPosicoes[pos] || (_mesaPosicoes[pos]=[])).push(mesaNovaLinhaObj(restante||1));
   renderMesa();
 }
 function mesaDividir(pos, tempId){
@@ -821,38 +926,117 @@ function mesaSetIntencao(pos, tempId, ordem){
   renderMesa();
 }
 
+// ---- desenho da peça (croqui) e legenda: camadas concêntricas vistas de cima ----
+const POS_COR = { nucleo:"var(--accent)", carcaca:"var(--roxo)", luva:"var(--orange)" };
+const POS_ICONE = { nucleo:"⬤", carcaca:"⭕", luva:"🔘" };
+function mesaCorPosicao(pos){
+  return (pos==="nucleo" && _mesaEstrutura.nucleo==="aco") ? "var(--text3)" : POS_COR[pos];
+}
+function mesaCroquiSvg(destaque){
+  const e = _mesaEstrutura;
+  const camadas = [];
+  if(e.luva) camadas.push({pos:"luva", r:78});
+  if(e.carcaca) camadas.push({pos:"carcaca", r:57});
+  if(e.nucleo) camadas.push({pos:"nucleo", r:35});
+  if(!camadas.length){
+    return `<svg viewBox="0 0 180 180" class="wz-croqui"><circle cx="90" cy="90" r="70" fill="none" stroke="var(--border2)" stroke-width="2" stroke-dasharray="7 7"/><text x="90" y="95" text-anchor="middle" font-size="11" fill="var(--text3)" font-family="IBM Plex Mono">nada ainda</text></svg>`;
+  }
+  const circles = camadas.map(c=>{
+    const foco = !destaque || destaque===c.pos;
+    const cor = mesaCorPosicao(c.pos);
+    return `<circle cx="90" cy="90" r="${c.r}" fill="${cor}" fill-opacity="${foco?0.22:0.06}" stroke="${cor}" stroke-width="${(destaque&&foco)?4:2}" stroke-opacity="${foco?1:0.28}"/>`;
+  }).join("");
+  return `<svg viewBox="0 0 180 180" class="wz-croqui">${circles}</svg>`;
+}
+function mesaLegendaHtml(destaque){
+  const e = _mesaEstrutura;
+  const linhas = [
+    {pos:"nucleo", on:!!e.nucleo, lbl:"Núcleo"+(e.nucleo?" · "+MATERIAL_LABEL[e.nucleo]:"")},
+    {pos:"carcaca", on:!!e.carcaca, lbl:"Carcaça · Aço"},
+    {pos:"luva", on:!!e.luva, lbl:"Luva · Aço"}
+  ];
+  return `<div class="wz-legend">` + linhas.map(x=>{
+    const nNovos = (_mesaPosicoes[x.pos]||[]).length;
+    const nSalvos = _mesaItem ? COMPONENTES.filter(c=>c.item_id===_mesaItem.id && c.posicao===x.pos).length : 0;
+    const q = x.on ? (nSalvos+nNovos ? (nSalvos+nNovos)+" lote"+((nSalvos+nNovos)>1?"s":"") : "—") : "";
+    return `<div class="wz-leg${x.on?"":" off"}${destaque===x.pos?" foco":""}">
+      <span class="wz-leg-sw" style="background:${x.on?mesaCorPosicao(x.pos):"var(--border2)"}"></span>
+      <span>${x.lbl}</span><span class="wz-leg-q">${q}</span></div>`;
+  }).join("") + `</div>`;
+}
+function mesaAsideHtml(destaque){
+  return `<div class="wz-aside-l">Estrutura da peça</div>
+    ${mesaCroquiSvg(destaque)}
+    ${mesaLegendaHtml(destaque)}`;
+}
+
+// ---- ETAPA 0: estrutura ----
+function mesaOptHtml(on, cls, ic, titulo, desc, onclick, locked){
+  return `<button type="button" class="wz-opt ${cls}${on?" on":""}${locked?" lock":""}" onclick="${onclick}">
+    <span class="wz-opt-ic">${ic}</span>
+    <span class="wz-opt-tx"><span class="wz-opt-t">${titulo}</span><span class="wz-opt-d">${desc}</span></span>
+    <span class="wz-opt-ck">${locked?"🔒":"✅"}</span>
+  </button>`;
+}
+function mesaStepEstruturaHtml(){
+  const e = _mesaEstrutura;
+  const lockN = mesaTemLoteSalvo("nucleo");
+  return `<div class="wz-q">Do que essa peça é feita?</div>
+  <div class="wz-q-sub">Marque tudo que compõe a estrutura. Depois você planeja os lotes de cada parte, uma por vez.</div>
+  <div class="wz-sec-l">1 · Núcleo <span style="color:var(--text3);font-weight:400">(obrigatório — escolha o material)</span></div>
+  <div class="wz-opts">
+    ${mesaOptHtml(e.nucleo==="metal_duro","c-acc","⬤","Núcleo: Metal Duro","Comprado pronto — vai de Compra direto para Pronto.","mesaSetNucleo('metal_duro')",lockN)}
+    ${mesaOptHtml(e.nucleo==="aco","c-aco","⬤","Núcleo: Aço","Passa por estoque, usinagem e tratamento térmico.","mesaSetNucleo('aco')",lockN)}
+  </div>
+  <div class="wz-sec-l">2 · Partes de aço em volta <span style="color:var(--text3);font-weight:400">(opcional)</span></div>
+  <div class="wz-opts">
+    ${mesaOptHtml(e.carcaca,"c-roxo","⭕","Carcaça de Aço","Anel que abraça o núcleo.","mesaToggle('carcaca')",mesaTemLoteSalvo("carcaca"))}
+    ${mesaOptHtml(e.luva,"c-orange","🔘","Luva de Aço","Camada externa de reforço.","mesaToggle('luva')",mesaTemLoteSalvo("luva"))}
+  </div>`;
+}
+
+// ---- ETAPAS 1..N: uma posição por tela ----
+function estagioIcone(desc){
+  const d = (desc||"").toLowerCase();
+  if(d.includes("compra")) return "🛒";
+  if(d.includes("receb")||d.includes("estoque")) return "📦";
+  if(d.includes("usinag")) return "⚙️";
+  if(d.includes("trat")) return "🔥";
+  if(d.includes("pronto")) return "✅";
+  return "•";
+}
 function mesaTrilhaHtml(pos, tempId, l, tipoMaterial){
   const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
   const aplicaveis = ESTAGIOS.filter(e=>e.ordem>0 && colunaAplica(e,tipoMaterial)).sort((a,b)=>a.ordem-b.ordem);
-  const dots = aplicaveis.map(e=>{
-    const filled = l.fato>0 && e.ordem<=l.fato;
-    return `<span class="mesa-dot${filled?' filled':''}" title="${escHtml(e.ordem>=maxOrdem?'Pronto':e.descricao)}" onclick="mesaSetFato('${pos}',${tempId},${e.ordem})"></span>`;
+  const aguardando = `<button type="button" class="wz-st${l.fato===0?" cur":""}" onclick="mesaSetFato('${pos}',${tempId},0)"><span class="wz-st-ic">⏳</span>Aguardando</button>`;
+  const passos = aplicaveis.map(e=>{
+    const cls = l.fato===e.ordem ? " cur" : (l.fato>0 && e.ordem<l.fato ? " done" : (l.fato===0 && l.intencao===e.ordem ? " intent" : ""));
+    return `<button type="button" class="wz-st${cls}" onclick="mesaSetFato('${pos}',${tempId},${e.ordem})"><span class="wz-st-ic">${estagioIcone(e.descricao)}</span>${escHtml(e.ordem>=maxOrdem?"Pronto":e.descricao)}</button>`;
   }).join("");
-  const statusHtml = l.fato>0
-    ? `<div class="mesa-comp-status">${l.fato>=maxOrdem?"✓ Pronto":"já em: "+escHtml((ESTAGIOS.find(e=>e.ordem===l.fato)||{}).descricao||"")}</div>`
-    : mesaIntencaoHtml(pos,tempId,l,tipoMaterial);
-  return `<div class="mesa-trilha">${dots}</div>${statusHtml}`;
+  const intencaoHtml = l.fato===0 ? mesaIntencaoHtml(pos,tempId,l,tipoMaterial) : "";
+  return `<div class="wz-pergunta">Onde este lote está agora?</div>
+    <div class="wz-trilha">${aguardando}${passos}</div>
+    ${intencaoHtml}`;
 }
 // "entra por" — só as etapas intermediárias (exclui Aguardando e Pronto, que não são pontos de entrada)
 function mesaIntencaoHtml(pos, tempId, l, tipoMaterial){
   const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
   const opcoes = ESTAGIOS.filter(e=>e.ordem>0 && e.ordem<maxOrdem && colunaAplica(e,tipoMaterial)).sort((a,b)=>a.ordem-b.ordem);
   if(!opcoes.length) return "";
-  return `<div class="mesa-intencao"><span class="mesa-intencao-lbl">entra por:</span>${opcoes.map(o=>
-    `<button type="button" class="mesa-chip mini${l.intencao===o.ordem?' on':''}" onclick="mesaSetIntencao('${pos}',${tempId},${o.ordem})">${escHtml(o.descricao)}</button>`
+  return `<div class="mesa-intencao"><span class="mesa-intencao-lbl">ainda vai começar — deve entrar por:</span>${opcoes.map(o=>
+    `<button type="button" class="mesa-chip${l.intencao===o.ordem?" on":""}" onclick="mesaSetIntencao('${pos}',${tempId},${o.ordem})">${escHtml(o.descricao)}</button>`
   ).join("")}</div>`;
 }
-
-function mesaLinhaHtml(pos, l, i, tipoMaterial){
-  return `<div class="mesa-lote">
-    <div class="mesa-lote-hdr">
-      <span class="mesa-lote-tag">Lote ${i+1}</span>
-      <input class="sp-inp mesa-qtd-inp" type="number" min="1" value="${escHtml(String(l.quantidade))}" oninput="mesaOnQtdInput('${pos}',${l.tempId},this.value)" onchange="mesaOnQtdChange('${pos}',${l.tempId})">
-      <span class="mesa-qtd-suf">pç</span>
-      <input class="sp-inp mesa-obs-inp" placeholder="observação (opcional)" value="${escHtml(l.observacao||"")}" oninput="mesaOnObsInput('${pos}',${l.tempId},this.value)">
-      <div class="mesa-lote-acoes">
-        <button type="button" class="btn-g mini" title="Dividir a quantidade em dois lotes" onclick="mesaDividir('${pos}',${l.tempId})">⑃ dividir</button>
-        <button type="button" class="btn-g mini" title="Duplicar este lote" onclick="mesaDuplicar('${pos}',${l.tempId})">⧉ duplicar</button>
+function mesaLinhaHtml(pos, l, i, tipoMaterial, offset){
+  return `<div class="wz-lote">
+    <div class="wz-lote-hdr">
+      <span class="wz-lote-tag">Lote ${offset+i+1}</span>
+      <input class="sp-inp wz-qtd-inp" type="number" min="1" value="${escHtml(String(l.quantidade))}" oninput="mesaOnQtdInput('${pos}',${l.tempId},this.value)" onchange="mesaOnQtdChange('${pos}',${l.tempId})">
+      <span class="wz-qtd-suf">pç</span>
+      <input class="sp-inp wz-obs-inp" placeholder="observação (opcional)" value="${escHtml(l.observacao||"")}" oninput="mesaOnObsInput('${pos}',${l.tempId},this.value)">
+      <div class="wz-lote-acoes">
+        <button type="button" class="btn-g mini" title="Dividir a quantidade em dois lotes" onclick="mesaDividir('${pos}',${l.tempId})">⑃</button>
+        <button type="button" class="btn-g mini" title="Duplicar este lote" onclick="mesaDuplicar('${pos}',${l.tempId})">⧉</button>
         <button type="button" class="btn-g mini danger" title="Remover este lote do planejamento" onclick="mesaRemoverLinha('${pos}',${l.tempId})">🗑</button>
       </div>
     </div>
@@ -863,101 +1047,124 @@ function mesaLoteExistenteHtml(comp){
   const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
   const u = ultimoDoComponente(comp.id);
   const completo = ordemAtual(comp.id) >= maxOrdem;
-  return `<div class="mesa-existente-row${completo?' ok':''}" onclick="fecharMesa();abrirComponente(${comp.id})">
+  return `<div class="mesa-existente-row${completo?" ok":""}" onclick="fecharMesa();abrirComponente(${comp.id})">
     <span class="mesa-existente-num">Lote ${comp.lote_numero}</span>
-    <span class="mesa-qtd-suf">${comp.quantidade} pç</span>
+    <span class="wz-qtd-suf">${comp.quantidade} pç</span>
     <span class="mesa-existente-status">${escHtml(u?u.estagio_descricao:"Aguardando")}</span>
-    ${completo?'<span class="mesa-existente-badge">✓ Pronto</span>':''}
+    ${completo?'<span class="mesa-existente-badge">✓ Pronto</span>':""}
   </div>`;
 }
-
-// uma seção inteira por posição (núcleo/carcaça/luva) — cada uma com sua própria barra de alocação e lista de lotes
-function mesaSecaoPosicaoHtml(pos){
-  const ativo = pos==="nucleo" ? !!_mesaEstrutura.nucleo : !!_mesaEstrutura[pos];
-  const existentes = COMPONENTES.filter(c=>c.item_id===_mesaItem.id && c.posicao===pos).sort((a,b)=>a.lote_numero-b.lote_numero);
-  // a seção fica visível se o chip está ligado OU se já existem lotes reais dessa posição — desligar o chip
-  // nunca pode "esconder" um lote que já foi criado de verdade, só evita planejar lote NOVO daquela posição
-  if(!ativo && !existentes.length) return "";
+function mesaStepPosicaoHtml(pos){
   const tipoMaterial = pos==="nucleo" ? _mesaEstrutura.nucleo : "aco";
+  const existentes = COMPONENTES.filter(c=>c.item_id===_mesaItem.id && c.posicao===pos).sort((a,b)=>a.lote_numero-b.lote_numero);
   const linhas = _mesaPosicoes[pos] || [];
   const total = parseInt(_mesaItem.quantidade,10)||0;
   const alocado = mesaAlocado(pos);
   const pct = total>0 ? Math.min(100, alocado/total*100) : 0;
+  const n = linhas.length;
+
+  const chips = [0,1,2,3,4,5].map(x=>
+    `<button type="button" class="wz-nbtn${n===x?" on":""}" onclick="mesaDefinirNLotes('${pos}',${x})">${x}</button>`
+  ).join("") + `<button type="button" class="wz-nbtn mais" onclick="mesaDefinirNLotes('${pos}',${n+1})">+ mais</button>`;
 
   const existentesHtml = existentes.length
-    ? `<div class="sp-l" style="margin-top:6px">Lotes já criados (${existentes.length})</div><div class="mesa-existentes">${existentes.map(mesaLoteExistenteHtml).join("")}</div>`
+    ? `<div class="wz-sec-l">Lotes que já existem (${existentes.length}) <span style="color:var(--text3);font-weight:400">— clique para ver no Kanban</span></div>
+       <div class="mesa-existentes">${existentes.map(mesaLoteExistenteHtml).join("")}</div>`
     : "";
 
-  if(!ativo){
-    // desligado, mas com lotes reais: modo só-consulta — sem barra de alocação nem "+ novo lote" (religar o chip pra planejar mais)
-    return `<div class="mesa-sec mesa-pos-sec">
-      <div class="mesa-sec-hdr"><div class="sp-l">${POS_LABEL[pos]} <span class="mesa-comp-mat">(desligado — religue o chip acima pra planejar mais)</span></div></div>
-      ${existentesHtml}
-    </div>`;
-  }
+  const lotesHtml = linhas.length
+    ? linhas.map((l,i)=>mesaLinhaHtml(pos,l,i,tipoMaterial,existentes.length)).join("")
+    : `<div class="mesa-hint">Nenhum lote novo — escolha um número acima.</div>`;
 
-  const linhasHtml = linhas.length
-    ? linhas.map((l,i)=>mesaLinhaHtml(pos,l,i,tipoMaterial)).join("")
-    : (existentes.length ? "" : `<div class="mesa-hint">Nenhum lote planejado ainda.</div>`);
-
-  return `<div class="mesa-sec mesa-pos-sec">
-    <div class="mesa-sec-hdr">
-      <div class="sp-l">${POS_LABEL[pos]} <span class="mesa-comp-mat">(${MATERIAL_LABEL[tipoMaterial]})</span></div>
-      <button type="button" class="btn-g mini" onclick="mesaAdicionarLinha('${pos}')">+ novo lote</button>
-    </div>
-    <div class="mesa-alloc-track"><div class="mesa-alloc-fill${alocado>total?' over':''}" id="mesaAllocFill_${pos}" style="width:${pct}%"></div></div>
-    <div class="mesa-alloc-lbl" id="mesaAllocLbl_${pos}">${alocado} de ${total} pç alocada${alocado>total?' — ⚠ passou do total':''}</div>
-    <div class="mesa-linhas">${linhasHtml}</div>
-    ${existentesHtml}
-  </div>`;
+  return `<div class="wz-q"><span style="color:${mesaCorPosicao(pos)}">${POS_ICONE[pos]}</span> ${POS_LABEL[pos]} · ${MATERIAL_LABEL[tipoMaterial]}</div>
+  <div class="wz-q-sub">${total} pç no total do item.${existentes.length?" Já existem "+existentes.length+" lote(s) desta parte.":""}</div>
+  <div class="wz-sec-l">Em quantos lotes novos essa parte vai ser separada?</div>
+  <div class="wz-nlotes">${chips}</div>
+  <div>
+    <div class="mesa-alloc-track"><div class="mesa-alloc-fill${alocado>total?" over":""}" id="mesaAllocFill_${pos}" style="width:${pct}%"></div></div>
+    <div class="mesa-alloc-lbl" id="mesaAllocLbl_${pos}">${alocado} de ${total} pç alocada${alocado>total?" — ⚠ passou do total":""}</div>
+  </div>
+  ${lotesHtml}
+  ${existentesHtml}`;
 }
 
+// ---- ETAPA FINAL: revisão ----
+function mesaStepRevisaoHtml(){
+  const total = parseInt(_mesaItem.quantidade,10)||0;
+  const passos = mesaPassos();
+  const linhasHtml = passos.map(pos=>{
+    const linhas = _mesaPosicoes[pos]||[];
+    const alocado = mesaAlocado(pos);
+    const salvos = COMPONENTES.filter(c=>c.item_id===_mesaItem.id && c.posicao===pos).length;
+    const tipoMaterial = pos==="nucleo" ? _mesaEstrutura.nucleo : "aco";
+    const desalinhado = linhas.length && alocado!==total;
+    const detalhe = linhas.length
+      ? linhas.map(l=>l.quantidade).join(" + ")+" pç"
+      : (salvos ? "nada novo" : "nenhum lote");
+    return `<div class="wz-rev-row${desalinhado?" alerta":""}">
+      <span class="wz-rev-sw" style="background:${mesaCorPosicao(pos)}"></span>
+      <span><span class="wz-rev-t">${POS_LABEL[pos]}</span> <span style="color:var(--text3)">· ${MATERIAL_LABEL[tipoMaterial]}</span>
+        ${desalinhado?`<div class="wz-rev-warn">⚠ soma ${alocado} pç ≠ ${total} pç do item</div>`:""}</span>
+      <span class="wz-rev-q">${linhas.length} lote${linhas.length===1?"":"s"} novo${linhas.length===1?"":"s"}<br>${detalhe}</span>
+    </div>`;
+  }).join("");
+
+  const n = mesaTotalLinhasNovas();
+  return `<div class="wz-final">${n?"🎯":"👀"} ${n? "Tudo pronto para criar "+n+" lote"+(n>1?"s":"") : "Nada novo para criar"}</div>
+  <div class="wz-q-sub">Confira o resumo. Se algo estiver errado, use ← Voltar.</div>
+  <div class="wz-rev">${linhasHtml}</div>
+  <label class="chk-row" style="margin-top:6px"><input type="checkbox" id="mesaConcluirChk" ${_mesaConcluirChecked?"checked":""} onchange="_mesaConcluirChecked=this.checked;mesaAtualizarBotaoSalvar()"> Marcar o planejamento deste item como concluído</label>`;
+}
+
+// ---- render ----
+function mesaFooterHtml(){
+  const totalSteps = mesaTotalSteps();
+  const esq = _mesaStep>0
+    ? `<button type="button" class="wz-btn" onclick="mesaVoltar()">← Voltar</button>`
+    : `<button type="button" class="wz-btn" onclick="fecharMesa()">Cancelar</button>`;
+  let dir;
+  if(_mesaStep < totalSteps-1){
+    const bloqueado = _mesaStep===0 && !_mesaEstrutura.nucleo;
+    dir = `<button type="button" class="wz-btn prim" onclick="mesaProximo()" ${bloqueado?"disabled":""}>Próximo →</button>`;
+  }else{
+    const n = mesaTotalLinhasNovas();
+    const concluirMudou = _mesaConcluirChecked !== !!_mesaItem.plano_separacao_concluido;
+    dir = `<button type="button" class="wz-btn go" id="mesaSalvarBtn" onclick="mesaSalvar()" ${(n>0||concluirMudou)?"":"disabled"}>${n?"✓ Criar "+n+" lote"+(n>1?"s":""):"✓ Salvar"}</button>`;
+  }
+  return esq+dir;
+}
 function renderMesa(){
   if(!_mesaItem) return;
   const item = _mesaItem;
-  document.getElementById("mesaTitle").textContent = "Planejamento — "+item.codigo_peca;
-  document.getElementById("mesaSub").textContent = "Pedido: "+(item.pedido||"—")+" · OS: "+(item.os||"—")+" · Qtd total: "+(item.quantidade||"—")+" pç";
+  const passos = mesaPassos(), totalSteps = passos.length+2;
+  if(_mesaStep > totalSteps-1) _mesaStep = totalSteps-1;
 
-  const estruturaHtml = `<div class="mesa-sec">
-    <div class="sp-l">Estrutura da peça</div>
-    <div class="mesa-chips">
-      <button type="button" class="mesa-chip${_mesaEstrutura.nucleo==='metal_duro'?' on':''}" onclick="mesaSetNucleo('metal_duro')">Núcleo: Metal Duro</button>
-      <button type="button" class="mesa-chip${_mesaEstrutura.nucleo==='aco'?' on':''}" onclick="mesaSetNucleo('aco')">Núcleo: Aço</button>
-      <button type="button" class="mesa-chip${_mesaEstrutura.carcaca?' on':''}" onclick="mesaToggle('carcaca')">+ Carcaça de Aço</button>
-      <button type="button" class="mesa-chip${_mesaEstrutura.luva?' on':''}" onclick="mesaToggle('luva')">+ Luva (Aço)</button>
-    </div>
-  </div>`;
+  document.getElementById("mesaTitle").textContent = "Planejar separação — "+item.codigo_peca;
+  document.getElementById("mesaSub").textContent = "Pedido "+(item.pedido||"—")+" · OS "+(item.os||"—")+" · "+(item.quantidade||"—")+" pç";
+  document.getElementById("mesaSteps").innerHTML =
+    Array.from({length:totalSteps},(_,i)=>`<span class="wz-seg${i<_mesaStep?" done":(i===_mesaStep?" cur":"")}"></span>`).join("") +
+    `<span class="wz-stepnum">${_mesaStep+1}/${totalSteps}</span>`;
 
-  const algumaSecao = ["nucleo","carcaca","luva"].some(p=>{
-    const ativo = p==="nucleo" ? !!_mesaEstrutura.nucleo : !!_mesaEstrutura[p];
-    return ativo || COMPONENTES.some(c=>c.item_id===item.id && c.posicao===p);
-  });
-  const posicoesHtml = algumaSecao
-    ? ["nucleo","carcaca","luva"].map(mesaSecaoPosicaoHtml).join("")
-    : `<div class="mesa-hint">Escolha ao menos o material do núcleo acima para começar a planejar.</div>`;
+  let html, destaque = null;
+  if(_mesaStep===0) html = mesaStepEstruturaHtml();
+  else if(_mesaStep<=passos.length){ destaque = passos[_mesaStep-1]; html = mesaStepPosicaoHtml(destaque); }
+  else html = mesaStepRevisaoHtml();
 
-  const totalLinhasNovas = ["nucleo","carcaca","luva"].reduce((s,p)=>s+((_mesaPosicoes[p]||[]).length),0);
-  const concluirMudou = _mesaConcluirChecked !== !!item.plano_separacao_concluido;
-  const podeSalvar = totalLinhasNovas>0 || concluirMudou;
-  const btnLabel = totalLinhasNovas ? "+ Criar "+totalLinhasNovas+" lote(s)" : "Salvar planejamento";
-
-  document.getElementById("mesaBody").innerHTML = `
-    ${estruturaHtml}
-    ${posicoesHtml}
-    <div class="mesa-footer">
-      <label class="chk-row"><input type="checkbox" id="mesaConcluirChk" ${_mesaConcluirChecked?'checked':''} onchange="_mesaConcluirChecked=this.checked;mesaAtualizarBotaoSalvar()"> Marcar planejamento deste item como concluído</label>
-      <button type="button" class="btn-g btn-acc" id="mesaSalvarBtn" onclick="mesaSalvar()" ${podeSalvar?'':'disabled'}>${btnLabel}</button>
-    </div>
-  `;
+  const main = document.getElementById("mesaBody");
+  const scroll = main.scrollTop;
+  main.innerHTML = html;
+  document.getElementById("mesaAside").innerHTML = mesaAsideHtml(destaque);
+  document.getElementById("mesaFooter").innerHTML = mesaFooterHtml();
+  main.scrollTop = (_mesaStepRenderizado===_mesaStep) ? scroll : 0; // trocou de etapa → começa do topo
+  _mesaStepRenderizado = _mesaStep;
 }
 
 // habilita/desabilita o botão sem re-renderizar a Mesa inteira (o clique no checkbox não pode perder o rascunho digitado)
 function mesaAtualizarBotaoSalvar(){
   const btn = document.getElementById("mesaSalvarBtn");
   if(!btn || !_mesaItem) return;
-  const totalLinhasNovas = ["nucleo","carcaca","luva"].reduce((s,p)=>s+((_mesaPosicoes[p]||[]).length),0);
   const concluirMudou = _mesaConcluirChecked !== !!_mesaItem.plano_separacao_concluido;
-  btn.disabled = !(totalLinhasNovas>0 || concluirMudou);
+  btn.disabled = !(mesaTotalLinhasNovas()>0 || concluirMudou);
 }
 
 async function mesaSalvar(){

@@ -325,3 +325,32 @@ consumiu tempo e continuava difícil de usar.
 (lotes em sequência + evento inicial de quem foi marcado como fato). O modo "só-consulta"
 de posição desligada com lotes reais (seção 10) deixou de existir: a posição agora fica
 travada ligada, que é mais simples de entender e impossível de errar.
+
+## 12. Núcleo duplo e croqui final (23/07/2026)
+
+**Croqui** (ajustes pedidos na revisão da tela): a silhueta externa da vista frontal é um
+**contorno fechado contínuo** (um retângulo próprio por cima dos preenchimentos), em vez de
+peças desenhadas lado a lado cujas bordas se encontravam — o furo deixou de "romper" a linha
+externa. Hachura de **metal duro é cruzada** (grade a 45°, duas linhas no `<pattern>`), aço
+continua simples; luva mantém o sentido invertido em relação ao núcleo. Todos os textos
+saíram do desenho (rótulos de vista, nota do furo) e a linha de centro também — o croqui fala
+por si.
+
+**Núcleo duplo**: a peça pode ter **um núcleo** (`posicao = nucleo`) ou **dois empilhados**
+(`nucleo_superior` + `nucleo_inferior`), com ou sem luva e com ou sem carcaça em volta. Cada
+núcleo tem o **seu próprio material** (um pode ser metal duro e o outro aço) e a **sua própria
+lista de lotes** — são cartões independentes no Kanban, como qualquer outra posição.
+
+- **Sem mudança de banco**: `material_lote_componentes.posicao` é texto livre (não há CHECK), e
+  a unique `(item_id, posicao, lote_numero)` já numera por posição — os dois núcleos numeram
+  independentes um do outro, sem migração.
+- **Etapa 1 do assistente**: primeiro "1 núcleo" ou "2 núcleos (empilhados)", depois o material
+  de cada um; "Próximo" exige o material de **todos** os núcleos escolhidos
+  (`mesaNucleoCompleto`). Trocar entre 1 e 2 é bloqueado se já existe lote de núcleo salvo.
+- **Etapas**: uma por núcleo (superior, depois inferior), seguidas de luva e carcaça.
+- **Croqui**: o miolo vira um anel dividido em duas metades empilhadas na vista frontal
+  (superior em cima, inferior embaixo, com a junta horizontal desenhada); a vista superior
+  mostra o núcleo que aparece de cima, o superior.
+- **Kanban e relatório**: `POS_LABEL` ganhou "Núcleo sup." / "Núcleo inf." nas duas telas e a
+  pílula do card reusa a cor do núcleo. `materialResumoItem` (status.js) não precisou mudar —
+  completude continua sendo "todos os lotes de todas as posições prontos".

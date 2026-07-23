@@ -56,7 +56,7 @@
 .mc-top{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px}
 .mc-cod{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mc-pos{font-size:9px;font-family:var(--mono);padding:1px 6px;border-radius:999px;font-weight:600;letter-spacing:.03em}
-.mc-pos.nucleo{background:rgba(59,127,255,.15);color:var(--accent)}
+.mc-pos.nucleo,.mc-pos.nucleo_superior,.mc-pos.nucleo_inferior{background:rgba(59,127,255,.15);color:var(--accent)}
 .mc-pos.carcaca{background:rgba(124,58,237,.15);color:var(--roxo)}
 .mc-pos.luva{background:rgba(249,115,22,.15);color:var(--orange)}
 .mc-meta{font-size:9.5px;color:var(--text3);font-family:var(--mono);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -143,6 +143,12 @@
 .wz-q{font-size:20px;font-weight:600;line-height:1.28}
 .wz-q-sub{font-size:12.5px;color:var(--text3);margin-top:-7px;line-height:1.45}
 .wz-sec-l{font-size:12.5px;font-weight:600;color:var(--text2)}
+.wz-sub-l{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
+.wz-opts.linha{flex-direction:row;flex-wrap:wrap}
+.wz-opts.linha .wz-opt{flex:1;min-width:145px}
+.wz-opt.compact{padding:10px 12px;gap:10px}
+.wz-opt.compact .wz-opt-ic{width:34px;height:34px;font-size:17px}
+.wz-opt.compact .wz-opt-t{font-size:13.5px}
 
 .wz-opts{display:flex;flex-direction:column;gap:10px}
 .wz-opt{display:flex;align-items:center;gap:13px;width:100%;border:2px solid var(--border);border-radius:14px;padding:12px 15px;background:var(--bg3);cursor:pointer;text-align:left;font-family:var(--sans);color:var(--text);transition:transform .1s,border-color .12s,background .12s;box-shadow:0 3px 0 var(--border)}
@@ -354,7 +360,11 @@ body.tv-mode .mc-dot{width:7px;height:7px}
 <script>
 function navTo(p){ location.href = p; }
 
-const POS_LABEL = { nucleo:"Núcleo", carcaca:"Carcaça", luva:"Luva" };
+// Posições possíveis de um lote. A peça tem UM núcleo (`nucleo`) ou DOIS empilhados
+// (`nucleo_superior` + `nucleo_inferior`) — nunca as duas formas ao mesmo tempo.
+const POS_LABEL = { nucleo:"Núcleo", nucleo_superior:"Núcleo sup.", nucleo_inferior:"Núcleo inf.", carcaca:"Carcaça", luva:"Luva" };
+const POS_TODAS = ["nucleo","nucleo_superior","nucleo_inferior","luva","carcaca"];
+const ehNucleo = pos => String(pos||"").indexOf("nucleo")===0;
 const MATERIAL_LABEL = { metal_duro:"Metal Duro", aco:"Aço" };
 
 let ITENS_CAD = [];     // itens cadastrados (fonte da busca p/ criar lote)
@@ -735,7 +745,9 @@ document.addEventListener("click", e=>{
 // pode ter 2 lotes enquanto a carcaça tem só 1, porque cada material tem sua própria lógica de fornecimento.
 // Estado é só rascunho em memória até confirmar na última etapa — nada é gravado antes disso.
 let _mesaItem = null;
-let _mesaEstrutura = { nucleo:null, carcaca:false, luva:false }; // molde: quais posições existem na peça
+// molde da peça: `duplo` diz se o miolo é um núcleo só ou dois empilhados (superior+inferior);
+// cada posição de núcleo guarda o SEU material — os dois podem ser diferentes.
+let _mesaEstrutura = { duplo:false, nucleo:null, nucleo_superior:null, nucleo_inferior:null, carcaca:false, luva:false };
 let _mesaPosicoes = {};    // { nucleo:[linha,...], carcaca:[...], luva:[...] } — só existe a chave se a posição está ativa
 let _mesaTempSeq = 1;
 let _mesaConcluirChecked = false; // estado do checkbox "planejamento concluído" — em variável pra sobreviver a um clique sem precisar re-renderizar tudo
@@ -750,11 +762,15 @@ function abrirMesa(itemId){
   const item = ITENS_CAD.find(i=>i.id===itemId);
   if(!item) return;
   _mesaItem = item;
-  // a estrutura já reflete o que o item já tem salvo — reabrir a Mesa não pode "esconder" carcaça/luva já criadas
+  // a estrutura já reflete o que o item já tem salvo — reabrir a Mesa não pode "esconder" o que já existe
   const existentesDoItem = COMPONENTES.filter(c=>c.item_id===itemId);
-  const nucleoExistente = existentesDoItem.find(c=>c.posicao==="nucleo");
+  const matDe = pos => { const c = existentesDoItem.find(x=>x.posicao===pos); return c ? c.tipo_material : null; };
+  const matSup = matDe("nucleo_superior"), matInf = matDe("nucleo_inferior");
   _mesaEstrutura = {
-    nucleo: nucleoExistente ? nucleoExistente.tipo_material : null,
+    duplo: !!(matSup || matInf),
+    nucleo: matDe("nucleo"),
+    nucleo_superior: matSup,
+    nucleo_inferior: matInf,
     carcaca: existentesDoItem.some(c=>c.posicao==="carcaca"),
     luva: existentesDoItem.some(c=>c.posicao==="luva")
   };
@@ -775,9 +791,17 @@ function fecharMesa(){
   document.getElementById("mesaPanel").classList.remove("open");
 }
 
+// núcleo(s) da peça, de cima para baixo — um só, ou superior + inferior
+function mesaNucleos(){
+  return _mesaEstrutura.duplo
+    ? ["nucleo_superior","nucleo_inferior"].filter(p=>_mesaEstrutura[p])
+    : (_mesaEstrutura.nucleo ? ["nucleo"] : []);
+}
 // posições ativas, na ordem em que viram etapa do assistente — do centro da peça para fora
 function mesaPassos(){
-  return ["nucleo","luva","carcaca"].filter(p => p==="nucleo" ? !!_mesaEstrutura.nucleo : !!_mesaEstrutura[p]);
+  return mesaNucleos()
+    .concat(_mesaEstrutura.luva ? ["luva"] : [])
+    .concat(_mesaEstrutura.carcaca ? ["carcaca"] : []);
 }
 function mesaTotalSteps(){ return mesaPassos().length + 2; } // estrutura + posições + revisão
 // posição já tem lote salvo de verdade? então a estrutura dela não pode mais ser desmarcada aqui
@@ -785,10 +809,19 @@ function mesaTemLoteSalvo(pos){
   return !!(_mesaItem && COMPONENTES.some(c=>c.item_id===_mesaItem.id && c.posicao===pos));
 }
 function mesaTotalLinhasNovas(){
-  return ["nucleo","carcaca","luva"].reduce((s,p)=>s+((_mesaPosicoes[p]||[]).length),0);
+  return POS_TODAS.reduce((s,p)=>s+((_mesaPosicoes[p]||[]).length),0);
+}
+// núcleo completo = 1 material escolhido (peça simples) ou os 2 (peça de núcleo duplo)
+function mesaNucleoCompleto(){
+  return _mesaEstrutura.duplo
+    ? !!(_mesaEstrutura.nucleo_superior && _mesaEstrutura.nucleo_inferior)
+    : !!_mesaEstrutura.nucleo;
 }
 function mesaProximo(){
-  if(_mesaStep===0 && !_mesaEstrutura.nucleo){ toast("Escolha o material do núcleo para continuar","erro"); return; }
+  if(_mesaStep===0 && !mesaNucleoCompleto()){
+    toast(_mesaEstrutura.duplo ? "Escolha o material dos dois núcleos para continuar" : "Escolha o material do núcleo para continuar","erro");
+    return;
+  }
   if(_mesaStep < mesaTotalSteps()-1){ _mesaStep++; renderMesa(); }
 }
 function mesaVoltar(){
@@ -810,15 +843,27 @@ function mesaAlocadoSalvo(pos){
 }
 // garante que exista (ou não) a lista de rascunho de cada posição, conforme a estrutura da peça
 function mesaSincronizar(){
-  ["nucleo","carcaca","luva"].forEach(pos=>{
-    const ativo = pos==="nucleo" ? !!_mesaEstrutura.nucleo : !!_mesaEstrutura[pos];
+  const ativas = mesaPassos();
+  POS_TODAS.forEach(pos=>{
+    const ativo = ativas.indexOf(pos)>=0;
     if(ativo && !_mesaPosicoes[pos]) _mesaPosicoes[pos] = [];
     if(!ativo && _mesaPosicoes[pos]) delete _mesaPosicoes[pos];
   });
 }
-function mesaSetNucleo(tipo){
-  if(mesaTemLoteSalvo("nucleo")){ toast("O núcleo já tem lote criado — o material não pode mudar","erro"); return; }
-  _mesaEstrutura.nucleo = (_mesaEstrutura.nucleo===tipo) ? null : tipo;
+// 1 ou 2 núcleos — só dá pra trocar enquanto nenhum núcleo virou lote de verdade
+function mesaSetDuplo(v){
+  if(_mesaEstrutura.duplo===v) return;
+  const travado = ["nucleo","nucleo_superior","nucleo_inferior"].some(mesaTemLoteSalvo);
+  if(travado){ toast("Já existe lote de núcleo criado — não dá pra mudar a quantidade de núcleos aqui","erro"); return; }
+  _mesaEstrutura.duplo = v;
+  if(v) _mesaEstrutura.nucleo = null;
+  else { _mesaEstrutura.nucleo_superior = null; _mesaEstrutura.nucleo_inferior = null; }
+  mesaSincronizar();
+  renderMesa();
+}
+function mesaSetNucleo(pos, tipo){
+  if(mesaTemLoteSalvo(pos)){ toast(POS_LABEL[pos]+" já tem lote criado — o material não pode mudar","erro"); return; }
+  _mesaEstrutura[pos] = (_mesaEstrutura[pos]===tipo) ? null : tipo;
   mesaSincronizar();
   renderMesa();
 }
@@ -932,84 +977,111 @@ function mesaSetIntencao(pos, tempId, ordem){
 // manda o desenho mecânico); vista superior é a planta, sem hachura. O núcleo é sempre furado
 // no centro (Ø do furo ≈ 30% do Ø do núcleo).
 const POS_COR = { nucleo:"var(--accent)", carcaca:"var(--roxo)", luva:"var(--orange)" };
-const POS_ICONE = { nucleo:"⬤", carcaca:"⭕", luva:"🔘" };
+const POS_ICONE = { nucleo:"⬤", nucleo_superior:"⬤", nucleo_inferior:"⬤", carcaca:"⭕", luva:"🔘" };
 const CROQUI_HACHURA = { nucleo:{ang:45,sp:4.5}, luva:{ang:-45,sp:4.5}, carcaca:{ang:45,sp:7.5} };
-function mesaCorPosicao(pos){
-  return (pos==="nucleo" && _mesaEstrutura.nucleo==="aco") ? "var(--text3)" : POS_COR[pos];
+// material real daquela posição na peça — só os núcleos variam; luva e carcaça são sempre aço
+function mesaMaterialDaPosicao(pos){
+  return ehNucleo(pos) ? (_mesaEstrutura[pos] || "aco") : "aco";
 }
-// camadas presentes, do centro para fora, já com raio interno/externo
+function mesaCorPosicao(pos){
+  return ehNucleo(pos)
+    ? (mesaMaterialDaPosicao(pos)==="metal_duro" ? POS_COR.nucleo : "var(--text3)")
+    : POS_COR[pos];
+}
+// anéis concêntricos (do centro para fora) e as camadas do corte. Quando a peça tem dois núcleos,
+// o miolo é um anel só, dividido em duas metades empilhadas — superior em cima, inferior embaixo.
 function mesaCamadasCroqui(){
   const e = _mesaEstrutura;
-  const presentes = [];
-  if(e.nucleo) presentes.push("nucleo");
-  if(e.luva) presentes.push("luva");
-  if(e.carcaca) presentes.push("carcaca");
-  if(!presentes.length) return [];
-  const RAIOS = {1:[60], 2:[40,60], 3:[32,46,60]}[presentes.length];
+  const nucs = mesaNucleos();
+  const aneis = [];
+  if(nucs.length) aneis.push("miolo");
+  if(e.luva) aneis.push("luva");
+  if(e.carcaca) aneis.push("carcaca");
+  if(!aneis.length) return { camadas:[], aneis:[], rFuro:0, rMax:0 };
+  const RAIOS = {1:[60], 2:[40,60], 3:[32,46,60]}[aneis.length];
   // furo central: 30% do diâmetro do núcleo (sem núcleo, um vazio genérico só pra não desenhar maciço)
-  const rFuro = e.nucleo ? RAIOS[0]*0.30 : RAIOS[0]*0.5;
-  return presentes.map((pos,i)=>({ pos, ri: i===0 ? rFuro : RAIOS[i-1], re: RAIOS[i] }));
+  const rFuro = nucs.length ? RAIOS[0]*0.30 : RAIOS[0]*0.5;
+  const camadas = [], aneisOut = [];
+  aneis.forEach((a,i)=>{
+    const ri = i===0 ? rFuro : RAIOS[i-1], re = RAIOS[i];
+    if(a==="miolo"){
+      if(nucs.length===2){
+        camadas.push({pos:nucs[0], ri, re, y0:0, y1:0.5});
+        camadas.push({pos:nucs[1], ri, re, y0:0.5, y1:1});
+      }else{
+        camadas.push({pos:nucs[0], ri, re, y0:0, y1:1});
+      }
+      aneisOut.push({pos:nucs[0], re}); // de cima, vê-se o núcleo superior
+    }else{
+      camadas.push({pos:a, ri, re, y0:0, y1:1});
+      aneisOut.push({pos:a, re});
+    }
+  });
+  return { camadas, aneis:aneisOut, rFuro, rMax:RAIOS[RAIOS.length-1] };
 }
 function mesaCroquiSvg(destaque){
-  const camadas = mesaCamadasCroqui();
-  const cx = 100, fY = 16, fH = 50;              // vista frontal (corte)
+  const { camadas, aneis, rFuro, rMax } = mesaCamadasCroqui();
+  const cx = 100, fY = 14, fH = 56;              // vista frontal (corte)
   const sCy = fY + fH + 84;                       // centro da vista superior, projetado no mesmo eixo
+  const VB = `0 0 200 ${sCy+74}`;
   if(!camadas.length){
-    return `<svg viewBox="0 0 200 250" class="wz-croqui">
+    return `<svg viewBox="${VB}" class="wz-croqui">
       <rect x="38" y="${fY}" width="124" height="${fH}" fill="none" stroke="var(--border2)" stroke-width="1.2" stroke-dasharray="6 5"/>
       <circle cx="${cx}" cy="${sCy}" r="60" fill="none" stroke="var(--border2)" stroke-width="1.2" stroke-dasharray="6 5"/>
-      <text x="${cx}" y="${sCy+4}" text-anchor="middle" font-size="9" fill="var(--text3)" font-family="IBM Plex Mono">sem estrutura</text>
     </svg>`;
   }
-  const rMax = camadas[camadas.length-1].re;
-  const rFuro = camadas[0].ri;
+  const corExt = mesaCorPosicao(aneis[aneis.length-1].pos);
   const foco = c => !destaque || destaque===c.pos;
+  const yDe = c => fY + c.y0*fH, altDe = c => (c.y1-c.y0)*fH;
 
+  // hachura de corte: aço = simples; metal duro = cruzada (grade a 45°)
   const defs = camadas.map(c=>{
-    const h = CROQUI_HACHURA[c.pos], cor = mesaCorPosicao(c.pos);
+    const h = CROQUI_HACHURA[ehNucleo(c.pos)?"nucleo":c.pos], cor = mesaCorPosicao(c.pos), op = foco(c)?0.9:0.18;
+    const cruzada = mesaMaterialDaPosicao(c.pos)==="metal_duro";
+    const traco = (x1,y1,x2,y2)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${cor}" stroke-width="0.9" stroke-opacity="${op}"/>`;
     return `<pattern id="hx_${c.pos}" patternUnits="userSpaceOnUse" width="${h.sp}" height="${h.sp}" patternTransform="rotate(${h.ang})">
-      <line x1="0" y1="0" x2="0" y2="${h.sp}" stroke="${cor}" stroke-width="0.9" stroke-opacity="${foco(c)?0.9:0.18}"/></pattern>`;
+      ${traco(0,0,0,h.sp)}${cruzada?traco(0,0,h.sp,0):""}</pattern>`;
   }).join("");
 
-  // VISTA FRONTAL — corte: cada camada aparece dos dois lados do furo
-  const frontal = camadas.map(c=>{
-    const cor = mesaCorPosicao(c.pos), f = foco(c), w = c.re-c.ri;
-    const lado = x => `<rect x="${x}" y="${fY}" width="${w}" height="${fH}" fill="${cor}" fill-opacity="${f?0.10:0.03}"/>
-      <rect x="${x}" y="${fY}" width="${w}" height="${fH}" fill="url(#hx_${c.pos})" stroke="${cor}" stroke-width="${f?1.6:0.9}" stroke-opacity="${f?1:0.25}"/>`;
+  // VISTA FRONTAL — corte pelo eixo: material dos dois lados do furo, silhueta externa fechada
+  const preench = camadas.map(c=>{
+    const cor = mesaCorPosicao(c.pos), f = foco(c), w = c.re-c.ri, y = yDe(c), h = altDe(c);
+    const lado = x => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${cor}" fill-opacity="${f?0.10:0.03}"/>
+      <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#hx_${c.pos})"/>`;
     return lado(cx-c.re) + lado(cx+c.ri);
   }).join("");
+  // fronteiras internas: parede do furo, divisa com a peça de dentro e, no miolo duplo, a junta horizontal
+  const divisorias = camadas.map(c=>{
+    const cor = mesaCorPosicao(c.pos), f = foco(c), y = yDe(c), h = altDe(c);
+    const w = `stroke="${cor}" stroke-width="${f?1.5:0.9}" stroke-opacity="${f?1:0.25}"`;
+    const vert = x => `<line x1="${x}" y1="${y}" x2="${x}" y2="${y+h}" ${w}/>`;
+    const junta = c.y0>0
+      ? `<line x1="${cx-c.re}" y1="${y}" x2="${cx-c.ri}" y2="${y}" ${w}/><line x1="${cx+c.ri}" y1="${y}" x2="${cx+c.re}" y2="${y}" ${w}/>`
+      : "";
+    return vert(cx-c.ri)+vert(cx+c.ri)+junta;
+  }).join("");
+  const contorno = `<rect x="${cx-rMax}" y="${fY}" width="${rMax*2}" height="${fH}" fill="none" stroke="${corExt}" stroke-width="1.8" stroke-linejoin="miter"/>`;
+  const frontal = preench + divisorias + contorno;
 
-  // VISTA SUPERIOR — planta: circunferências concêntricas + furo
-  const superior = camadas.slice().reverse().map(c=>{
-    const cor = mesaCorPosicao(c.pos), f = foco(c);
-    return `<circle cx="${cx}" cy="${sCy}" r="${c.re}" fill="${cor}" fill-opacity="${f?0.13:0.035}" stroke="${cor}" stroke-width="${f?1.6:0.9}" stroke-opacity="${f?1:0.25}"/>`;
-  }).join("") + `<circle cx="${cx}" cy="${sCy}" r="${rFuro}" fill="var(--bg3)" stroke="${mesaCorPosicao(camadas[0].pos)}" stroke-width="1.2" stroke-opacity="${foco(camadas[0])?1:0.25}"/>`;
+  // VISTA SUPERIOR — planta: circunferências concêntricas + furo, contorno externo cheio
+  const superior = aneis.slice().reverse().map(a=>{
+    const cor = mesaCorPosicao(a.pos), f = foco(a);
+    return `<circle cx="${cx}" cy="${sCy}" r="${a.re}" fill="${cor}" fill-opacity="${f?0.13:0.035}" stroke="${cor}" stroke-width="${f?1.5:0.9}" stroke-opacity="${f?1:0.25}"/>`;
+  }).join("")
+    + `<circle cx="${cx}" cy="${sCy}" r="${rFuro}" fill="var(--bg3)" stroke="${mesaCorPosicao(aneis[0].pos)}" stroke-width="1.2" stroke-opacity="${foco(aneis[0])?1:0.25}"/>`
+    + `<circle cx="${cx}" cy="${sCy}" r="${rMax}" fill="none" stroke="${corExt}" stroke-width="1.8"/>`;
 
-  const eixo = `stroke="var(--text3)" stroke-width="0.7" stroke-opacity=".6" stroke-dasharray="9 3 1.5 3"`;
-  const linhasCentro = `
-    <line x1="${cx}" y1="${fY-9}" x2="${cx}" y2="${sCy+rMax+9}" ${eixo}/>
-    <line x1="${cx-rMax-9}" y1="${fY+fH/2}" x2="${cx+rMax+9}" y2="${fY+fH/2}" ${eixo}/>
-    <line x1="${cx-rMax-9}" y1="${sCy}" x2="${cx+rMax+9}" y2="${sCy}" ${eixo}/>`;
-
-  const rot = (y,txt) => `<text x="${cx}" y="${y}" text-anchor="middle" font-size="7" letter-spacing=".08em" fill="var(--text3)" font-family="IBM Plex Mono">${txt}</text>`;
-  const notaFuro = _mesaEstrutura.nucleo ? rot(sCy+rMax+27,"Ø FURO ≈ 30% DO NÚCLEO") : "";
-
-  return `<svg viewBox="0 0 200 258" class="wz-croqui"><defs>${defs}</defs>
-    ${frontal}
-    ${rot(fY+fH+15,"VISTA FRONTAL — CORTE")}
-    ${superior}
-    ${linhasCentro}
-    ${rot(sCy+rMax+16,"VISTA SUPERIOR")}
-    ${notaFuro}
-  </svg>`;
+  return `<svg viewBox="${VB}" class="wz-croqui"><defs>${defs}</defs>${frontal}${superior}</svg>`;
 }
 function mesaLegendaHtml(destaque){
   const e = _mesaEstrutura;
-  const linhas = [
-    {pos:"nucleo", on:!!e.nucleo, lbl:"Núcleo"+(e.nucleo?" · "+MATERIAL_LABEL[e.nucleo]:"")},
+  const nucs = e.duplo ? ["nucleo_superior","nucleo_inferior"] : ["nucleo"];
+  const linhas = nucs.map(p=>({
+    pos:p, on:!!e[p], lbl:POS_LABEL[p]+(e[p]?" · "+MATERIAL_LABEL[e[p]]:"")
+  })).concat([
     {pos:"luva", on:!!e.luva, lbl:"Luva · Aço"},
     {pos:"carcaca", on:!!e.carcaca, lbl:"Carcaça · Aço"}
-  ];
+  ]);
   return `<div class="wz-legend">` + linhas.map(x=>{
     const nNovos = (_mesaPosicoes[x.pos]||[]).length;
     const nSalvos = _mesaItem ? COMPONENTES.filter(c=>c.item_id===_mesaItem.id && c.posicao===x.pos).length : 0;
@@ -1033,16 +1105,31 @@ function mesaOptHtml(on, cls, ic, titulo, desc, onclick, locked){
     <span class="wz-opt-ck">${locked?"🔒":"✅"}</span>
   </button>`;
 }
+// bloco de material de um núcleo (compacto quando são dois, pra caber os dois na mesma tela)
+function mesaMaterialNucleoHtml(pos, compacto){
+  const e = _mesaEstrutura, lock = mesaTemLoteSalvo(pos);
+  const opt = (mat,cls,titulo,desc)=>mesaOptHtml(e[pos]===mat,cls+(compacto?" compact":""),"⬤",titulo,compacto?"":desc,`mesaSetNucleo('${pos}','${mat}')`,lock);
+  return `<div class="wz-opts${compacto?" linha":""}">
+    ${opt("metal_duro","c-acc","Metal Duro","Comprado pronto — vai de Compra direto para Pronto.")}
+    ${opt("aco","c-aco","Aço","Passa por estoque, usinagem e tratamento térmico.")}
+  </div>`;
+}
 function mesaStepEstruturaHtml(){
   const e = _mesaEstrutura;
-  const lockN = mesaTemLoteSalvo("nucleo");
+  const lockQtd = ["nucleo","nucleo_superior","nucleo_inferior"].some(mesaTemLoteSalvo);
+  const quantos = `<div class="wz-opts linha">
+    ${mesaOptHtml(!e.duplo,"c-acc compact","①","1 núcleo","","mesaSetDuplo(false)",lockQtd)}
+    ${mesaOptHtml(e.duplo,"c-acc compact","②","2 núcleos (empilhados)","","mesaSetDuplo(true)",lockQtd)}
+  </div>`;
+  const materiais = e.duplo
+    ? `<div class="wz-sub-l">Núcleo superior — material</div>${mesaMaterialNucleoHtml("nucleo_superior",true)}
+       <div class="wz-sub-l">Núcleo inferior — material</div>${mesaMaterialNucleoHtml("nucleo_inferior",true)}`
+    : mesaMaterialNucleoHtml("nucleo",false);
   return `<div class="wz-q">Do que essa peça é feita?</div>
   <div class="wz-q-sub">Marque tudo que compõe a estrutura. Depois você planeja os lotes de cada parte, uma por vez.</div>
-  <div class="wz-sec-l">1 · Núcleo <span style="color:var(--text3);font-weight:400">(obrigatório — escolha o material)</span></div>
-  <div class="wz-opts">
-    ${mesaOptHtml(e.nucleo==="metal_duro","c-acc","⬤","Núcleo: Metal Duro","Comprado pronto — vai de Compra direto para Pronto.","mesaSetNucleo('metal_duro')",lockN)}
-    ${mesaOptHtml(e.nucleo==="aco","c-aco","⬤","Núcleo: Aço","Passa por estoque, usinagem e tratamento térmico.","mesaSetNucleo('aco')",lockN)}
-  </div>
+  <div class="wz-sec-l">1 · Núcleo <span style="color:var(--text3);font-weight:400">(obrigatório)</span></div>
+  ${quantos}
+  ${materiais}
   <div class="wz-sec-l">2 · Partes de aço em volta <span style="color:var(--text3);font-weight:400">(opcional — do centro para fora)</span></div>
   <div class="wz-opts">
     ${mesaOptHtml(e.luva,"c-orange","🔘","Luva de Aço","Anel intermediário: fica entre o núcleo e a carcaça.","mesaToggle('luva')",mesaTemLoteSalvo("luva"))}
@@ -1110,7 +1197,7 @@ function mesaLoteExistenteHtml(comp){
   </div>`;
 }
 function mesaStepPosicaoHtml(pos){
-  const tipoMaterial = pos==="nucleo" ? _mesaEstrutura.nucleo : "aco";
+  const tipoMaterial = mesaMaterialDaPosicao(pos);
   const existentes = COMPONENTES.filter(c=>c.item_id===_mesaItem.id && c.posicao===pos).sort((a,b)=>a.lote_numero-b.lote_numero);
   const linhas = _mesaPosicoes[pos] || [];
   const total = parseInt(_mesaItem.quantidade,10)||0;
@@ -1151,7 +1238,7 @@ function mesaStepRevisaoHtml(){
     const linhas = _mesaPosicoes[pos]||[];
     const alocado = mesaAlocado(pos);
     const salvos = COMPONENTES.filter(c=>c.item_id===_mesaItem.id && c.posicao===pos).length;
-    const tipoMaterial = pos==="nucleo" ? _mesaEstrutura.nucleo : "aco";
+    const tipoMaterial = mesaMaterialDaPosicao(pos);
     const desalinhado = linhas.length && alocado!==total;
     const detalhe = linhas.length
       ? linhas.map(l=>l.quantidade).join(" + ")+" pç"
@@ -1179,7 +1266,7 @@ function mesaFooterHtml(){
     : `<button type="button" class="wz-btn" onclick="fecharMesa()">Cancelar</button>`;
   let dir;
   if(_mesaStep < totalSteps-1){
-    const bloqueado = _mesaStep===0 && !_mesaEstrutura.nucleo;
+    const bloqueado = _mesaStep===0 && !mesaNucleoCompleto();
     dir = `<button type="button" class="wz-btn prim" onclick="mesaProximo()" ${bloqueado?"disabled":""}>Próximo →</button>`;
   }else{
     const n = mesaTotalLinhasNovas();
@@ -1224,7 +1311,7 @@ function mesaAtualizarBotaoSalvar(){
 
 async function mesaSalvar(){
   if(!_mesaItem) return;
-  const posicoesAtivas = ["nucleo","carcaca","luva"].filter(p=>_mesaPosicoes[p]);
+  const posicoesAtivas = POS_TODAS.filter(p=>_mesaPosicoes[p]);
   const totalLinhasNovas = posicoesAtivas.reduce((s,p)=>s+_mesaPosicoes[p].length,0);
   const concluirMudou = _mesaConcluirChecked !== !!_mesaItem.plano_separacao_concluido;
   if(!totalLinhasNovas && !concluirMudou){ toast("Nada para salvar", "erro"); return; }
@@ -1254,7 +1341,7 @@ async function mesaSalvar(){
       const linhas = _mesaPosicoes[p];
       if(!linhas.length) continue;
       let nLotesExistentes = COMPONENTES.filter(c=>c.item_id===itemId && c.posicao===p).length;
-      const tipoMaterial = p==="nucleo" ? _mesaEstrutura.nucleo : "aco";
+      const tipoMaterial = mesaMaterialDaPosicao(p);
       for(const l of linhas){
         nLotesExistentes++;
         const payload = {

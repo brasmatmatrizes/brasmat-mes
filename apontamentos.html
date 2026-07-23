@@ -78,7 +78,9 @@
 .sec-title{font-size:11px;font-weight:500;letter-spacing:0.09em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .sec-title::after{content:"";flex:1;height:1px;background:var(--border)}
 .ap-list{display:flex;flex-direction:column;gap:6px}
-.ap-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:grid;grid-template-columns:80px 120px 1fr 140px 80px;gap:8px;align-items:center;transition:background 0.1s}
+.ap-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:grid;grid-template-columns:80px 120px 1fr 140px 80px 34px;gap:8px;align-items:center;transition:background 0.1s}
+.ap-edit{background:transparent;border:1px solid var(--border);border-radius:7px;width:30px;height:30px;font-size:14px;color:var(--text3);cursor:pointer;line-height:1;padding:0}
+.ap-edit:hover{border-color:var(--accent);color:var(--accent)}
 .ap-item:hover{background:var(--bg3)}
 .ap-item.aberto{border-color:rgba(245,166,35,0.4);background:rgba(245,166,35,0.03)}
 .ap-hora{font-size:13px;font-weight:500;font-family:var(--mono);color:var(--text)}
@@ -123,6 +125,7 @@
         <button class="nb" data-href="kanban.html" onclick="navTo('kanban.html')">Kanban</button>
         <button class="nb" data-href="op-kanban.html" onclick="navTo('op-kanban.html')">Painel</button>
         <button class="nb active" data-href="apontamentos.html">Apontamentos</button>
+        <button class="nb" data-href="editar-apontamento.html" onclick="navTo('editar-apontamento.html')">Editar Apontamento</button>
         <button class="nb" data-href="paradas.html" onclick="navTo('paradas.html')">Peças paradas</button>
       </div>
     </div>
@@ -368,6 +371,7 @@ function renderResultado(op, eventos, di, df){
         <div class="ap-subop">${sub}</div>
       </div>
       ${statusChip}
+      <button class="ap-edit" onclick="abrirEdicaoApontamento('${ev.id}')" title="Editar apontamento">✎</button>
     </div>`;
   }).join("");
 
@@ -474,6 +478,7 @@ function renderLista(eventos){
       <div class="ap-peca"><div class="ap-codigo">${ev.codigo_peca||"—"}</div><div class="ap-pedido">${ev.pedido||"—"}</div></div>
       <div><div class="ap-proc">${String(ev.processo||"").trim()}</div><div class="ap-subop">${sub}</div></div>
       ${statusChip}
+      <button class="ap-edit" onclick="abrirEdicaoApontamento('${ev.id}')" title="Editar apontamento">✎</button>
     </div>`;
   }).join("");
 }
@@ -525,6 +530,9 @@ function iniciarRealtime(){
 }
 iniciarRealtime();
 setInterval(()=>{ if(!_rtConectado) refreshRealtime(); }, 180000);   // só recarrega no polling se o realtime não estiver conectado
+
+// Recarrega a lista após uma edição de apontamento (o ✎ chama abrirEdicaoApontamento do status.js)
+window.onApontamentoEditado = async function(){ const f = filtroCard; await buscar(); if(f) setFiltroCard(f); };
 
 init();
 </script>

@@ -387,3 +387,194 @@ document.addEventListener("click", function(e){
     if(!g.contains(e.target)) g.classList.remove("open");
   });
 });
+
+// ============================================================
+// EDIÇÃO DE APONTAMENTO (compartilhado: apontamentos.html + editar-apontamento.html)
+// Corrige um apontamento errado direto no producao_eventos (a "raiz" que o MES lê;
+// Forms/planilha não voltam atrás — ver CLAUDE.md). Toda edição:
+//  - pede senha (guardada só como hash — não é cofre, é trava contra edição acidental);
+//  - grava o antes/depois em apontamento_edicoes (rastro de auditoria).
+// A página que chama define window.onApontamentoEditado = fn pra recarregar após salvar.
+// ============================================================
+const AP_EDIT_HASH = "de039caae34be4424263c71865d7bf45d5f4de4fbeb2b6fd1277c16331c52430";
+const AP_EDIT_CAMPOS = [
+  {campo:"operador",              label:"Operador",               tipo:"operador"},
+  {campo:"evento",               label:"Evento",                 tipo:"select", opcoes:["Entrada","Saída","Em Análise"], aviso:"muda o status da peça"},
+  {campo:"quantidade_produzida", label:"Qtd produzida",          tipo:"text"},
+  {campo:"quantidade_solicitada",label:"Qtd solicitada",         tipo:"text"},
+  {campo:"sequencial_operacao",  label:"Sequencial da operação", tipo:"text", aviso:"muda a barra de progresso"},
+  {campo:"retrabalho",           label:"Retrabalho",             tipo:"select", opcoes:["","Retrabalho","Não Conforme"]},
+  {campo:"data_evento",          label:"Data e hora",            tipo:"datetime"}
+];
+let _apEditRow = null;
+let _apEditBusy = false;
+let _apOperadores = null;
+
+async function supaSend(path, method, body, prefer){
+  const r = await fetch(SUPA_URL + path, {
+    method,
+    headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":"application/json", Prefer: prefer||"return=minimal" },
+    body: body!==undefined ? JSON.stringify(body) : undefined
+  });
+  if(r.status===204) return null;
+  const j = await r.json().catch(()=>null);
+  if(!r.ok) throw new Error((j&&j.message)||("HTTP "+r.status));
+  return j;
+}
+async function _sha256Hex(str){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+function _nomeOp(raw){ return String(raw||"").replace(/^\d+_/,"").trim(); }
+function _dtToInput(iso){
+  if(!iso) return "";
+  const d=new Date(iso); if(isNaN(d)) return "";
+  const p=n=>String(n).padStart(2,"0");
+  return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())+"T"+p(d.getHours())+":"+p(d.getMinutes());
+}
+async function _carregarOperadores(){
+  if(_apOperadores) return _apOperadores;
+  try{
+    const rows = await supaFetch("/rest/v1/operadores_distintos?select=operador&limit=1000");
+    const set = new Set();
+    (Array.isArray(rows)?rows:[]).forEach(r=>{ const o=String(r.operador||"").trim(); if(o) set.add(o); });
+    _apOperadores = [...set].sort((a,b)=>_nomeOp(a).localeCompare(_nomeOp(b),"pt-BR"));
+  }catch(e){ _apOperadores = []; }
+  return _apOperadores;
+}
+
+function _ensureEdicaoModal(){
+  if(document.getElementById("apEdModal")) return;
+  const st = document.createElement("style");
+  st.textContent = `
+  .aped-ov{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:none;align-items:center;justify-content:center;padding:16px}
+  .aped-ov.show{display:flex}
+  .aped-box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;width:100%;max-width:460px;max-height:90vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+  .aped-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--border)}
+  .aped-title{font-size:15px;font-weight:500;color:var(--text)}
+  .aped-x{background:transparent;border:none;color:var(--text3);font-size:18px;cursor:pointer;line-height:1}
+  .aped-x:hover{color:var(--text)}
+  .aped-ctx{padding:12px 18px;background:var(--bg3);font-size:12px;color:var(--text2);line-height:1.7;border-bottom:1px solid var(--border)}
+  .aped-ctx b{color:var(--text);font-family:var(--mono)}
+  .aped-body{padding:14px 18px;display:flex;flex-direction:column;gap:12px}
+  .aped-f label{display:block;font-size:11px;color:var(--text3);margin-bottom:4px;font-family:var(--mono)}
+  .aped-f .apav{color:var(--warn);font-size:10px;margin-left:6px}
+  .aped-inp{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:13px;color:var(--text);outline:none;font-family:var(--sans)}
+  .aped-inp:focus{border-color:var(--accent)}
+  .aped-foot{padding:14px 18px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+  .aped-err{font-size:12px;color:var(--danger);min-height:0}
+  .aped-actions{display:flex;gap:8px;justify-content:flex-end}
+  .aped-btn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:8px 16px;font-size:13px;color:var(--text2);cursor:pointer;font-family:var(--sans)}
+  .aped-btn:hover{border-color:var(--border2);color:var(--text)}
+  .aped-btn-acc{background:var(--accent);border-color:var(--accent);color:#fff}
+  .aped-btn-acc:hover{background:#1A4FCC}
+  .aped-btn-acc:disabled{opacity:0.5;cursor:default}`;
+  document.head.appendChild(st);
+  const div = document.createElement("div");
+  div.id = "apEdModal"; div.className = "aped-ov";
+  div.innerHTML = `<div class="aped-box">
+    <div class="aped-head"><div class="aped-title">✎ Editar apontamento</div><button class="aped-x" onclick="fecharEdicaoApontamento()">✕</button></div>
+    <div class="aped-ctx" id="apEdCtx"></div>
+    <div class="aped-body" id="apEdBody"></div>
+    <div class="aped-foot">
+      <div class="aped-f"><label>Senha para confirmar a edição</label><input type="password" class="aped-inp" id="apEdSenha" autocomplete="off"></div>
+      <div class="aped-err" id="apEdErr"></div>
+      <div class="aped-actions">
+        <button class="aped-btn" onclick="fecharEdicaoApontamento()">Cancelar</button>
+        <button class="aped-btn aped-btn-acc" id="apEdSalvar" onclick="_salvarEdicaoApontamento()">Salvar edição</button>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(div);
+  div.addEventListener("click", e=>{ if(e.target===div) fecharEdicaoApontamento(); });
+}
+function _apEdErr(msg){ const e=document.getElementById("apEdErr"); if(e) e.textContent=msg||""; }
+function fecharEdicaoApontamento(){ const m=document.getElementById("apEdModal"); if(m) m.classList.remove("show"); }
+
+async function abrirEdicaoApontamento(id){
+  _ensureEdicaoModal();
+  _apEditRow = null;
+  document.getElementById("apEdCtx").innerHTML = "";
+  document.getElementById("apEdBody").innerHTML = `<div style="color:var(--text3);font-size:12px;padding:8px 0">carregando…</div>`;
+  document.getElementById("apEdSenha").value = "";
+  _apEdErr("");
+  document.getElementById("apEdModal").classList.add("show");
+  let row, ops;
+  try{
+    [row, ops] = await Promise.all([
+      supaFetch(`/rest/v1/producao_eventos?id=eq.${encodeURIComponent(id)}&select=*`),
+      _carregarOperadores()
+    ]);
+  }catch(e){ document.getElementById("apEdBody").innerHTML = `<div style="color:var(--danger);font-size:12px">Erro ao carregar: ${escHtml(e.message)}</div>`; return; }
+  row = Array.isArray(row) ? row[0] : null;
+  if(!row){ document.getElementById("apEdBody").innerHTML = `<div style="color:var(--danger);font-size:12px">Apontamento não encontrado.</div>`; return; }
+  _apEditRow = row;
+  document.getElementById("apEdCtx").innerHTML =
+    `<b>${escHtml(row.codigo_peca||"—")}</b> · pedido ${escHtml(row.pedido||"—")} · OS ${escHtml(row.os||"—")}<br>`+
+    `${escHtml(String(row.processo||"").trim()||"—")} · ${escHtml(getSubop(row))}`;
+  document.getElementById("apEdBody").innerHTML = AP_EDIT_CAMPOS.map(f=>{
+    const cur = f.campo==="data_evento" ? _dtToInput(row.data_evento) : (row[f.campo]==null?"":String(row[f.campo]));
+    const aviso = f.aviso ? `<span class="apav">⚠ ${escHtml(f.aviso)}</span>` : "";
+    let input;
+    if(f.tipo==="operador"){
+      const opts = (ops||[]).map(o=>`<option value="${escHtml(o)}"${o===cur?" selected":""}>${escHtml(_nomeOp(o))}</option>`).join("");
+      input = `<select class="aped-inp" data-campo="${f.campo}">${opts}</select>`;
+    }else if(f.tipo==="select"){
+      const opts = f.opcoes.map(o=>`<option value="${escHtml(o)}"${o===cur?" selected":""}>${escHtml(o||"—")}</option>`).join("");
+      input = `<select class="aped-inp" data-campo="${f.campo}">${opts}</select>`;
+    }else if(f.tipo==="datetime"){
+      input = `<input type="datetime-local" class="aped-inp" data-campo="${f.campo}" value="${escHtml(cur)}">`;
+    }else{
+      input = `<input type="text" class="aped-inp" data-campo="${f.campo}" value="${escHtml(cur)}">`;
+    }
+    return `<div class="aped-f"><label>${escHtml(f.label)}${aviso}</label>${input}</div>`;
+  }).join("") +
+    `<div class="aped-f"><label>Seu nome (opcional — fica no histórico)</label><input type="text" class="aped-inp" id="apEdPor" autocomplete="off"></div>`+
+    `<div class="aped-f"><label>Motivo da correção (opcional)</label><input type="text" class="aped-inp" id="apEdMotivo" autocomplete="off"></div>`;
+}
+
+async function _salvarEdicaoApontamento(){
+  if(!_apEditRow || _apEditBusy) return;
+  const senha = document.getElementById("apEdSenha").value;
+  if(!senha){ _apEdErr("Digite a senha para confirmar."); return; }
+  if(await _sha256Hex(senha) !== AP_EDIT_HASH){ _apEdErr("Senha incorreta."); return; }
+  // monta o diff só com o que mudou
+  const patch = {}, campos = {};
+  document.querySelectorAll("#apEdBody [data-campo]").forEach(el=>{
+    const f = AP_EDIT_CAMPOS.find(x=>x.campo===el.getAttribute("data-campo"));
+    const novo = el.value;
+    if(f.campo==="data_evento"){
+      const orig = _dtToInput(_apEditRow.data_evento);
+      if(novo && novo!==orig){ patch.data_evento = new Date(novo).toISOString(); campos.data_evento = {de:fmtDt(_apEditRow.data_evento), para:fmtDt(patch.data_evento)}; }
+    }else{
+      const orig = _apEditRow[f.campo]==null ? "" : String(_apEditRow[f.campo]);
+      if(novo!==orig){
+        patch[f.campo] = novo;
+        const disp = f.campo==="operador" ? [_nomeOp(orig), _nomeOp(novo)] : [orig, novo];
+        campos[f.campo] = {de:disp[0], para:disp[1]};
+      }
+    }
+  });
+  if(!Object.keys(patch).length){ _apEdErr("Nada foi alterado."); return; }
+  _apEditBusy = true;
+  const btn = document.getElementById("apEdSalvar");
+  if(btn){ btn.disabled = true; btn.textContent = "Salvando…"; }
+  try{
+    await supaSend(`/rest/v1/producao_eventos?id=eq.${encodeURIComponent(_apEditRow.id)}`, "PATCH", patch, "return=minimal");
+    await supaSend("/rest/v1/apontamento_edicoes", "POST", {
+      evento_id: _apEditRow.id,
+      pedido: _apEditRow.pedido || null,
+      codigo_peca: _apEditRow.codigo_peca || null,
+      campos,
+      editado_por: (document.getElementById("apEdPor").value||"").trim() || null,
+      motivo: (document.getElementById("apEdMotivo").value||"").trim() || null
+    }, "return=minimal");
+    _apEdErr("");
+    fecharEdicaoApontamento();
+    if(typeof window.onApontamentoEditado === "function") window.onApontamentoEditado();
+  }catch(e){
+    _apEdErr("Erro ao salvar: " + (e&&e.message||e));
+  }
+  _apEditBusy = false;
+  if(btn){ btn.disabled = false; btn.textContent = "Salvar edição"; }
+}

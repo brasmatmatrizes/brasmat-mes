@@ -24,6 +24,7 @@ const NAV = [
       { page: "kanban.html", label: "Kanban", mobile: "Kanban" },
       { page: "op-kanban.html", label: "Painel", mobile: "Painel" },
       { page: "apontamentos.html", label: "Apontamentos", mobile: "Apontamentos" },
+      { page: "editar-apontamento.html", label: "Editar Apontamento", mobile: "Editar Apont." },
       { page: "paradas.html", label: "Peças paradas", mobile: "Paradas" },
     ],
   },

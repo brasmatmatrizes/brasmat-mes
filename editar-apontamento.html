@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BRASMAT MES — Editar Apontamento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="design.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans)}
+.topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;gap:12px;flex-shrink:0}
+.brand{display:flex;align-items:center;gap:10px}.bm{width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0}
+.bn{font-size:14px;font-weight:500;letter-spacing:0.04em}.bs{font-size:9px;color:var(--text3);font-family:var(--mono)}
+.nav{display:flex;gap:4px}
+.nb{font-size:12px;padding:6px 12px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all 0.15s;white-space:nowrap}
+.nb:hover{background:var(--bg3);color:var(--text)}.nb.active{background:var(--accent);color:#fff}
+.tr-right{display:flex;align-items:center;gap:8px}
+.sync-lbl{font-size:11px;color:var(--text2);font-family:var(--mono)}
+
+.wrap{max-width:820px;margin:0 auto;padding:24px 20px}
+.page-title{font-size:18px;font-weight:500;color:var(--text)}
+.page-desc{font-size:12px;color:var(--text3);margin-top:3px;line-height:1.6;margin-bottom:18px}
+.warn-box{background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.3);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:18px}
+.warn-box b{color:var(--warn)}
+.search-row{display:flex;gap:8px;margin-bottom:20px}
+.search-inp{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:11px 14px;font-size:14px;color:var(--text);outline:none}
+.search-inp:focus{border-color:var(--accent)}
+.search-btn{background:var(--accent);border:none;border-radius:9px;padding:0 20px;font-size:13px;color:#fff;cursor:pointer;font-weight:500}
+.search-btn:hover{background:#1A4FCC}
+
+.sec-title{font-size:11px;font-weight:500;letter-spacing:0.09em;text-transform:uppercase;color:var(--text2);font-family:var(--mono);margin:22px 0 12px;display:flex;align-items:center;gap:8px}
+.sec-title::after{content:"";flex:1;height:1px;background:var(--border)}
+.ev-list{display:flex;flex-direction:column;gap:6px}
+.ev-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;display:grid;grid-template-columns:150px 1fr 150px 34px;gap:10px;align-items:center}
+.ev-item:hover{background:var(--bg3)}
+.ev-cod{font-size:13px;font-weight:500;font-family:var(--mono);color:var(--text)}
+.ev-ped{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.ev-proc{font-size:12px;color:var(--text2)}
+.ev-sub{font-size:10px;color:var(--text3)}
+.ev-op{font-size:11px;color:var(--text2)}
+.ev-meta{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.ev-tag{display:inline-block;font-size:10px;padding:1px 7px;border-radius:6px;font-family:var(--mono)}
+.ev-tag.entrada{background:rgba(59,127,255,0.12);color:var(--accent)}
+.ev-tag.saida{background:rgba(45,191,126,0.1);color:var(--ok)}
+.ap-edit{background:transparent;border:1px solid var(--border);border-radius:7px;width:30px;height:30px;font-size:14px;color:var(--text3);cursor:pointer;line-height:1;padding:0}
+.ap-edit:hover{border-color:var(--accent);color:var(--accent)}
+.empty{color:var(--text3);font-size:13px;padding:24px;text-align:center}
+.loading{color:var(--text3);font-family:var(--mono);font-size:12px;padding:24px;text-align:center}
+
+.ed-item{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:6px}
+.ed-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px}
+.ed-top b{color:var(--text)}
+.ed-change{font-size:12px;color:var(--text2);line-height:1.7}
+.ed-change .de{color:var(--danger)}.ed-change .para{color:var(--ok)}
+.ed-motivo{font-size:11px;color:var(--text3);margin-top:5px;font-style:italic}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand"><img class="bm" src="assets/logo-icone.jpg" alt="Brasmat"><div><div class="bn">BRASMAT MES</div><div class="bs">sistema de execução de manufatura</div></div></div>
+  <div class="nav">
+    <button class="nb" data-href="index.html" onclick="navTo('index.html')">Buscar Peça</button>
+    <div class="nav-group">
+      <button class="nb nb-group">Cliente ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="demanda.html" onclick="navTo('demanda.html')">Demanda Cliente</button>
+        <button class="nb" data-href="cliente.html" onclick="navTo('cliente.html')">Consulta Cliente</button>
+        <button class="nb" data-href="expedicao.html" onclick="navTo('expedicao.html')">Expedição</button>
+      </div>
+    </div>
+    <div class="nav-group group-active">
+      <button class="nb nb-group active">Produção ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="kanban.html" onclick="navTo('kanban.html')">Kanban</button>
+        <button class="nb" data-href="op-kanban.html" onclick="navTo('op-kanban.html')">Painel</button>
+        <button class="nb" data-href="apontamentos.html" onclick="navTo('apontamentos.html')">Apontamentos</button>
+        <button class="nb active" data-href="editar-apontamento.html">Editar Apontamento</button>
+        <button class="nb" data-href="paradas.html" onclick="navTo('paradas.html')">Peças paradas</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nb nb-group">Indicadores ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="prazos.html" onclick="navTo('prazos.html')">Prazos</button>
+        <button class="nb" data-href="otd.html" onclick="navTo('otd.html')">OTD</button>
+        <button class="nb" data-href="ordens.html" onclick="navTo('ordens.html')">Ordens em Aberto</button>
+        <button class="nb" data-href="operadores.html" onclick="navTo('operadores.html')">Performance</button>
+        <button class="nb" data-href="qualidade.html" onclick="navTo('qualidade.html')">Qualidade</button>
+        <button class="nb" data-href="separacao-relatorio.html" onclick="navTo('separacao-relatorio.html')">Separação Relatório</button>
+      </div>
+    </div>
+    <div class="nav-group">
+      <button class="nb nb-group">Cadastro ▾</button>
+      <div class="nav-dropdown">
+        <button class="nb" data-href="cadastro-item.html" onclick="navTo('cadastro-item.html')">Item</button>
+        <button class="nb" data-href="separacao-material.html" onclick="navTo('separacao-material.html')">Separação</button>
+        <button class="nb" data-href="engenharia.html" onclick="navTo('engenharia.html')">Roteiro</button>
+      </div>
+    </div>
+  </div>
+  <div class="tr-right"><span class="sync-lbl" id="slbl">&nbsp;</span></div>
+</div>
+
+<div class="wrap">
+  <div class="page-title">✎ Editar Apontamento</div>
+  <div class="page-desc">Corrige um apontamento lançado errado. A correção vale no sistema (MES); o Forms/planilha de origem não mudam. Toda edição pede senha e fica registrada no histórico abaixo.</div>
+  <div class="warn-box">Editar <b>Evento</b> ou <b>Sequencial da operação</b> muda o status e a barra de progresso da peça — confira antes de salvar.</div>
+
+  <div class="search-row">
+    <input class="search-inp" id="q" placeholder="Buscar por código, pedido ou OS..." onkeydown="if(event.key==='Enter')buscar()">
+    <button class="search-btn" onclick="buscar()">Buscar</button>
+  </div>
+
+  <div id="resultados"></div>
+
+  <div class="sec-title">últimas edições feitas</div>
+  <div id="histEdicoes"><div class="loading">carregando…</div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="status.js"></script>
+<script>
+function navTo(p){ window.location.href=p; }
+
+async function buscar(){
+  const q = document.getElementById("q").value.trim();
+  const cont = document.getElementById("resultados");
+  if(!q){ cont.innerHTML = `<div class="empty">Digite um código, pedido ou OS para buscar.</div>`; return; }
+  cont.innerHTML = `<div class="loading">buscando…</div>`;
+  const t = encodeURIComponent("*"+q+"*");
+  const sel = "id,pedido,codigo_peca,os,processo,operador,evento,data_evento,quantidade_produzida,operacao_retifica_plana,operacao_retifica_cilindrica_interna,operacao_retifica_cilindrica_externa,operacao_erosao_fio,operacao_forma,operacao_polimento,operacao_brunidora,operacao_prensa,operacao_torno,operacao_qualidade,operacao_administrativo,operacao_servico_externo,operacao_erosao_penetracao";
+  let rows;
+  try{
+    rows = await supaFetch(`/rest/v1/producao_eventos?select=${sel}&or=(codigo_peca.ilike.${t},pedido.ilike.${t},os.ilike.${t})&order=data_evento.desc&limit=300`);
+  }catch(e){ cont.innerHTML = `<div class="empty">Erro ao buscar: ${escHtml(e.message)}</div>`; return; }
+  rows = Array.isArray(rows) ? rows : [];
+  if(!rows.length){ cont.innerHTML = `<div class="empty">Nenhum apontamento encontrado para "<b>${escHtml(q)}</b>".</div>`; return; }
+  cont.innerHTML =
+    `<div class="sec-title">apontamentos encontrados (${rows.length})</div>` +
+    `<div class="ev-list">` + rows.map(ev=>{
+      const evS = String(ev.evento||"").trim().toUpperCase();
+      const isE = evS==="ENTRADA";
+      return `<div class="ev-item">
+        <div><div class="ev-cod">${escHtml(ev.codigo_peca||"—")}</div><div class="ev-ped">${escHtml(ev.pedido||"—")} · OS ${escHtml(ev.os||"—")}</div></div>
+        <div><div class="ev-proc">${escHtml(String(ev.processo||"").trim()||"—")}</div><div class="ev-sub">${escHtml(getSubop(ev))}</div></div>
+        <div>
+          <span class="ev-tag ${isE?"entrada":"saida"}">${isE?"ENTRADA":"SAÍDA"}</span>
+          <div class="ev-op">${escHtml(String(ev.operador||"").replace(/^\d+_/,""))}</div>
+          <div class="ev-meta">${fmtDt(ev.data_evento)}</div>
+        </div>
+        <button class="ap-edit" onclick="abrirEdicaoApontamento('${ev.id}')" title="Editar apontamento">✎</button>
+      </div>`;
+    }).join("") + `</div>`;
+}
+
+async function carregarHistorico(){
+  const cont = document.getElementById("histEdicoes");
+  let rows;
+  try{
+    rows = await supaFetch(`/rest/v1/apontamento_edicoes?select=*&order=data_edicao.desc&limit=50`);
+  }catch(e){ cont.innerHTML = `<div class="empty">Erro ao carregar histórico: ${escHtml(e.message)}</div>`; return; }
+  rows = Array.isArray(rows) ? rows : [];
+  if(!rows.length){ cont.innerHTML = `<div class="empty">Nenhuma edição registrada ainda.</div>`; return; }
+  cont.innerHTML = rows.map(ed=>{
+    const campos = ed.campos || {};
+    const mudancas = Object.keys(campos).map(k=>{
+      const c = campos[k];
+      return `<div><b style="color:var(--text2)">${escHtml(k)}:</b> <span class="de">${escHtml(String(c.de||"(vazio)"))}</span> → <span class="para">${escHtml(String(c.para||"(vazio)"))}</span></div>`;
+    }).join("");
+    return `<div class="ed-item">
+      <div class="ed-top">
+        <span><b>${escHtml(ed.codigo_peca||"—")}</b> · pedido ${escHtml(ed.pedido||"—")}</span>
+        <span>${ed.editado_por?escHtml(ed.editado_por)+" · ":""}${fmtDt(ed.data_edicao)}</span>
+      </div>
+      <div class="ed-change">${mudancas}</div>
+      ${ed.motivo?`<div class="ed-motivo">"${escHtml(ed.motivo)}"</div>`:""}
+    </div>`;
+  }).join("");
+}
+
+// após salvar uma edição: recarrega a busca atual e o histórico
+window.onApontamentoEditado = function(){ if(document.getElementById("q").value.trim()) buscar(); carregarHistorico(); };
+
+document.getElementById("resultados").innerHTML = `<div class="empty">Busque um apontamento acima para editar.</div>`;
+carregarHistorico();
+</script>
+</body>
+</html>

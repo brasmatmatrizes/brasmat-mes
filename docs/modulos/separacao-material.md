@@ -308,9 +308,16 @@ consumiu tempo e continuava difícil de usar.
   aviso quando a soma ≠ quantidade do item), checkbox "planejamento concluído" e o botão
   "✓ Criar N lotes". Nada é gravado antes disso — todas as etapas anteriores são rascunho
   em memória.
-- **Croqui da peça** (aside fixo, `mesaCroquiSvg`): camadas concêntricas (luva → carcaça →
-  núcleo) coloridas com as mesmas cores das posições no Kanban, destacando a posição da
-  etapa atual, com legenda contando os lotes de cada parte. Some abaixo de 880px de largura.
+- **Croqui da peça** (aside fixo, `mesaCroquiSvg`): **desenho técnico com duas vistas
+  projetadas no mesmo eixo** (1º diedro) — **vista frontal em corte**, com hachuras a 45°
+  alternando o sentido entre peças vizinhas (núcleo 45°, luva −45°, carcaça 45° mais aberta),
+  e **vista superior** em planta logo abaixo, ambas com linha de centro traço-ponto. A ordem
+  física é do centro para fora: **núcleo → luva → carcaça** (a luva é intermediária, nunca
+  externa), e o núcleo é sempre desenhado **furado no centro**, com Ø do furo ≈ 30% do Ø do
+  núcleo (`mesaCamadasCroqui` calcula raio interno/externo de cada camada). Cores iguais às
+  das posições no Kanban; a parte da etapa atual fica em destaque e as outras esmaecidas;
+  legenda conta os lotes de cada parte. Some abaixo de 880px de largura.
+  Sem cotas numéricas — o cadastro não guarda dimensões reais da peça.
 - **Navegação**: "← Voltar" em todas as etapas (na primeira, "Cancelar") e "Próximo →"
   bloqueado enquanto o núcleo não tem material escolhido.
 

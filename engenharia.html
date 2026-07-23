@@ -179,7 +179,9 @@
    ANTES de chamar window.print() — @media print só passa a valer depois que a impressão já
    disparou, tarde demais pra decidir se cabe 1 página ou precisa de 2. @media print, no fim
    do bloco, só troca a posição de fora-da-tela pra visível. */
-#printArea{position:fixed;left:-9999px;top:0;width:210mm;box-sizing:border-box;background:#fff;color:#000;font-family:Arial,sans-serif;padding:10mm}
+/* o padding de 10mm que dá o respiro da folha fica em cada .p-page (não no #printArea), pra que
+   o .p-foot (absolute) de cada página ancore na borda FÍSICA da folha — ver .p-page/.p-foot */
+#printArea{position:fixed;left:-9999px;top:0;width:210mm;box-sizing:border-box;background:#fff;color:#000;font-family:Arial,sans-serif}
 .p-top{display:flex;justify-content:space-between;align-items:flex-start;border:2px solid #000;padding:8px 12px}
 .p-logo{font-size:20px;font-weight:700;letter-spacing:0.05em}
 .p-logo img{height:42px;display:block}
@@ -200,11 +202,13 @@
 .p-conjunto{border:3px double #000;padding:5px 10px;margin-top:6px;text-align:center}
 .p-conjunto-titulo{font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;color:#000}
 .p-conjunto-aviso{font-size:11px;font-weight:700;color:#000;margin-top:2px}
-/* cada página precisa da sua própria origem de posicionamento — sem isso, o .p-foot (absolute)
-   de páginas depois da 1ª calcula a distância a partir do topo do #printArea inteiro (que
-   engloba todas as páginas empilhadas antes da paginação), não do topo da própria folha, e o
-   QR do conjunto some ou aparece fora do lugar */
-.p-page{position:relative}
+/* cada página é a própria origem de posicionamento (position:relative) E carrega o padding de
+   10mm da folha — sem isso, o .p-foot (absolute) ancoraria no #printArea: pra páginas 2+ do
+   conjunto calcularia a distância a partir do topo do bloco inteiro (QR some), e o padding do
+   #printArea empurraria o rodapé 10mm pra baixo+direita. Com padding aqui, o padding-box de cada
+   .p-page coincide com o canto físico (0,0) da folha, então top:229mm/left:10mm cai igual em toda
+   página. box-sizing:border-box mantém a largura em 210mm com o padding por dentro */
+.p-page{position:relative;padding:10mm;box-sizing:border-box}
 /* rodapé travado no painel de baixo-direita (222,75-297mm de altura, 105-210mm de largura) —
    posição fixa em relação à folha, nunca em relação ao fim da tabela */
 .p-foot{position:absolute;left:10mm;top:229mm;height:63mm;display:flex;gap:20mm;align-items:stretch}
@@ -214,11 +218,9 @@
 .p-qr{width:85mm;border:2px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;gap:4px;box-sizing:border-box}
 .p-qr img{width:200px;height:200px}
 .p-qr span{font-size:8px;text-align:center}
-/* página 2+: mesmo cabeçalho completo da página 1 (pedido pelo usuário 22/07/2026), sem
-   rodapé/QR (já apareceu na página 1); o vinco não importa aqui porque não tem nada pra
-   escanear, só texto, que sobrevive à dobra numa boa. padding-top:10mm repõe o respiro do
-   topo que o padding do #printArea não repete sozinho entre páginas */
-.p-pagebreak{page-break-before:always;padding-top:10mm}
+/* página 2+: mesmo cabeçalho completo da página 1 (pedido pelo usuário 22/07/2026); o respiro
+   do topo já vem do padding de .p-page, então aqui só o quebra-página */
+.p-pagebreak{page-break-before:always}
 @media print{
   @page{ size:A4; margin:0; }
   #appRoot, .modal-bg, .toast{ display:none !important; }
@@ -1188,8 +1190,9 @@ function imprimir(){
     const linhas = montarLinhasArray();
 
     // 1ª passada: mede a altura real de cada linha (varia com texto que quebra em 2 linhas) e
-    // onde a tabela começa — com o cabeçalho igual em toda página, essa distância não muda
-    area.innerHTML = `${cabecalhoHtml(1,1)}<table class="p-tbl">${theadHtml}<tbody>${linhas.join("")}</tbody></table>`;
+    // onde a tabela começa — envolve em .p-page pra medir já com o padding de 10mm da folha (o
+    // mesmo do render final), senão tableStartMM sairia 10mm curto e a paginação erraria o corte
+    area.innerHTML = `<div class="p-page">${cabecalhoHtml(1,1)}<table class="p-tbl">${theadHtml}<tbody>${linhas.join("")}</tbody></table></div>`;
     const areaTop = area.getBoundingClientRect().top;
     const tabelaEl = area.querySelector(".p-tbl");
     const tableStartMM = tabelaEl ? mm(tabelaEl.getBoundingClientRect().top - areaTop) : 48;
@@ -1230,7 +1233,7 @@ function imprimir(){
     // mede com o banner presente (ele aparece em toda página no modo conjunto, então desloca
     // o início da tabela igual em todas), medindo todas as linhas de todos os blocos de uma vez
     const linhasTeste = gruposSub.flatMap(g=>g.itens.map(linhaPrint));
-    area.innerHTML = `${cabecalhoHtml(1,1)}${bannerHtml(gruposSub[0].nome,1,gruposSub.length)}<table class="p-tbl">${theadHtml}<tbody>${linhasTeste.join("")}</tbody></table>`;
+    area.innerHTML = `<div class="p-page">${cabecalhoHtml(1,1)}${bannerHtml(gruposSub[0].nome,1,gruposSub.length)}<table class="p-tbl">${theadHtml}<tbody>${linhasTeste.join("")}</tbody></table></div>`;
     const areaTop = area.getBoundingClientRect().top;
     const tabelaEl = area.querySelector(".p-tbl");
     const tableStartMM = tabelaEl ? mm(tabelaEl.getBoundingClientRect().top - areaTop) : 60;

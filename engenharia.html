@@ -194,10 +194,17 @@
 .p-tbl thead{display:table-header-group} /* repete o cabeçalho de colunas se a página 2 estourar pra 3, 4... */
 .p-tbl tr{page-break-inside:avoid}
 .p-sub{background:#f0f0f0;font-weight:700;font-size:11px;text-transform:uppercase}
-/* aviso de conjunto: borda grossa + fundo preto/texto branco continuam visíveis mesmo se a
-   impressora for P&B ou o driver não imprimir cor de fundo (a borda sempre imprime) */
-.p-conjunto{border:3px solid #000;background:#000;color:#fff;font-weight:700;font-size:12px;
-  text-align:center;text-transform:uppercase;letter-spacing:.03em;padding:6px 10px;margin-top:6px}
+/* aviso de conjunto: texto preto sólido + borda dupla grossa, sem depender de fundo colorido —
+   impressora que não reproduz "gráficos de plano de fundo" deixaria fundo preto/texto branco
+   sumindo (foi o que aconteceu: saiu cinza fraco) */
+.p-conjunto{border:3px double #000;padding:5px 10px;margin-top:6px;text-align:center}
+.p-conjunto-titulo{font-size:16px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;color:#000}
+.p-conjunto-aviso{font-size:11px;font-weight:700;color:#000;margin-top:2px}
+/* cada página precisa da sua própria origem de posicionamento — sem isso, o .p-foot (absolute)
+   de páginas depois da 1ª calcula a distância a partir do topo do #printArea inteiro (que
+   engloba todas as páginas empilhadas antes da paginação), não do topo da própria folha, e o
+   QR do conjunto some ou aparece fora do lugar */
+.p-page{position:relative}
 /* rodapé travado no painel de baixo-direita (222,75-297mm de altura, 105-210mm de largura) —
    posição fixa em relação à folha, nunca em relação ao fim da tabela */
 .p-foot{position:absolute;left:10mm;top:229mm;height:63mm;display:flex;gap:20mm;align-items:stretch}
@@ -1172,13 +1179,16 @@ function imprimir(){
     const totalPaginas = paginas.length;
     area.innerHTML = paginas.map((p,idx)=>{
       const num = idx+1;
-      const quebra = idx>0 ? ' class="p-pagebreak"' : "";
+      const classe = idx>0 ? "p-page p-pagebreak" : "p-page";
       const corpo = `<table class="p-tbl">${theadHtml}<tbody>${linhas.slice(p.inicio,p.fim).join("")}</tbody></table>`;
       const rodape = num===1 ? rodapeHtml : "";
-      return `<div${quebra}>${cabecalhoHtml(num,totalPaginas)}${corpo}${rodape}</div>`;
+      return `<div class="${classe}">${cabecalhoHtml(num,totalPaginas)}${corpo}${rodape}</div>`;
     }).join("");
   }else{
-    const bannerHtml = (nome, idx, total) => `<div class="p-conjunto">⚠ Conjunto — ${escHtml(nome)} · peça ${idx} de ${total} — não expedir sozinha</div>`;
+    const bannerHtml = (nome, idx, total) => `<div class="p-conjunto">
+      <div class="p-conjunto-titulo">Conjunto — ${escHtml(nome)} (peça ${idx} de ${total})</div>
+      <div class="p-conjunto-aviso">⚠ não expedir sozinha — só junto com as demais peças do conjunto</div>
+    </div>`;
 
     // mede com o banner presente (ele aparece em toda página no modo conjunto, então desloca
     // o início da tabela igual em todas), medindo todas as linhas de todos os blocos de uma vez
@@ -1215,10 +1225,10 @@ function imprimir(){
     let numGlobal = 0;
     area.innerHTML = gruposPag.map((g,gi)=> g.paginas.map((p,pi)=>{
       numGlobal++;
-      const quebra = numGlobal>1 ? ' class="p-pagebreak"' : "";
+      const classe = numGlobal>1 ? "p-page p-pagebreak" : "p-page";
       const corpo = `<table class="p-tbl">${theadHtml}<tbody>${g.linhasHtml.slice(p.inicio,p.fim).join("")}</tbody></table>`;
       const rodape = pi===0 ? rodapeHtml : "";
-      return `<div${quebra}>${cabecalhoHtml(numGlobal,totalPaginas)}${bannerHtml(g.nome, gi+1, gruposPag.length)}${corpo}${rodape}</div>`;
+      return `<div class="${classe}">${cabecalhoHtml(numGlobal,totalPaginas)}${bannerHtml(g.nome, gi+1, gruposPag.length)}${corpo}${rodape}</div>`;
     }).join("")).join("");
   }
 

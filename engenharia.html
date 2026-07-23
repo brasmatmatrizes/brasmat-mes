@@ -1140,12 +1140,16 @@ function imprimir(){
   const area = document.getElementById("printArea");
   const mm = px => px/(96/25.4);
 
-  // conjunto = roteiro com mais de um bloco de subcomponente (ex.: Inferior + Superior) — cada
-  // bloco segue pra um lado diferente da produção e se reencontra só no fim, então cada um vira
-  // um docket impresso próprio: página nova forçada, aviso bem visível repetido e QR/rodapé
-  // repetidos no início de cada bloco (não só na página 1 do documento inteiro)
+  // conjunto = roteiro com mais de um bloco de subcomponente NOMEADO (ex.: Inferior + Superior) —
+  // cada bloco segue pra um lado diferente da produção e se reencontra só no fim, então cada um
+  // vira um docket impresso próprio: página nova forçada, aviso bem visível repetido e QR/rodapé
+  // repetidos no início de cada bloco (não só na página 1 do documento inteiro). Exige TODAS as
+  // linhas com subcomponente preenchido — se alguma operação ainda não foi marcada, não dá pra
+  // saber se ela é uma peça própria ou só falta de tag, então cai no fluxo único de sempre (senão
+  // o bloco "sem subcomponente" vira um docket com título em branco, sem sentido nenhum)
   const gruposSub = agruparPorSubcomponente();
-  const conjunto = gruposSub.length > 1;
+  const todasMarcadas = ITENS.length>0 && ITENS.every(it=>String(it.subcomponente||"").trim());
+  const conjunto = todasMarcadas && gruposSub.length > 1;
 
   if(!conjunto){
     const linhas = montarLinhasArray();

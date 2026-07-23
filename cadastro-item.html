@@ -139,10 +139,14 @@
       <div class="ed-f"><span class="ed-l">Prazo de entrega*</span><input type="date" class="ed-inp" id="novoPrazo" style="width:150px"></div>
       <div class="ed-f"><span class="ed-l">&nbsp;</span><label style="display:flex;align-items:center;gap:6px;height:32px;font-size:12px;color:var(--text2);white-space:nowrap"><input type="checkbox" id="novoFerramenta"> 🔧 Ferramenta interna (não passa pelo controle de material)</label></div>
       <div class="ed-f"><span class="ed-l">Desenho (PDF/imagem)</span>
-        <div style="display:flex;align-items:center;gap:8px;height:32px">
+        <div id="desenhoDrop" title="Clique em Anexar ou arraste o PDF/imagem aqui"
+          ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='rgba(59,127,255,0.08)'"
+          ondragleave="this.style.borderColor='var(--border)';this.style.background='transparent'"
+          ondrop="dropDesenho(event)"
+          style="display:flex;align-items:center;gap:8px;height:32px;border:1px dashed var(--border);border-radius:7px;padding:0 10px">
           <input type="file" id="novoDesenhoInput" accept="application/pdf,image/*" style="display:none" onchange="uploadDesenho(this)">
-          <button type="button" class="btn-g" style="height:32px;padding:0 12px;font-size:12px" onclick="document.getElementById('novoDesenhoInput').click()">📐 Anexar</button>
-          <span id="desenhoState" style="font-size:11px;color:var(--text3);font-family:var(--mono);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">nenhum</span>
+          <button type="button" class="btn-g" style="height:24px;padding:0 10px;font-size:12px" onclick="document.getElementById('novoDesenhoInput').click()">📐 Anexar</button>
+          <span id="desenhoState" style="font-size:11px;color:var(--text3);font-family:var(--mono);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">arraste ou clique</span>
         </div>
       </div>
       <button class="btn-g btn-acc" id="btnSalvar" onclick="salvarItem()">+ Cadastrar item</button>
@@ -190,15 +194,25 @@ async function supaDeleteArquivo(url){
   const path = url.slice(idx + marker.length);
   try{ await fetch(`${SUPA_URL}/storage/v1/object/${BUCKET}/${path}`, { method:"DELETE", headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY } }); }catch(e){}
 }
-async function uploadDesenho(inputEl){
+function uploadDesenho(inputEl){
   const file = inputEl.files && inputEl.files[0];
-  if(!file) return;
+  if(file) uploadDesenhoFile(file);
+  inputEl.value = "";
+}
+function dropDesenho(ev){
+  ev.preventDefault();
+  const dz = document.getElementById("desenhoDrop");
+  if(dz){ dz.style.borderColor="var(--border)"; dz.style.background="transparent"; }
+  const file = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+  if(file) uploadDesenhoFile(file);
+}
+async function uploadDesenhoFile(file){
   const ext = (file.name.split(".").pop()||"").toLowerCase();
   const extOk = ["pdf","jpg","jpeg","png","gif","webp","bmp","tif","tiff","heic","heif","svg"].includes(ext);
   const tipoOk = file.type==="application/pdf" || (file.type||"").startsWith("image/");
   if(!tipoOk && !extOk){ toast("Formato não aceito (use PDF ou imagem)", "erro"); return; }
   const st = document.getElementById("desenhoState");
-  st.textContent = "enviando...";
+  if(st) st.textContent = "enviando...";
   try{
     const cod = (String(document.getElementById("novoCod").value||"").replace(/[^A-Za-z0-9_-]/g,"_")) || "item";
     const path = `CADASTRO/${cod}/desenho-${Date.now()}.${ext||"bin"}`;
@@ -207,15 +221,14 @@ async function uploadDesenho(inputEl){
     NOVO_DESENHO_URL = url;
     renderDesenhoState();
     if(old && old!==url) supaDeleteArquivo(old);   // troca: apaga o anterior
-  }catch(e){ st.textContent = "falha no envio"; toast("Erro ao enviar desenho", "erro"); }
-  inputEl.value = "";
+  }catch(e){ if(st) st.textContent = "falha no envio"; toast("Erro ao enviar desenho", "erro"); }
 }
 function renderDesenhoState(){
   const st = document.getElementById("desenhoState");
   if(!st) return;
   if(NOVO_DESENHO_URL){
     st.innerHTML = `<a href="${NOVO_DESENHO_URL}" target="_blank" rel="noopener" style="color:var(--accent)">📐 ver</a> · <span onclick="removerDesenho()" style="color:var(--danger);cursor:pointer">remover</span>`;
-  }else{ st.textContent = "nenhum"; }
+  }else{ st.textContent = "arraste ou clique"; }
 }
 function removerDesenho(){
   const old = NOVO_DESENHO_URL;

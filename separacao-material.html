@@ -130,9 +130,9 @@
 
 .wz-body{flex:1;display:flex;min-height:0}
 .wz-main{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:14px;min-width:0}
-.wz-aside{width:220px;flex-shrink:0;border-left:1px solid var(--border);background:var(--bg3);padding:16px 14px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+.wz-aside{width:242px;flex-shrink:0;border-left:1px solid var(--border);background:var(--bg3);padding:16px 14px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
 .wz-aside-l{font-size:9px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em}
-.wz-croqui{width:100%;max-width:170px;align-self:center}
+.wz-croqui{width:100%;max-width:188px;align-self:center}
 .wz-legend{display:flex;flex-direction:column;gap:7px}
 .wz-leg{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--text2)}
 .wz-leg.off{opacity:.28}
@@ -775,9 +775,9 @@ function fecharMesa(){
   document.getElementById("mesaPanel").classList.remove("open");
 }
 
-// posições ativas, na ordem em que viram etapa do assistente
+// posições ativas, na ordem em que viram etapa do assistente — do centro da peça para fora
 function mesaPassos(){
-  return ["nucleo","carcaca","luva"].filter(p => p==="nucleo" ? !!_mesaEstrutura.nucleo : !!_mesaEstrutura[p]);
+  return ["nucleo","luva","carcaca"].filter(p => p==="nucleo" ? !!_mesaEstrutura.nucleo : !!_mesaEstrutura[p]);
 }
 function mesaTotalSteps(){ return mesaPassos().length + 2; } // estrutura + posições + revisão
 // posição já tem lote salvo de verdade? então a estrutura dela não pode mais ser desmarcada aqui
@@ -926,34 +926,89 @@ function mesaSetIntencao(pos, tempId, ordem){
   renderMesa();
 }
 
-// ---- desenho da peça (croqui) e legenda: camadas concêntricas vistas de cima ----
+// ---- croqui da peça: desenho técnico com duas vistas projetadas (1º diedro) ----
+// Ordem física real, do centro para fora: núcleo → luva (quando existe) → carcaça.
+// Vista frontal é um CORTE pelo eixo (hachurada, ângulos alternados entre peças vizinhas como
+// manda o desenho mecânico); vista superior é a planta, sem hachura. O núcleo é sempre furado
+// no centro (Ø do furo ≈ 30% do Ø do núcleo).
 const POS_COR = { nucleo:"var(--accent)", carcaca:"var(--roxo)", luva:"var(--orange)" };
 const POS_ICONE = { nucleo:"⬤", carcaca:"⭕", luva:"🔘" };
+const CROQUI_HACHURA = { nucleo:{ang:45,sp:4.5}, luva:{ang:-45,sp:4.5}, carcaca:{ang:45,sp:7.5} };
 function mesaCorPosicao(pos){
   return (pos==="nucleo" && _mesaEstrutura.nucleo==="aco") ? "var(--text3)" : POS_COR[pos];
 }
-function mesaCroquiSvg(destaque){
+// camadas presentes, do centro para fora, já com raio interno/externo
+function mesaCamadasCroqui(){
   const e = _mesaEstrutura;
-  const camadas = [];
-  if(e.luva) camadas.push({pos:"luva", r:78});
-  if(e.carcaca) camadas.push({pos:"carcaca", r:57});
-  if(e.nucleo) camadas.push({pos:"nucleo", r:35});
+  const presentes = [];
+  if(e.nucleo) presentes.push("nucleo");
+  if(e.luva) presentes.push("luva");
+  if(e.carcaca) presentes.push("carcaca");
+  if(!presentes.length) return [];
+  const RAIOS = {1:[60], 2:[40,60], 3:[32,46,60]}[presentes.length];
+  // furo central: 30% do diâmetro do núcleo (sem núcleo, um vazio genérico só pra não desenhar maciço)
+  const rFuro = e.nucleo ? RAIOS[0]*0.30 : RAIOS[0]*0.5;
+  return presentes.map((pos,i)=>({ pos, ri: i===0 ? rFuro : RAIOS[i-1], re: RAIOS[i] }));
+}
+function mesaCroquiSvg(destaque){
+  const camadas = mesaCamadasCroqui();
+  const cx = 100, fY = 16, fH = 50;              // vista frontal (corte)
+  const sCy = fY + fH + 84;                       // centro da vista superior, projetado no mesmo eixo
   if(!camadas.length){
-    return `<svg viewBox="0 0 180 180" class="wz-croqui"><circle cx="90" cy="90" r="70" fill="none" stroke="var(--border2)" stroke-width="2" stroke-dasharray="7 7"/><text x="90" y="95" text-anchor="middle" font-size="11" fill="var(--text3)" font-family="IBM Plex Mono">nada ainda</text></svg>`;
+    return `<svg viewBox="0 0 200 250" class="wz-croqui">
+      <rect x="38" y="${fY}" width="124" height="${fH}" fill="none" stroke="var(--border2)" stroke-width="1.2" stroke-dasharray="6 5"/>
+      <circle cx="${cx}" cy="${sCy}" r="60" fill="none" stroke="var(--border2)" stroke-width="1.2" stroke-dasharray="6 5"/>
+      <text x="${cx}" y="${sCy+4}" text-anchor="middle" font-size="9" fill="var(--text3)" font-family="IBM Plex Mono">sem estrutura</text>
+    </svg>`;
   }
-  const circles = camadas.map(c=>{
-    const foco = !destaque || destaque===c.pos;
-    const cor = mesaCorPosicao(c.pos);
-    return `<circle cx="90" cy="90" r="${c.r}" fill="${cor}" fill-opacity="${foco?0.22:0.06}" stroke="${cor}" stroke-width="${(destaque&&foco)?4:2}" stroke-opacity="${foco?1:0.28}"/>`;
+  const rMax = camadas[camadas.length-1].re;
+  const rFuro = camadas[0].ri;
+  const foco = c => !destaque || destaque===c.pos;
+
+  const defs = camadas.map(c=>{
+    const h = CROQUI_HACHURA[c.pos], cor = mesaCorPosicao(c.pos);
+    return `<pattern id="hx_${c.pos}" patternUnits="userSpaceOnUse" width="${h.sp}" height="${h.sp}" patternTransform="rotate(${h.ang})">
+      <line x1="0" y1="0" x2="0" y2="${h.sp}" stroke="${cor}" stroke-width="0.9" stroke-opacity="${foco(c)?0.9:0.18}"/></pattern>`;
   }).join("");
-  return `<svg viewBox="0 0 180 180" class="wz-croqui">${circles}</svg>`;
+
+  // VISTA FRONTAL — corte: cada camada aparece dos dois lados do furo
+  const frontal = camadas.map(c=>{
+    const cor = mesaCorPosicao(c.pos), f = foco(c), w = c.re-c.ri;
+    const lado = x => `<rect x="${x}" y="${fY}" width="${w}" height="${fH}" fill="${cor}" fill-opacity="${f?0.10:0.03}"/>
+      <rect x="${x}" y="${fY}" width="${w}" height="${fH}" fill="url(#hx_${c.pos})" stroke="${cor}" stroke-width="${f?1.6:0.9}" stroke-opacity="${f?1:0.25}"/>`;
+    return lado(cx-c.re) + lado(cx+c.ri);
+  }).join("");
+
+  // VISTA SUPERIOR — planta: circunferências concêntricas + furo
+  const superior = camadas.slice().reverse().map(c=>{
+    const cor = mesaCorPosicao(c.pos), f = foco(c);
+    return `<circle cx="${cx}" cy="${sCy}" r="${c.re}" fill="${cor}" fill-opacity="${f?0.13:0.035}" stroke="${cor}" stroke-width="${f?1.6:0.9}" stroke-opacity="${f?1:0.25}"/>`;
+  }).join("") + `<circle cx="${cx}" cy="${sCy}" r="${rFuro}" fill="var(--bg3)" stroke="${mesaCorPosicao(camadas[0].pos)}" stroke-width="1.2" stroke-opacity="${foco(camadas[0])?1:0.25}"/>`;
+
+  const eixo = `stroke="var(--text3)" stroke-width="0.7" stroke-opacity=".6" stroke-dasharray="9 3 1.5 3"`;
+  const linhasCentro = `
+    <line x1="${cx}" y1="${fY-9}" x2="${cx}" y2="${sCy+rMax+9}" ${eixo}/>
+    <line x1="${cx-rMax-9}" y1="${fY+fH/2}" x2="${cx+rMax+9}" y2="${fY+fH/2}" ${eixo}/>
+    <line x1="${cx-rMax-9}" y1="${sCy}" x2="${cx+rMax+9}" y2="${sCy}" ${eixo}/>`;
+
+  const rot = (y,txt) => `<text x="${cx}" y="${y}" text-anchor="middle" font-size="7" letter-spacing=".08em" fill="var(--text3)" font-family="IBM Plex Mono">${txt}</text>`;
+  const notaFuro = _mesaEstrutura.nucleo ? rot(sCy+rMax+27,"Ø FURO ≈ 30% DO NÚCLEO") : "";
+
+  return `<svg viewBox="0 0 200 258" class="wz-croqui"><defs>${defs}</defs>
+    ${frontal}
+    ${rot(fY+fH+15,"VISTA FRONTAL — CORTE")}
+    ${superior}
+    ${linhasCentro}
+    ${rot(sCy+rMax+16,"VISTA SUPERIOR")}
+    ${notaFuro}
+  </svg>`;
 }
 function mesaLegendaHtml(destaque){
   const e = _mesaEstrutura;
   const linhas = [
     {pos:"nucleo", on:!!e.nucleo, lbl:"Núcleo"+(e.nucleo?" · "+MATERIAL_LABEL[e.nucleo]:"")},
-    {pos:"carcaca", on:!!e.carcaca, lbl:"Carcaça · Aço"},
-    {pos:"luva", on:!!e.luva, lbl:"Luva · Aço"}
+    {pos:"luva", on:!!e.luva, lbl:"Luva · Aço"},
+    {pos:"carcaca", on:!!e.carcaca, lbl:"Carcaça · Aço"}
   ];
   return `<div class="wz-legend">` + linhas.map(x=>{
     const nNovos = (_mesaPosicoes[x.pos]||[]).length;
@@ -988,10 +1043,10 @@ function mesaStepEstruturaHtml(){
     ${mesaOptHtml(e.nucleo==="metal_duro","c-acc","⬤","Núcleo: Metal Duro","Comprado pronto — vai de Compra direto para Pronto.","mesaSetNucleo('metal_duro')",lockN)}
     ${mesaOptHtml(e.nucleo==="aco","c-aco","⬤","Núcleo: Aço","Passa por estoque, usinagem e tratamento térmico.","mesaSetNucleo('aco')",lockN)}
   </div>
-  <div class="wz-sec-l">2 · Partes de aço em volta <span style="color:var(--text3);font-weight:400">(opcional)</span></div>
+  <div class="wz-sec-l">2 · Partes de aço em volta <span style="color:var(--text3);font-weight:400">(opcional — do centro para fora)</span></div>
   <div class="wz-opts">
-    ${mesaOptHtml(e.carcaca,"c-roxo","⭕","Carcaça de Aço","Anel que abraça o núcleo.","mesaToggle('carcaca')",mesaTemLoteSalvo("carcaca"))}
-    ${mesaOptHtml(e.luva,"c-orange","🔘","Luva de Aço","Camada externa de reforço.","mesaToggle('luva')",mesaTemLoteSalvo("luva"))}
+    ${mesaOptHtml(e.luva,"c-orange","🔘","Luva de Aço","Anel intermediário: fica entre o núcleo e a carcaça.","mesaToggle('luva')",mesaTemLoteSalvo("luva"))}
+    ${mesaOptHtml(e.carcaca,"c-roxo","⭕","Carcaça de Aço","Anel mais externo, que fecha o conjunto.","mesaToggle('carcaca')",mesaTemLoteSalvo("carcaca"))}
   </div>`;
 }
 

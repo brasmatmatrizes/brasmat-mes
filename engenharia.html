@@ -932,9 +932,12 @@ async function abrirRoteiro(id){
   renderSubChips();
   renderPaleta();
   document.getElementById("seqBody").innerHTML = '<div class="loading"><div class="spinner"></div>carregando...</div>';
-  const its = await supaFetch(`/rest/v1/roteiro_itens?select=*&roteiro_id=eq.${R.id}&order=sequencia&limit=500`);
+  // id como desempate: se a numeração vier duplicada (roteiro antigo), a ordem
+  // ainda é estável — e logo abaixo ela é corrigida no banco
+  const its = await supaFetch(`/rest/v1/roteiro_itens?select=*&roteiro_id=eq.${R.id}&order=sequencia.asc,id.asc&limit=500`);
   ITENS = Array.isArray(its)?its:[];
   renderSeq();
+  if(ITENS.some((it,i)=>it.sequencia!==i+1)) naFilaSeq(()=>renumerar().then(renderSeq));
   _lancFormOpen = false;
   renderLancPainel();
   checkLancado();
@@ -1046,7 +1049,7 @@ function renderSeq(){
   const opts = v => `<option value=""${v===""?" selected":""}>—</option>` +
     SUBS.map(s=>`<option value="${escHtml(s.nome)}"${v===s.nome?" selected":""}>${escHtml(s.nome)}</option>`).join("");
   el.innerHTML = ITENS.map((it,i)=>`<div class="seq-row">
-    <span class="seq-n">${it.sequencia}ª</span>
+    <span class="seq-n">${i+1}ª</span>
     <span class="seq-cod">${escHtml(it.operacao_codigo)}</span>
     <span class="seq-desc" title="${escHtml(it.operacao_descricao)}">${escHtml(it.operacao_descricao)}</span>
     <select class="seq-sel" onchange="setSub(${it.id},this.value)">${opts(it.subcomponente||"")}</select>
@@ -1059,37 +1062,58 @@ function renderSeq(){
   </div>`).join("");
 }
 
-async function addOp(opId){
+// Toda mudança na ordem (adicionar / remover / mover) passa por esta fila: são
+// operações assíncronas que leem ITENS pra calcular a sequência, e dois cliques
+// rápidos na paleta chegavam a calcular o mesmo número antes do POST anterior
+// voltar — nasciam duas linhas com a mesma sequência. A fila garante que cada
+// uma só começa depois que a anterior terminou de atualizar ITENS.
+let _seqFila = Promise.resolve();
+function naFilaSeq(fn){
+  const p = _seqFila.then(fn, fn);
+  _seqFila = p.catch(()=>{});
+  return p;
+}
+
+function addOp(opId){
   if(!R) return;
   const op = OPS.find(o=>o.id===opId);
   if(!op) return;
-  const seq = ITENS.length+1;
-  try{
-    const novo = await supaWrite("/rest/v1/roteiro_itens","POST",{
-      roteiro_id:R.id, sequencia:seq, subcomponente:SUB_ATUAL,
-      operacao_codigo:op.codigo, operacao_descricao:op.descricao
-    });
-    ITENS.push(Array.isArray(novo)?novo[0]:novo);
-    renderSeq(); tocarHdr();
-  }catch(e){ toast("Erro ao adicionar: "+e.message); }
+  return naFilaSeq(async ()=>{
+    if(!R) return;
+    const seq = ITENS.length+1;
+    try{
+      const novo = await supaWrite("/rest/v1/roteiro_itens","POST",{
+        roteiro_id:R.id, sequencia:seq, subcomponente:SUB_ATUAL,
+        operacao_codigo:op.codigo, operacao_descricao:op.descricao
+      });
+      const linha = Array.isArray(novo)?novo[0]:novo;
+      ITENS.push(linha);
+      if(linha && linha.sequencia!==seq) await renumerar();
+      renderSeq(); tocarHdr();
+    }catch(e){ toast("Erro ao adicionar: "+e.message); }
+  });
 }
 
-async function delItem(id){
-  const idx = ITENS.findIndex(x=>x.id===id);
-  if(idx<0) return;
-  try{
-    await supaWrite(`/rest/v1/roteiro_itens?id=eq.${id}`,"DELETE",undefined,"return=minimal");
-    ITENS.splice(idx,1);
+function delItem(id){
+  return naFilaSeq(async ()=>{
+    const idx = ITENS.findIndex(x=>x.id===id);
+    if(idx<0) return;
+    try{
+      await supaWrite(`/rest/v1/roteiro_itens?id=eq.${id}`,"DELETE",undefined,"return=minimal");
+      ITENS.splice(idx,1);
+      await renumerar(); renderSeq(); tocarHdr();
+    }catch(e){ toast("Erro ao remover: "+e.message); }
+  });
+}
+
+function mover(id,dir){
+  return naFilaSeq(async ()=>{
+    const i = ITENS.findIndex(x=>x.id===id);
+    const j = i+dir;
+    if(i<0||j<0||j>=ITENS.length) return;
+    [ITENS[i],ITENS[j]] = [ITENS[j],ITENS[i]];
     await renumerar(); renderSeq(); tocarHdr();
-  }catch(e){ toast("Erro ao remover: "+e.message); }
-}
-
-async function mover(id,dir){
-  const i = ITENS.findIndex(x=>x.id===id);
-  const j = i+dir;
-  if(i<0||j<0||j>=ITENS.length) return;
-  [ITENS[i],ITENS[j]] = [ITENS[j],ITENS[i]];
-  await renumerar(); renderSeq(); tocarHdr();
+  });
 }
 
 // regrava sequencia = posição no array (só onde mudou)

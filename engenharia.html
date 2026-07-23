@@ -433,8 +433,24 @@ const FORM_ENTRY = {
   qtd_sol:              "1682768047",
   qtd_op:               "1878330568",
   cliente:              "650904313",
-  prazo:                "1378517438"
+  prazo:                "1378517438",
+  // campos que a pessoa escolhe ao apontar (usados no envio do 1º apontamento pelo botão)
+  operador:             "2010775572",
+  qtd_prod:             "214164187",
+  sequencial:           "1030804751",
+  evento:               "824876599",
+  processo:             "297691282", // "Selecione Máquina / Processo"
+  op_admin:             "102792772"  // "Operação - Administrativa"
 };
+// Endpoint de envio do Forms + roteamento do 1º apontamento (11.3).
+// O Forms tem 14 seções: a página 0 (dados) desvia pra seção do setor escolhido.
+// "11 – ADMINISTRATIVO" cai na seção página 11 → pageHistory "0,11". Se o Forms for
+// recriado/reordenado, reconferir esse índice e a lista FORM_OPERADORES abaixo.
+const FORM_RESP = "https://docs.google.com/forms/d/e/1FAIpQLSe4EE1M2pqamVKXCav2aZ4uj-hMsxGGma_dUJE3NDcwnGOp7g/formResponse";
+const FORM_ADMIN_PAGEHISTORY = "0,11";
+// Opções exatas do dropdown "Operador (Responsável)" do Forms — o envio é recusado (em
+// silêncio) se o valor não bater exatamente, então validamos antes de disparar.
+const FORM_OPERADORES = ["5_MAYKON CERESSO DE ANDRADE BASSO","6_ADRIANO DE MEIRA MARTINS","7_FELIPE DA SILVEIRA ALVES","10_DIONI PELLANI DA SILVA","11_JAIR XAVIER DA SILVA","13_NATAN DOS SANTOS BATISTA","20_MAURICIO DIAS","22_SÉRGIO SANTOS DE OLIVEIRA","24_CLERI ANTUNES DA MOTA","25_CLAUDINEI ANTUNES DA MOTA","26_FELIPE CAMPOS DA MOTA","27_HENRIQUE CAMPOS DA MOTA","31_LUCAS HENRIQUE DOS SANTOS","32_DIEGO PELLANI DA SILVA","33_JEAN VITHOR DA SILVA","34_MATHEUS HENRIQUE AMARAL DIAS","35_RICHARDSON PASTANA TITO","36_CLAUDINEIA NOVAIS CUNHA","37_REINALDO WENDRY THOMAZ VIEIRA","39_VINICIUS DA MOTA OLIVEIRA","40_GABRIEL ARANTES","41_GIOVANI LUCAS","42_LUCAS LOPES DE MELLO","43_GUSTAVO RANGEL","44_LUCAS ANDRÉ DOS ANJOS","45_DEIVID ROBSON","46_JOÃO PEDRO BRAVO DA SILVA"];
 // ---- estado ----
 let POS = [];        // posicao_atual (só p/ exibição de roteiros legados no editor)
 let ITENS_CAD = [];  // itens cadastrados (Cadastro Item) — fonte da busca do roteiro
@@ -683,17 +699,24 @@ function renderMatBanner(item, resumo){
   return `<div class="mat-banner danger"><span class="mat-banner-ico">🔒</span><div><div class="mat-banner-title">Nenhum material pronto ainda</div><div class="mat-banner-detail">${detalheHtml}</div></div><a class="mat-banner-link" href="separacao-material.html">ver Separação de Material →</a></div>`;
 }
 
-// ---- 1º apontamento (11.3 Elaboração do Processo) direto pelo MES ----
-// Hoje esse apontamento é feito escaneando o QR/link do Forms pré-preenchido (montarLinkForms).
-// Como quem monta o roteiro já está no MES, este botão grava o mesmo registro direto em
-// producao_eventos — só esse 1º lançamento; os apontamentos seguintes continuam pelo QR na máquina.
+// ---- 1º apontamento (11.3 Elaboração do Processo) pelo Forms ----
+// Este botão ENVIA o mesmo Forms que a máquina usa (via QR), já preenchido com 11.3/Saída/operador.
+// Assim o apontamento entra na planilha "super base" e de lá sincroniza pro producao_eventos —
+// mesmo caminho de todos os outros apontamentos, sem gravar direto no banco (que não voltava pra planilha).
+// Como a sincronização não é instantânea, guardamos um marcador local (lancPendKey) pra mostrar
+// "aguardando sincronizar" nesse intervalo e evitar lançamento em dobro numa recarga.
+function lancPendKey(){ return R ? ("brasmatLancPend_"+R.pedido+"_"+R.codigo_peca) : ""; }
 async function checkLancado(){
   if(!R) return;
-  R._lancInfo = undefined; // carregando — evita mostrar o botão por um instante antes de saber
+  R._lancInfo = undefined; R._lancPend = undefined; // carregando — evita mostrar o botão antes de saber
   try{
     const rows = await supaFetch(`/rest/v1/producao_eventos?select=operador,data_evento&pedido=eq.${encodeURIComponent(R.pedido)}&codigo_peca=eq.${encodeURIComponent(R.codigo_peca)}&operacao_administrativo=ilike.*Elabora*&order=data_evento.desc&limit=1`);
     R._lancInfo = (Array.isArray(rows) && rows[0]) ? rows[0] : null;
   }catch(e){ R._lancInfo = null; }
+  if(R._lancInfo){ try{ localStorage.removeItem(lancPendKey()); }catch(e){} } // já sincronizou → limpa pendência
+  else{
+    try{ const raw = localStorage.getItem(lancPendKey()); R._lancPend = raw ? JSON.parse(raw) : null; }catch(e){ R._lancPend = null; }
+  }
   renderLancPainel();
 }
 
@@ -706,12 +729,17 @@ function renderLancPainel(){
     el.innerHTML = `<div class="mat-banner ok"><span class="mat-banner-ico">✅</span><div><div class="mat-banner-title">1º apontamento (11.3) já lançado</div><div class="mat-banner-detail">por ${escHtml(String(info.operador||"").replace(/^\d+_/,""))} em ${fmtDt(info.data_evento)}</div></div></div>`;
     return;
   }
+  if(R._lancPend){ // enviado ao Forms, ainda não sincronizou pro banco
+    const info = R._lancPend;
+    el.innerHTML = `<div class="mat-banner warn"><span class="mat-banner-ico">⏳</span><div><div class="mat-banner-title">1º apontamento (11.3) enviado ao Forms</div><div class="mat-banner-detail">por ${escHtml(String(info.operador||"").replace(/^\d+_/,""))} em ${fmtDt(info.data_evento)} — aparece no sistema quando o Forms sincronizar (alguns minutos)</div></div><button class="btn-g" style="margin-left:auto" onclick="reenviarLancamento()">reenviar</button></div>`;
+    return;
+  }
   if(!ITENS.length){ el.innerHTML = ""; return; } // só libera com pelo menos 1 operação (senão quantidade_operacoes fica 0)
   if(_lancFormOpen){
     const opts = LANCADORES.map(n=>`<option value="${escHtml(n)}">${escHtml(n.replace(/^\d+_/,""))}</option>`).join("");
     el.innerHTML = `<div class="mat-banner warn">
       <span class="mat-banner-ico">🚀</span>
-      <div><div class="mat-banner-title">Quem está lançando?</div><div class="mat-banner-detail">grava o 1º apontamento (11.3) direto, sem passar pelo Forms</div></div>
+      <div><div class="mat-banner-title">Quem está lançando?</div><div class="mat-banner-detail">envia o 1º apontamento (11.3 · Saída) pelo Forms, no nome do operador</div></div>
       <div style="display:flex;gap:8px;margin-left:auto;align-items:center">
         <select class="ed-inp" id="lancSel" style="width:220px">${opts||'<option value="">nenhum lançador configurado</option>'}</select>
         <button class="btn-g btn-acc" id="lancConfirmBtn" onclick="confirmarLancamento()" ${LANCADORES.length?"":"disabled"}>Confirmar</button>
@@ -732,43 +760,65 @@ function renderLancPainel(){
 function abrirLancamento(){ _lancFormOpen = true; renderLancPainel(); }
 function cancelarLancamento(){ _lancFormOpen = false; renderLancPainel(); }
 
+function reenviarLancamento(){ _lancFormOpen = true; renderLancPainel(); }
+
 let _lancBusy = false;
 async function confirmarLancamento(){
   if(!R || _lancBusy) return;
   const sel = document.getElementById("lancSel");
   const nome = sel ? sel.value : "";
   if(!nome){ toast("Selecione quem está lançando"); return; }
+  // valida os campos obrigatórios do Forms ANTES de enviar — o envio é cego (no-cors),
+  // então um campo faltando/errado seria recusado pelo Google sem ninguém saber.
+  const faltando = [];
+  if(!R.razao_social) faltando.push("razão social");
+  if(!R.codigo_peca) faltando.push("código");
+  if(R.quantidade==null || String(R.quantidade).trim()==="") faltando.push("quantidade");
+  if(!R.cliente) faltando.push("cliente");
+  if(!R.prazo_entrega) faltando.push("prazo de entrega");
+  if(faltando.length){ toast("Não dá pra enviar ao Forms — falta no cabeçalho: "+faltando.join(", "), "erro"); return; }
+  if(!FORM_OPERADORES.includes(nome)){
+    toast('Operador "'+nome.replace(/^\d+_/,"")+'" não está na lista do Forms — o envio seria recusado. Ajuste em ⚙.', "erro"); return;
+  }
+  const d = String(R.prazo_entrega).split("-"); // yyyy-mm-dd
+  if(d.length!==3){ toast("Prazo de entrega em formato inesperado — corrija antes de enviar", "erro"); return; }
+
   _lancBusy = true;
   const btn = document.getElementById("lancConfirmBtn");
-  if(btn){ btn.disabled = true; btn.textContent = "Lançando..."; }
+  if(btn){ btn.disabled = true; btn.textContent = "Enviando..."; }
   const agora = new Date().toISOString();
   try{
-    await supaWrite("/rest/v1/producao_eventos","POST",{
-      pedido: R.pedido,
-      codigo_peca: R.codigo_peca,
-      os: R.os,
-      processo: "11 – ADMINISTRATIVO",
-      operacao_administrativo: "11.3  Elaboração do Processo",
-      evento: "Saída",
-      sequencial_operacao: "0ª",
-      quantidade_operacoes: String(ITENS.length),
-      quantidade_solicitada: R.quantidade!=null ? String(R.quantidade) : "",
-      quantidade_produzida: R.quantidade!=null ? String(R.quantidade) : "",
-      razao_social: R.razao_social||"",
-      classificacao_fiscal: R.classificacao_fiscal||"",
-      cliente: R.cliente||"",
-      prazo_entrega: R.prazo_entrega||"",
-      retrabalho: "",
-      operador: nome,
-      data_evento: agora,
-      chave_unica: R.pedido + "_" + R.codigo_peca + "_0ª"
-    },"return=minimal");
+    const p = new URLSearchParams();
+    const put=(entry,val)=>{ val=(val==null?"":String(val).trim()); if(val!=="") p.append("entry."+entry, val); };
+    put(FORM_ENTRY.razao_social,         R.razao_social);
+    put(FORM_ENTRY.classificacao_fiscal, R.classificacao_fiscal);
+    put(FORM_ENTRY.codigo,               R.codigo_peca);
+    put(FORM_ENTRY.pedido,               R.pedido);
+    put(FORM_ENTRY.os,                   R.os);
+    put(FORM_ENTRY.qtd_sol,              R.quantidade);
+    put(FORM_ENTRY.qtd_op,               ITENS.length);
+    put(FORM_ENTRY.cliente,              R.cliente);
+    // data (obrigatória) vai quebrada em ano/mês/dia
+    p.append("entry."+FORM_ENTRY.prazo+"_year",  d[0]);
+    p.append("entry."+FORM_ENTRY.prazo+"_month", String(parseInt(d[1],10)));
+    p.append("entry."+FORM_ENTRY.prazo+"_day",   String(parseInt(d[2],10)));
+    put(FORM_ENTRY.operador,   nome);
+    put(FORM_ENTRY.qtd_prod,   R.quantidade);
+    put(FORM_ENTRY.sequencial, "0ª");
+    put(FORM_ENTRY.evento,     "Saída");
+    put(FORM_ENTRY.processo,   "11 – ADMINISTRATIVO");
+    put(FORM_ENTRY.op_admin,   "11.3  Elaboração do Processo");
+    p.append("pageHistory", FORM_ADMIN_PAGEHISTORY);
+    p.append("fvv", "1");
+    await fetch(FORM_RESP, { method:"POST", mode:"no-cors", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body: p.toString() });
     localStorage.setItem("brasmatRoteiroLancador", nome);
-    R._lancInfo = {operador:nome, data_evento:agora};
+    const pend = {operador:nome, data_evento:agora};
+    try{ localStorage.setItem(lancPendKey(), JSON.stringify(pend)); }catch(e){}
+    R._lancPend = pend;
     _lancFormOpen = false;
-    toast("1º apontamento lançado — peça liberada pra produção");
+    toast("✅ 1º apontamento enviado ao Forms — vai aparecer no sistema quando sincronizar");
   }catch(e){
-    toast("Erro ao lançar: "+e.message, "erro");
+    toast("Erro ao enviar ao Forms: "+(e&&e.message||e)+" — verifique a conexão", "erro");
   }
   _lancBusy = false;
   renderLancPainel();

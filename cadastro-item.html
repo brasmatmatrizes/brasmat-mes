@@ -237,6 +237,105 @@ function removerDesenho(){
   if(old) supaDeleteArquivo(old);
 }
 
+// ---- Desenho de um item já cadastrado (ação 📐 Desenho da lista) ----
+// Anexar/trocar o desenho é permitido MESMO depois de já ter havido lançamento (apontamento no
+// Forms) — é só um anexo, não altera identidade da peça nem o QR/dados do Forms. O bloqueio por
+// apontamento continua valendo só para os campos de identidade (editarItem).
+let DESENHO_ITEM_ID = null;
+const EXT_DESENHO = ["pdf","jpg","jpeg","png","gif","webp","bmp","tif","tiff","heic","heif","svg"];
+
+function abrirDesenhoItem(id){
+  const it = ITENS.find(x=>x.id===id); if(!it) return;
+  DESENHO_ITEM_ID = id;
+  let ov = document.getElementById("desenhoOv");
+  if(!ov){
+    ov = document.createElement("div");
+    ov.id = "desenhoOv";
+    ov.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:60px 16px;overflow:auto";
+    ov.addEventListener("click", e=>{ if(e.target===ov) fecharDesenhoItem(); });
+    document.body.appendChild(ov);
+  }
+  ov.style.display = "flex";
+  renderDesenhoItemModal();
+}
+function fecharDesenhoItem(){
+  DESENHO_ITEM_ID = null;
+  const ov = document.getElementById("desenhoOv");
+  if(ov) ov.style.display = "none";
+}
+function renderDesenhoItemModal(){
+  const ov = document.getElementById("desenhoOv"); if(!ov) return;
+  const it = ITENS.find(x=>x.id===DESENHO_ITEM_ID); if(!it) return;
+  const url = it.desenho_url;
+  const estado = url
+    ? `<a href="${url}" target="_blank" rel="noopener" style="color:var(--accent)">📐 ver desenho atual</a> · <span onclick="removerDesenhoItem()" style="color:var(--danger);cursor:pointer">remover</span>`
+    : "arraste o arquivo aqui ou clique em Anexar";
+  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:460px;width:100%;overflow:hidden">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text)">${escHtml(it.codigo_peca||"")}</span>
+      <span style="font-size:11px;font-family:var(--mono);color:var(--text3)">${escHtml(it.pedido||"")}${it.os?" · OS "+escHtml(it.os):""}</span>
+      <button onclick="fecharDesenhoItem()" title="Fechar" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--text2);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px">✕</button>
+    </div>
+    <div style="padding:18px">
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:10px">Desenho (PDF ou imagem) — pode anexar ou trocar mesmo depois do lançamento</div>
+      <div id="desenhoItemDrop"
+        ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='rgba(59,127,255,0.08)'"
+        ondragleave="this.style.borderColor='var(--border)';this.style.background='transparent'"
+        ondrop="dropDesenhoItem(event)"
+        style="border:1px dashed var(--border);border-radius:9px;padding:20px;text-align:center">
+        <input type="file" id="desenhoItemInput" accept="application/pdf,image/*" style="display:none" onchange="uploadDesenhoItem(this)">
+        <button type="button" class="btn-g" onclick="document.getElementById('desenhoItemInput').click()">📐 Anexar</button>
+        <div id="desenhoItemState" style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:12px">${estado}</div>
+      </div>
+    </div>
+  </div>`;
+}
+function uploadDesenhoItem(inputEl){
+  const f = inputEl.files && inputEl.files[0];
+  if(f) uploadDesenhoItemFile(f);
+  inputEl.value = "";
+}
+function dropDesenhoItem(ev){
+  ev.preventDefault();
+  const dz = document.getElementById("desenhoItemDrop");
+  if(dz){ dz.style.borderColor="var(--border)"; dz.style.background="transparent"; }
+  const f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+  if(f) uploadDesenhoItemFile(f);
+}
+async function uploadDesenhoItemFile(file){
+  const it = ITENS.find(x=>x.id===DESENHO_ITEM_ID); if(!it) return;
+  const ext = (file.name.split(".").pop()||"").toLowerCase();
+  const tipoOk = file.type==="application/pdf" || (file.type||"").startsWith("image/");
+  if(!tipoOk && !EXT_DESENHO.includes(ext)){ toast("Formato não aceito (use PDF ou imagem)", "erro"); return; }
+  const st = document.getElementById("desenhoItemState");
+  if(st) st.textContent = "enviando...";
+  try{
+    const cod = (String(it.codigo_peca||"").replace(/[^A-Za-z0-9_-]/g,"_")) || "item";
+    const path = `CADASTRO/${cod}/desenho-${Date.now()}.${ext||"bin"}`;
+    const old = it.desenho_url;
+    const url = await supaUpload(path, file);
+    await supaWrite(`/rest/v1/itens?id=eq.${it.id}`,"PATCH",{desenho_url:url},"return=minimal");
+    it.desenho_url = url;
+    renderDesenhoItemModal();
+    renderLista();
+    toast("Desenho anexado");
+    if(old && old!==url) supaDeleteArquivo(old);   // troca: apaga o anterior
+  }catch(e){ if(st) st.textContent = "falha no envio"; toast("Erro ao enviar desenho: "+e.message, "erro"); }
+}
+async function removerDesenhoItem(){
+  const it = ITENS.find(x=>x.id===DESENHO_ITEM_ID); if(!it || !it.desenho_url) return;
+  if(!confirm("Remover o desenho deste item?")) return;
+  const old = it.desenho_url;
+  try{
+    await supaWrite(`/rest/v1/itens?id=eq.${it.id}`,"PATCH",{desenho_url:null},"return=minimal");
+    it.desenho_url = null;
+    renderDesenhoItemModal();
+    renderLista();
+    supaDeleteArquivo(old);
+    toast("Desenho removido");
+  }catch(e){ toast("Erro ao remover: "+e.message, "erro"); }
+}
+
 async function supaWrite(path, method, body, prefer){
   const r = await fetch(SUPA_URL + path, {
     method,
@@ -300,6 +399,7 @@ function renderLista(){
       <td style="white-space:normal">${escHtml(it.cliente||"")}</td>
       <td>${fmtData(it.prazo_entrega)}</td>
       <td class="it-act">
+        <button class="lnk" onclick="abrirDesenhoItem(${it.id})" title="Anexar/trocar o desenho — permitido mesmo após o lançamento">📐 Desenho</button>
         <button class="lnk" onclick="editarItem(${it.id})">Editar</button>
         <button class="lnk lnk-del" onclick="excluirItem(${it.id})">Excluir</button>
       </td>
@@ -365,7 +465,7 @@ async function existeMaterial(itemId){
 async function editarItem(id){
   const it = ITENS.find(x=>x.id===id); if(!it) return;
   if(await existeApontamento(it.codigo_peca, it.pedido, it.os)){
-    toast("Não é possível alterar — este item já teve apontamento no Forms.", "erro");
+    toast("Não é possível alterar os dados — este item já teve apontamento no Forms. O desenho, sim: use o botão 📐 Desenho.", "erro");
     return;
   }
   if(await existeRoteiro(it.codigo_peca, it.pedido)){

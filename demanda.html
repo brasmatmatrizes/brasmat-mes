@@ -617,12 +617,30 @@ async function selecionarCliente(){
   render();
 }
 
+// Roteiros cadastrados no MES (Engenharia) — Set de "pedido||codigo" com ≥1 operação. Quando existe,
+// o item já conta como "com roteiro" (não precisa do PDF) e ganha o botão de consulta na tela.
+let ROTEIROS_MES = null;
+async function carregarRoteirosMes(){
+  try{
+    const rows = await supaFetch(`/rest/v1/roteiros?select=pedido,codigo_peca,roteiro_itens(count)&limit=2000`);
+    ROTEIROS_MES = new Set();
+    (rows||[]).forEach(r=>{
+      const n = (r.roteiro_itens && r.roteiro_itens[0] && r.roteiro_itens[0].count) || 0;
+      if(n>0) ROTEIROS_MES.add((r.pedido||"")+"||"+(r.codigo_peca||""));
+    });
+  }catch(e){ ROTEIROS_MES = new Set(); }
+}
+function itemTemRoteiroMes(it){
+  return !!(ROTEIROS_MES && ROTEIROS_MES.has((it.pedido||"")+"||"+(it.codigo_peca||"")));
+}
+
 async function carregarDemanda(){
   ITENS = []; REMOVIDOS = [];
   try{
-    const rows = await supaFetch(
-      `/rest/v1/demanda_itens?select=*&cliente=eq.${encodeURIComponent(CLIENTE)}&order=ordem.asc.nullslast,id.asc`
-    );
+    const [rows] = await Promise.all([
+      supaFetch(`/rest/v1/demanda_itens?select=*&cliente=eq.${encodeURIComponent(CLIENTE)}&order=ordem.asc.nullslast,id.asc`),
+      carregarRoteirosMes()
+    ]);
     if(Array.isArray(rows)) ITENS = rows.map(r=>{
       const existe = !!r.pedido || POS.some(p=>String(p.codigo_peca||"").toUpperCase()===String(r.codigo_peca||"").toUpperCase());
       return {...r, pedido:r.pedido||"", os:r.os||"", _novo:!existe};
@@ -675,9 +693,9 @@ function toggleFiltroSemDesenho(){
   FILTRO_SEMDESENHO = !FILTRO_SEMDESENHO;
   render();
 }
-// Item sem roteiro (fluxo) anexado?
+// Item sem roteiro? Vale o PDF (fluxo) anexado OU o roteiro cadastrado no MES (Engenharia).
 function itemSemRoteiro(it){
-  return !it.fluxo_url;
+  return !it.fluxo_url && !itemTemRoteiroMes(it);
 }
 function toggleFiltroSemRoteiro(){
   FILTRO_SEMROTEIRO = !FILTRO_SEMROTEIRO;
@@ -1335,6 +1353,10 @@ function render(){
         ${fileBox(i,"desenho","Desenho (PDF ou imagem)",it.desenho_url)}
         ${fileBox(i,"fluxo","Fluxo do processo (PDF ou imagem)",it.fluxo_url)}
       </div>
+      ${itemTemRoteiroMes(it) ? `<div style="margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button onclick="abrirConsultaRoteiro('${esc(it.pedido||"")}','${esc(it.codigo_peca||"")}')" title="Ver roteiro cadastrado no MES" style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);padding:5px 12px;border-radius:6px;background:rgba(45,191,126,0.12);color:var(--ok);border:1px solid rgba(45,191,126,0.3);cursor:pointer">📋 Ver roteiro (MES)</button>
+        <span style="font-size:10px;color:var(--text3);font-family:var(--mono)">roteiro cadastrado no MES — não precisa anexar PDF do fluxo</span>
+      </div>` : ""}
       <div style="margin-top:12px">
         <div class="field-lbl">Observações</div>
         <textarea oninput="setCampo(${i},'observacao',this.value)" placeholder="Anotações sobre este item..."

@@ -172,13 +172,16 @@ async function buscarAnexosDemanda(pedido, codigo){
   return {desenho_url:null, fluxo_url:null, emDemanda:false, cliente:null};
 }
 
-// Renderiza os ícones de anexo (só aparecem quando existe o arquivo) e o atalho para a Demanda Cliente
-function renderAnexosIcons(a, pedido, codigo){
-  if(!a || (!a.desenho_url && !a.fluxo_url && !a.emDemanda)) return "";
+// Renderiza os ícones de anexo (só aparecem quando existe o arquivo) e o atalho para a Demanda Cliente.
+// temRoteiroMes: quando a peça tem roteiro cadastrado no MES (Engenharia), mostra o botão de consulta
+// na tela (modelo novo, sem PDF) — coexiste com o 📋 Roteiro do PDF anexado na Demanda.
+function renderAnexosIcons(a, pedido, codigo, temRoteiroMes){
+  if(!a || (!a.desenho_url && !a.fluxo_url && !a.emDemanda && !temRoteiroMes)) return "";
   const base = "display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:var(--mono);padding:4px 10px;border-radius:6px;text-decoration:none";
   let h = '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">';
   if(a.desenho_url) h += `<a href="${a.desenho_url}" target="_blank" rel="noopener" title="Abrir desenho (PDF)" style="${base};background:rgba(59,127,255,0.12);color:var(--accent);border:1px solid rgba(59,127,255,0.3)">📐 Desenho</a>`;
-  if(a.fluxo_url)   h += `<a href="${a.fluxo_url}" target="_blank" rel="noopener" title="Abrir roteiro (PDF)" style="${base};background:rgba(45,191,126,0.12);color:var(--ok);border:1px solid rgba(45,191,126,0.3)">📋 Roteiro</a>`;
+  if(temRoteiroMes) h += `<button onclick="abrirConsultaRoteiro('${String(pedido||"").replace(/'/g,"\\'")}','${String(codigo||"").replace(/'/g,"\\'")}')" title="Ver roteiro cadastrado no MES" style="${base};background:rgba(45,191,126,0.12);color:var(--ok);border:1px solid rgba(45,191,126,0.3);cursor:pointer">📋 Roteiro (MES)</button>`;
+  if(a.fluxo_url)   h += `<a href="${a.fluxo_url}" target="_blank" rel="noopener" title="Abrir roteiro (PDF)" style="${base};background:rgba(45,191,126,0.12);color:var(--ok);border:1px solid rgba(45,191,126,0.3)">📋 Roteiro (PDF)</a>`;
   if(a.emDemanda){
     const url = `demanda.html?cliente=${encodeURIComponent(a.cliente||"")}&codigo=${encodeURIComponent(codigo||"")}&pedido=${encodeURIComponent(pedido||"")}`;
     h += `<a href="${url}" title="Ver na Demanda Cliente" style="${base};background:rgba(155,93,229,0.12);color:#9B5DE5;border:1px solid rgba(155,93,229,0.3)">🔔 Em Demanda</a>`;
@@ -195,6 +198,107 @@ async function buscarTotalRoteiro(pedido, codigo){
     if(Array.isArray(r)&&r[0]&&r[0].roteiro_itens&&r[0].roteiro_itens[0]) return parseInt(r[0].roteiro_itens[0].count)||0;
   }catch(e){}
   return 0;
+}
+
+// ---- Consulta do roteiro cadastrado no MES (roteiros + roteiro_itens) ----
+// Modelo novo, alternativo ao PDF anexado na Demanda: quando a peça tem roteiro na Engenharia,
+// a sequência de operações é mostrada direto na tela (sem PDF). Se não tem roteiro no MES,
+// segue valendo o PDF (fluxo) anexado na Demanda como hoje. Lookup por pedido+código.
+async function buscarRoteiroMes(pedido, codigo){
+  try{
+    const p = encodeURIComponent(pedido||""), c = encodeURIComponent(codigo||"");
+    const r = await supaFetch(`/rest/v1/roteiros?select=*,roteiro_itens(*)&pedido=eq.${p}&codigo_peca=eq.${c}&limit=1`);
+    if(Array.isArray(r) && r[0] && Array.isArray(r[0].roteiro_itens) && r[0].roteiro_itens.length){
+      const itens = r[0].roteiro_itens.slice().sort((a,b)=>(parseInt(a.sequencia)||0)-(parseInt(b.sequencia)||0));
+      return { header:r[0], itens };
+    }
+  }catch(e){}
+  return null;
+}
+
+function linhaConsultaRoteiro(it){
+  return `<tr style="border-bottom:1px solid var(--border)">
+    <td style="text-align:center;padding:8px 6px;font-family:var(--mono)">${it.sequencia}ª</td>
+    <td style="text-align:center;padding:8px 6px;font-family:var(--mono);color:var(--text2)">${escHtml(it.operacao_codigo||"")}</td>
+    <td style="padding:8px 6px">${escHtml(it.operacao_descricao||"")}</td>
+    <td style="padding:8px 6px;color:var(--text2)">${escHtml(it.observacao||"")}</td>
+  </tr>`;
+}
+
+function renderConsultaRoteiroHTML(h, itens){
+  const tipo = getTipo(h);
+  const tipoBadge = tipo ? `<span style="font-size:10px;font-family:var(--mono);font-weight:600;padding:2px 8px;border-radius:6px;background:${tipo.bg};color:${tipo.cor};border:1px solid ${tipo.cor}44">${tipo.label} · ${tipo.full}</span>` : "";
+  const prazo = h.prazo_entrega ? new Date(h.prazo_entrega).toLocaleDateString("pt-BR") : "—";
+  const meta = [
+    h.pedido?`Pedido: <span style="color:var(--text)">${escHtml(String(h.pedido))}</span>`:"",
+    h.os?`OS: <span style="color:var(--text)">${escHtml(String(h.os))}</span>`:"",
+    h.quantidade?`Qtd: <span style="color:var(--text)">${escHtml(String(h.quantidade))} pç</span>`:"",
+    h.cliente?`Cliente: <span style="color:var(--text)">${escHtml(String(h.cliente))}</span>`:"",
+    `Prazo: <span style="color:var(--text)">${prazo}</span>`
+  ].filter(Boolean).join(" · ");
+  // agrupa por subcomponente adjacente (mesmo critério do impresso da Engenharia)
+  const temSub = itens.some(it=>String(it.subcomponente||"").trim());
+  let rows = "";
+  if(temSub){
+    const grupos = [];
+    itens.forEach(it=>{
+      const s = String(it.subcomponente||"").trim()||"—";
+      let g = grupos.length && grupos[grupos.length-1].nome===s ? grupos[grupos.length-1] : null;
+      if(!g){ g={nome:s,itens:[]}; grupos.push(g); }
+      g.itens.push(it);
+    });
+    grupos.forEach(g=>{
+      rows += `<tr><td colspan="4" style="padding:11px 8px 5px;font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--accent);text-transform:uppercase;border-bottom:1px solid var(--border)">▸ ${escHtml(g.nome)}</td></tr>`;
+      g.itens.forEach(it=>rows+=linhaConsultaRoteiro(it));
+    });
+  }else{
+    itens.forEach(it=>rows+=linhaConsultaRoteiro(it));
+  }
+  const engLink = `engenharia.html?pedido=${encodeURIComponent(h.pedido||"")}&codigo=${encodeURIComponent(h.codigo_peca||"")}`;
+  return `
+    <div style="padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-family:var(--mono);font-size:15px;font-weight:600;color:var(--text)">${escHtml(h.codigo_peca||"")}</span>
+      ${tipoBadge}
+      <span style="margin-left:auto;font-size:11px;font-family:var(--mono);color:var(--ok);background:rgba(45,191,126,0.12);padding:3px 9px;border-radius:6px">📋 Roteiro no MES · ${itens.length} ${itens.length===1?"operação":"operações"}</span>
+      <button onclick="document.getElementById('consultaRoteiroOv').style.display='none'" title="Fechar" style="background:none;border:1px solid var(--border);color:var(--text2);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px">✕</button>
+    </div>
+    <div style="padding:11px 18px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;color:var(--text3);line-height:1.9">${meta}</div>
+    <div style="padding:6px 18px 14px;max-height:60vh;overflow:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;color:var(--text)">
+        <thead><tr style="color:var(--text3);font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em">
+          <th style="text-align:center;padding:9px 6px;width:44px">Seq</th>
+          <th style="text-align:center;padding:9px 6px;width:46px">Cód</th>
+          <th style="text-align:left;padding:9px 6px">Processo</th>
+          <th style="text-align:left;padding:9px 6px;width:34%">Observações</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="margin-top:14px">
+        <a href="${engLink}" style="font-size:11px;font-family:var(--mono);color:var(--text2);border:1px solid var(--border);padding:6px 12px;border-radius:7px;text-decoration:none">✎ abrir na Engenharia</a>
+      </div>
+    </div>`;
+}
+
+// Abre o modal de consulta do roteiro do MES (compartilhado por todas as telas). Cria o overlay
+// sob demanda (não precisa existir no HTML de cada página); busca o roteiro ao abrir.
+async function abrirConsultaRoteiro(pedido, codigo){
+  let ov = document.getElementById("consultaRoteiroOv");
+  if(!ov){
+    ov = document.createElement("div");
+    ov.id = "consultaRoteiroOv";
+    ov.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99999;display:flex;align-items:flex-start;justify-content:center;padding:36px 16px;overflow:auto";
+    ov.addEventListener("click", e=>{ if(e.target===ov) ov.style.display="none"; });
+    document.body.appendChild(ov);
+  }
+  const card = html=>`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:660px;width:100%;overflow:hidden">${html}</div>`;
+  ov.style.display = "flex";
+  ov.innerHTML = card(`<div style="padding:40px;text-align:center;color:var(--text3);font-size:13px">carregando roteiro...</div>`);
+  const r = await buscarRoteiroMes(pedido, codigo);
+  if(!r){
+    ov.innerHTML = card(`<div style="padding:32px;text-align:center;color:var(--text3);font-size:13px">Sem roteiro cadastrado no MES para esta peça.<div style="margin-top:14px"><button onclick="document.getElementById('consultaRoteiroOv').style.display='none'" style="background:none;border:1px solid var(--border);color:var(--text2);padding:6px 16px;border-radius:7px;cursor:pointer">fechar</button></div></div>`);
+    return;
+  }
+  ov.innerHTML = card(renderConsultaRoteiroHTML(r.header, r.itens));
 }
 
 // Resumo dos lotes de um item na Separação de Material. Cada componente (material_lote_componentes)
@@ -298,7 +402,7 @@ async function abrirPainelDetalhe(pedido, codigo, panelId, titleId, bodyId){
         ${renderTipoBadge(ultimo)}
       </div>
       <div style="font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:2px">Pedido: ${pedido}${ultimo.os&&String(ultimo.os).trim()?' · OS: '+String(ultimo.os).trim():''}</div>
-      ${renderAnexosIcons(anexos, pedido, codigo)}
+      ${renderAnexosIcons(anexos, pedido, codigo, rotTotal>0)}
     </div>
     <div style="display:flex;gap:8px;flex-shrink:0">
       <div style="text-align:center;padding:0 12px">

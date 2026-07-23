@@ -157,11 +157,12 @@ function renderTipoBadge(row){
 async function buscarAnexosDemanda(pedido, codigo){
   const c = encodeURIComponent(codigo||"");
   const ped = pedido ? `&pedido=eq.${encodeURIComponent(pedido)}` : "";
+  let res = {desenho_url:null, fluxo_url:null, emDemanda:false, cliente:null};
   try{
     const rows = await supaFetch(`/rest/v1/demanda_itens?select=cliente,desenho_url,fluxo_url&codigo_peca=eq.${c}${ped}&order=id.desc`);
     if(Array.isArray(rows) && rows.length){
       const comUrl = rows.find(r=>r.desenho_url||r.fluxo_url);
-      return {
+      res = {
         desenho_url: comUrl ? (comUrl.desenho_url||null) : null,
         fluxo_url:   comUrl ? (comUrl.fluxo_url||null)   : null,
         emDemanda: true,
@@ -169,7 +170,15 @@ async function buscarAnexosDemanda(pedido, codigo){
       };
     }
   }catch(e){}
-  return {desenho_url:null, fluxo_url:null, emDemanda:false, cliente:null};
+  // Fallback: desenho anexado no Cadastro Item (itens.desenho_url) quando a Demanda não tem um próprio.
+  // É o mesmo 📐 Desenho (não cria ícone novo) — a Demanda tem prioridade quando também anexou.
+  if(!res.desenho_url){
+    try{
+      const it = await supaFetch(`/rest/v1/itens?select=desenho_url&codigo_peca=eq.${c}${ped}&order=id.desc&limit=1`);
+      if(Array.isArray(it) && it[0] && it[0].desenho_url) res.desenho_url = it[0].desenho_url;
+    }catch(e){}
+  }
+  return res;
 }
 
 // Renderiza os ícones de anexo (só aparecem quando existe o arquivo) e o atalho para a Demanda Cliente.

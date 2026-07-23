@@ -138,6 +138,13 @@
       </div>
       <div class="ed-f"><span class="ed-l">Prazo de entrega*</span><input type="date" class="ed-inp" id="novoPrazo" style="width:150px"></div>
       <div class="ed-f"><span class="ed-l">&nbsp;</span><label style="display:flex;align-items:center;gap:6px;height:32px;font-size:12px;color:var(--text2);white-space:nowrap"><input type="checkbox" id="novoFerramenta"> 🔧 Ferramenta interna (não passa pelo controle de material)</label></div>
+      <div class="ed-f"><span class="ed-l">Desenho (PDF/imagem)</span>
+        <div style="display:flex;align-items:center;gap:8px;height:32px">
+          <input type="file" id="novoDesenhoInput" accept="application/pdf,image/*" style="display:none" onchange="uploadDesenho(this)">
+          <button type="button" class="btn-g" style="height:32px;padding:0 12px;font-size:12px" onclick="document.getElementById('novoDesenhoInput').click()">📐 Anexar</button>
+          <span id="desenhoState" style="font-size:11px;color:var(--text3);font-family:var(--mono);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">nenhum</span>
+        </div>
+      </div>
       <button class="btn-g btn-acc" id="btnSalvar" onclick="salvarItem()">+ Cadastrar item</button>
       <button class="btn-g" id="btnCancelar" onclick="cancelarEdicao()" style="display:none">Cancelar</button>
     </div>
@@ -163,6 +170,59 @@ const TIPO_MAP = {
 let CLIENTES = [];   // roteiro_clientes (dropdown do Forms)
 let ITENS = [];      // itens cadastrados
 let EDIT_ID = null;  // id do item em edição (null = novo)
+
+// ---- Desenho (PDF/imagem) do item — mesmo bucket/chave pública da Demanda ----
+const BUCKET = "demanda-arquivos";
+let NOVO_DESENHO_URL = null;   // desenho anexado no formulário atual (novo ou em edição)
+
+function supaUpload(path, file){
+  return fetch(`${SUPA_URL}/storage/v1/object/${BUCKET}/${encodeURIComponent(path)}`, {
+    method:"POST",
+    headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY, "Content-Type":file.type||"application/octet-stream", "x-upsert":"true" },
+    body:file
+  }).then(r=>{ if(!r.ok) throw new Error("upload"); return `${SUPA_URL}/storage/v1/object/public/${BUCKET}/${path}`; });
+}
+async function supaDeleteArquivo(url){
+  if(!url) return;
+  const marker = `/storage/v1/object/public/${BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if(idx < 0) return;
+  const path = url.slice(idx + marker.length);
+  try{ await fetch(`${SUPA_URL}/storage/v1/object/${BUCKET}/${path}`, { method:"DELETE", headers:{ apikey:SUPA_KEY, Authorization:"Bearer "+SUPA_KEY } }); }catch(e){}
+}
+async function uploadDesenho(inputEl){
+  const file = inputEl.files && inputEl.files[0];
+  if(!file) return;
+  const ext = (file.name.split(".").pop()||"").toLowerCase();
+  const extOk = ["pdf","jpg","jpeg","png","gif","webp","bmp","tif","tiff","heic","heif","svg"].includes(ext);
+  const tipoOk = file.type==="application/pdf" || (file.type||"").startsWith("image/");
+  if(!tipoOk && !extOk){ toast("Formato não aceito (use PDF ou imagem)", "erro"); return; }
+  const st = document.getElementById("desenhoState");
+  st.textContent = "enviando...";
+  try{
+    const cod = (String(document.getElementById("novoCod").value||"").replace(/[^A-Za-z0-9_-]/g,"_")) || "item";
+    const path = `CADASTRO/${cod}/desenho-${Date.now()}.${ext||"bin"}`;
+    const old = NOVO_DESENHO_URL;
+    const url = await supaUpload(path, file);
+    NOVO_DESENHO_URL = url;
+    renderDesenhoState();
+    if(old && old!==url) supaDeleteArquivo(old);   // troca: apaga o anterior
+  }catch(e){ st.textContent = "falha no envio"; toast("Erro ao enviar desenho", "erro"); }
+  inputEl.value = "";
+}
+function renderDesenhoState(){
+  const st = document.getElementById("desenhoState");
+  if(!st) return;
+  if(NOVO_DESENHO_URL){
+    st.innerHTML = `<a href="${NOVO_DESENHO_URL}" target="_blank" rel="noopener" style="color:var(--accent)">📐 ver</a> · <span onclick="removerDesenho()" style="color:var(--danger);cursor:pointer">remover</span>`;
+  }else{ st.textContent = "nenhum"; }
+}
+function removerDesenho(){
+  const old = NOVO_DESENHO_URL;
+  NOVO_DESENHO_URL = null;
+  renderDesenhoState();
+  if(old) supaDeleteArquivo(old);
+}
 
 async function supaWrite(path, method, body, prefer){
   const r = await fetch(SUPA_URL + path, {
@@ -217,12 +277,13 @@ function renderLista(){
     const t = tipoDoItem(it);
     const badge = t ? `<span class="badge badge-${t}">${t}</span>` : "";
     const badgeFerramenta = it.ferramenta_interna ? ` <span class="badge" style="background:rgba(124,58,237,0.16);color:var(--roxo)" title="Ferramenta interna — não passa pelo controle de material">🔧</span>` : "";
+    const badgeDesenho = it.desenho_url ? ` <a href="${it.desenho_url}" target="_blank" rel="noopener" class="badge" style="background:rgba(59,127,255,0.14);color:var(--accent);text-decoration:none" title="Desenho anexado — abrir">📐</a>` : "";
     return `<tr>
       <td class="it-cod">${escHtml(it.codigo_peca||"")}</td>
       <td>${escHtml(it.pedido||"")}</td>
       <td>${escHtml(it.os||"")}</td>
       <td>${escHtml(it.quantidade||"")}</td>
-      <td>${badge}${badgeFerramenta}</td>
+      <td>${badge}${badgeFerramenta}${badgeDesenho}</td>
       <td style="white-space:normal">${escHtml(it.cliente||"")}</td>
       <td>${fmtData(it.prazo_entrega)}</td>
       <td class="it-act">
@@ -247,16 +308,21 @@ function lerForm(){
     classificacao_fiscal: tipo.classificacao_fiscal || null,
     cliente: document.getElementById("novoCli").value.trim() || null,
     prazo_entrega: document.getElementById("novoPrazo").value.trim() || null,
-    ferramenta_interna: document.getElementById("novoFerramenta").checked
+    ferramenta_interna: document.getElementById("novoFerramenta").checked,
+    desenho_url: NOVO_DESENHO_URL || null
   };
 }
 
 function limparForm(){
   ["novoCod","novoPed","novoOs","novoQtd","novoTipo","novoCli","novoPrazo"].forEach(id=>document.getElementById(id).value="");
   document.getElementById("novoFerramenta").checked = false;
+  NOVO_DESENHO_URL = null;   // já persistido (após salvar) — só limpa o estado do form, sem apagar o arquivo
+  renderDesenhoState();
 }
 
 function cancelarEdicao(){
+  // desenho anexado num cadastro NOVO que foi cancelado = órfão no bucket → apaga
+  if(EDIT_ID===null && NOVO_DESENHO_URL) supaDeleteArquivo(NOVO_DESENHO_URL);
   EDIT_ID = null;
   limparForm();
   document.getElementById("btnSalvar").textContent = "+ Cadastrar item";
@@ -301,6 +367,8 @@ async function editarItem(id){
   document.getElementById("novoCli").value = it.cliente || "";
   document.getElementById("novoPrazo").value = it.prazo_entrega ? String(it.prazo_entrega).slice(0,10) : "";
   document.getElementById("novoFerramenta").checked = !!it.ferramenta_interna;
+  NOVO_DESENHO_URL = it.desenho_url || null;
+  renderDesenhoState();
   document.getElementById("btnSalvar").textContent = "Salvar alteração";
   document.getElementById("btnCancelar").style.display = "";
   document.getElementById("formHint").textContent = "Editando "+(it.codigo_peca||"item")+" — altere e salve.";
@@ -337,6 +405,9 @@ async function salvarItem(){
   if(!d.pedido || !d.os){
     const falta = !d.pedido ? "o Pedido" : "a OS";
     if(!confirm(`Está faltando ${falta}. Cadastrar assim mesmo?`)) return;
+  }
+  if(!d.desenho_url){
+    if(!confirm("O desenho não foi anexado. É muito importante ter. Continuar o cadastro sem o desenho?")) return;
   }
   const dup = await verificarDuplicado(d.codigo_peca, d.pedido, d.os, EDIT_ID);
   if(dup){ toast(dup, "erro"); return; }
@@ -380,6 +451,7 @@ async function excluirItem(id){
   if(!confirm(msg)) return;
   try{
     await supaWrite(`/rest/v1/itens?id=eq.${id}`,"DELETE",undefined,"return=minimal");
+    if(it.desenho_url) supaDeleteArquivo(it.desenho_url);   // não deixa o arquivo órfão no bucket
     ITENS = ITENS.filter(x=>x.id!==id);
     if(EDIT_ID===id) cancelarEdicao();
     renderLista();

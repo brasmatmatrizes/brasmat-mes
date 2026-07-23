@@ -203,10 +203,11 @@
 .p-qr{width:85mm;border:2px solid #000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px;gap:4px;box-sizing:border-box}
 .p-qr img{width:200px;height:200px}
 .p-qr span{font-size:8px;text-align:center}
-/* página(s) de continuação — sem rodapé/QR (já apareceu na página 1); o vinco não importa
-   aqui porque não tem nada pra escanear, só texto, que sobrevive à dobra numa boa */
-.p-page2{page-break-before:always;padding-top:10mm}
-.p-page2-hdr{font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:6px}
+/* página 2+: mesmo cabeçalho completo da página 1 (pedido pelo usuário 22/07/2026), sem
+   rodapé/QR (já apareceu na página 1); o vinco não importa aqui porque não tem nada pra
+   escanear, só texto, que sobrevive à dobra numa boa. padding-top:10mm repõe o respiro do
+   topo que o padding do #printArea não repete sozinho entre páginas */
+.p-pagebreak{page-break-before:always;padding-top:10mm}
 @media print{
   @page{ size:A4; margin:0; }
   #appRoot, .modal-bg, .toast{ display:none !important; }
@@ -1040,13 +1041,15 @@ async function excluirRoteiro(){
 // ao meio 3 vezes, alternando altura/largura/altura — fatia a A4 física em 8 painéis de
 // 105x74,25mm, com vincos horizontais em 74,25/148,5/222,75mm. O rodapé (.p-foot no CSS,
 // observações+QR) fica travado no painel de baixo (top:229mm) — sempre no mesmo lugar físico,
-// não importa quantas operações o roteiro tem. TABLE_MAX_BOTTOM_MM é onde a tabela de
-// operações tem que parar na página 1: **não precisa respeitar o vinco de 222,75mm** — vinco
-// em cima de texto normal não atrapalha em nada, só em cima do QR importa, e o QR já está
-// protegido pela posição fixa. O único limite real é não encostar visualmente no rodapé
-// (229mm) — por isso o corte é bem mais generoso que a 1ª versão (216mm), cabendo ~25 linhas
-// de operação na página 1 em vez de ~23.
+// não importa quantas operações o roteiro tem, e só existe na página 1 (não pode se repetir
+// fora do painel seguro). TABLE_MAX_BOTTOM_MM é onde a tabela para na página 1: **não precisa
+// respeitar o vinco de 222,75mm** — vinco em cima de texto normal não atrapalha em nada, só em
+// cima do QR importa, e o QR já está protegido pela posição fixa. O único limite real é não
+// encostar visualmente no rodapé (229mm). TABLE_MAX_BOTTOM_MM_CONT é o mesmo limite pras
+// páginas seguintes, que não têm rodapé pra evitar — só a margem inferior da folha (297mm)
+// menos os mesmos 10mm de respiro do topo.
 const TABLE_MAX_BOTTOM_MM = 225;
+const TABLE_MAX_BOTTOM_MM_CONT = 287;
 
 // uma entrada por linha física da tabela (cabeçalho de subcomponente OU operação), nessa ordem —
 // permite cortar exatamente entre linhas na hora de decidir onde a página 1 termina
@@ -1093,8 +1096,10 @@ function imprimir(){
   const linhas = montarLinhasArray();
 
   const theadHtml = `<thead><tr><th style="width:52px">Sequência</th><th style="width:60px">Cód.</th><th>Processo</th><th style="width:110px">Visto operador</th><th style="width:32%">Observações</th></tr></thead>`;
-  const cabecalhoHtml = `
-    <div class="p-top"><div class="p-logo"><img src="assets/logo-horizontal.png" alt="BRASMAT"></div><div class="p-title">PROCESSO PRODUTIVO</div></div>
+  // o cabeçalho de identificação se repete em TODAS as páginas (pedido pelo usuário 22/07/2026)
+  // — só o nº de página muda de uma pra outra, por isso é uma função, não uma string fixa
+  const cabecalhoHtml = (num,total) => `
+    <div class="p-top"><div class="p-logo"><img src="assets/logo-horizontal.png" alt="BRASMAT"></div><div class="p-title">PROCESSO PRODUTIVO</div><div style="font-size:10px">Página ${num}/${total}</div></div>
     <div class="p-hdr">
       <div class="p-hf"><b>CÓDIGO:</b> ${escHtml(R.codigo_peca)}</div>
       <div class="p-hf"><b>PEDIDO:</b> ${escHtml(R.pedido)}</div>
@@ -1109,26 +1114,42 @@ function imprimir(){
     </div>`;
 
   const area = document.getElementById("printArea");
-  // 1ª tentativa: tudo numa tabela só, pra medir se cabe antes do vinco de 222,75mm
-  area.innerHTML = `${cabecalhoHtml}<table class="p-tbl">${theadHtml}<tbody>${linhas.join("")}</tbody></table>${rodapeHtml}`;
-
   const mm = px => px/(96/25.4);
-  const areaTop = area.getBoundingClientRect().top;
-  const rows = Array.from(area.querySelectorAll(".p-tbl tbody tr"));
-  const corte = rows.findIndex(tr => mm(tr.getBoundingClientRect().bottom - areaTop) > TABLE_MAX_BOTTOM_MM);
 
-  if(corte !== -1){
-    // não coube antes do vinco — página 1 fica só com o que cabe; o resto continua na
-    // página 2 (sem rodapé/QR, que já apareceu na página 1 e não pode se repetir fora do painel seguro)
-    area.innerHTML = `
-      ${cabecalhoHtml}
-      <table class="p-tbl">${theadHtml}<tbody>${linhas.slice(0,corte).join("")}</tbody></table>
-      ${rodapeHtml}
-      <div class="p-page2">
-        <div class="p-page2-hdr">Continuação — ${escHtml(R.codigo_peca)} · Pedido ${escHtml(R.pedido)}</div>
-        <table class="p-tbl">${theadHtml}<tbody>${linhas.slice(corte).join("")}</tbody></table>
-      </div>`;
+  // 1ª passada: mede a altura real de cada linha (varia com texto que quebra em 2 linhas) e
+  // onde a tabela começa — com o cabeçalho igual em toda página, essa distância não muda
+  area.innerHTML = `${cabecalhoHtml(1,1)}<table class="p-tbl">${theadHtml}<tbody>${linhas.join("")}</tbody></table>`;
+  const areaTop = area.getBoundingClientRect().top;
+  const tabelaEl = area.querySelector(".p-tbl");
+  const tableStartMM = tabelaEl ? mm(tabelaEl.getBoundingClientRect().top - areaTop) : 48;
+  const alturasMM = Array.from(area.querySelectorAll(".p-tbl tbody tr")).map(tr => mm(tr.getBoundingClientRect().height));
+
+  // 2ª passada: decide o corte de cada página, em JS puro (sem precisar re-renderizar a cada
+  // tentativa) — a 1ª página usa o limite que reserva o rodapé, as seguintes usam o limite maior
+  const paginas = [];
+  if(!linhas.length){
+    paginas.push({inicio:0, fim:0});
+  }else{
+    let i = 0;
+    while(i < linhas.length){
+      const limite = paginas.length===0 ? TABLE_MAX_BOTTOM_MM : TABLE_MAX_BOTTOM_MM_CONT;
+      let y = tableStartMM, j = i;
+      while(j < linhas.length && (y + alturasMM[j]) <= limite){ y += alturasMM[j]; j++; }
+      if(j === i) j = i + 1; // garante progresso mesmo se uma linha sozinha já estourasse a página
+      paginas.push({inicio:i, fim:j});
+      i = j;
+    }
   }
+
+  // 3ª passada: monta o HTML final já sabendo o total de páginas (pro "Página X/Y")
+  const totalPaginas = paginas.length;
+  area.innerHTML = paginas.map((p,idx)=>{
+    const num = idx+1;
+    const quebra = idx>0 ? ' class="p-pagebreak"' : "";
+    const corpo = `<table class="p-tbl">${theadHtml}<tbody>${linhas.slice(p.inicio,p.fim).join("")}</tbody></table>`;
+    const rodape = num===1 ? rodapeHtml : "";
+    return `<div${quebra}>${cabecalhoHtml(num,totalPaginas)}${corpo}${rodape}</div>`;
+  }).join("");
 
   // espera logo + QR carregarem antes de abrir a impressão
   const imgs = Array.from(document.querySelectorAll("#printArea img"));

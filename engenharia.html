@@ -194,6 +194,10 @@
 .p-tbl thead{display:table-header-group} /* repete o cabeçalho de colunas se a página 2 estourar pra 3, 4... */
 .p-tbl tr{page-break-inside:avoid}
 .p-sub{background:#f0f0f0;font-weight:700;font-size:11px;text-transform:uppercase}
+/* aviso de conjunto: borda grossa + fundo preto/texto branco continuam visíveis mesmo se a
+   impressora for P&B ou o driver não imprimir cor de fundo (a borda sempre imprime) */
+.p-conjunto{border:3px solid #000;background:#000;color:#fff;font-weight:700;font-size:12px;
+  text-align:center;text-transform:uppercase;letter-spacing:.03em;padding:6px 10px;margin-top:6px}
 /* rodapé travado no painel de baixo-direita (222,75-297mm de altura, 105-210mm de largura) —
    posição fixa em relação à folha, nunca em relação ao fim da tabela */
 .p-foot{position:absolute;left:10mm;top:229mm;height:63mm;display:flex;gap:20mm;align-items:stretch}
@@ -1053,6 +1057,20 @@ const TABLE_MAX_BOTTOM_MM_CONT = 287;
 
 // uma entrada por linha física da tabela (cabeçalho de subcomponente OU operação), nessa ordem —
 // permite cortar exatamente entre linhas na hora de decidir onde a página 1 termina
+// agrupa por subcomponente na ordem da sequência (mesmo critério de blocos adjacentes usado no
+// impresso normal) — usado pra decidir se o roteiro é um conjunto (>1 bloco) e paginar cada
+// bloco isolado
+function agruparPorSubcomponente(){
+  const grupos = [];
+  ITENS.forEach(it=>{
+    const s = String(it.subcomponente||"").trim()||"—";
+    let g = grupos.length && grupos[grupos.length-1].nome===s ? grupos[grupos.length-1] : null;
+    if(!g){ g = {nome:s, itens:[]}; grupos.push(g); }
+    g.itens.push(it);
+  });
+  return grupos;
+}
+
 function montarLinhasArray(){
   const arr = [];
   const temSub = ITENS.some(it=>String(it.subcomponente||"").trim());
@@ -1093,7 +1111,6 @@ function imprimir(){
   // — pra caber nos 63mm de altura do painel reservado no rodapé (ver TABLE_MAX_BOTTOM_MM acima
   // e .p-foot no CSS). Módulo continua em 0,62mm, bem longe do 0,42mm que não lia.
   const qrSrc = "https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&ecc=M&qzone=4&format=svg&data="+encodeURIComponent(formsLink);
-  const linhas = montarLinhasArray();
 
   const theadHtml = `<thead><tr><th style="width:52px">Sequência</th><th style="width:60px">Cód.</th><th>Processo</th><th style="width:110px">Visto operador</th><th style="width:32%">Observações</th></tr></thead>`;
   // o cabeçalho de identificação se repete em TODAS as páginas (pedido pelo usuário 22/07/2026)
@@ -1116,40 +1133,94 @@ function imprimir(){
   const area = document.getElementById("printArea");
   const mm = px => px/(96/25.4);
 
-  // 1ª passada: mede a altura real de cada linha (varia com texto que quebra em 2 linhas) e
-  // onde a tabela começa — com o cabeçalho igual em toda página, essa distância não muda
-  area.innerHTML = `${cabecalhoHtml(1,1)}<table class="p-tbl">${theadHtml}<tbody>${linhas.join("")}</tbody></table>`;
-  const areaTop = area.getBoundingClientRect().top;
-  const tabelaEl = area.querySelector(".p-tbl");
-  const tableStartMM = tabelaEl ? mm(tabelaEl.getBoundingClientRect().top - areaTop) : 48;
-  const alturasMM = Array.from(area.querySelectorAll(".p-tbl tbody tr")).map(tr => mm(tr.getBoundingClientRect().height));
+  // conjunto = roteiro com mais de um bloco de subcomponente (ex.: Inferior + Superior) — cada
+  // bloco segue pra um lado diferente da produção e se reencontra só no fim, então cada um vira
+  // um docket impresso próprio: página nova forçada, aviso bem visível repetido e QR/rodapé
+  // repetidos no início de cada bloco (não só na página 1 do documento inteiro)
+  const gruposSub = agruparPorSubcomponente();
+  const conjunto = gruposSub.length > 1;
 
-  // 2ª passada: decide o corte de cada página, em JS puro (sem precisar re-renderizar a cada
-  // tentativa) — a 1ª página usa o limite que reserva o rodapé, as seguintes usam o limite maior
-  const paginas = [];
-  if(!linhas.length){
-    paginas.push({inicio:0, fim:0});
-  }else{
-    let i = 0;
-    while(i < linhas.length){
-      const limite = paginas.length===0 ? TABLE_MAX_BOTTOM_MM : TABLE_MAX_BOTTOM_MM_CONT;
-      let y = tableStartMM, j = i;
-      while(j < linhas.length && (y + alturasMM[j]) <= limite){ y += alturasMM[j]; j++; }
-      if(j === i) j = i + 1; // garante progresso mesmo se uma linha sozinha já estourasse a página
-      paginas.push({inicio:i, fim:j});
-      i = j;
+  if(!conjunto){
+    const linhas = montarLinhasArray();
+
+    // 1ª passada: mede a altura real de cada linha (varia com texto que quebra em 2 linhas) e
+    // onde a tabela começa — com o cabeçalho igual em toda página, essa distância não muda
+    area.innerHTML = `${cabecalhoHtml(1,1)}<table class="p-tbl">${theadHtml}<tbody>${linhas.join("")}</tbody></table>`;
+    const areaTop = area.getBoundingClientRect().top;
+    const tabelaEl = area.querySelector(".p-tbl");
+    const tableStartMM = tabelaEl ? mm(tabelaEl.getBoundingClientRect().top - areaTop) : 48;
+    const alturasMM = Array.from(area.querySelectorAll(".p-tbl tbody tr")).map(tr => mm(tr.getBoundingClientRect().height));
+
+    // 2ª passada: decide o corte de cada página, em JS puro (sem precisar re-renderizar a cada
+    // tentativa) — a 1ª página usa o limite que reserva o rodapé, as seguintes usam o limite maior
+    const paginas = [];
+    if(!linhas.length){
+      paginas.push({inicio:0, fim:0});
+    }else{
+      let i = 0;
+      while(i < linhas.length){
+        const limite = paginas.length===0 ? TABLE_MAX_BOTTOM_MM : TABLE_MAX_BOTTOM_MM_CONT;
+        let y = tableStartMM, j = i;
+        while(j < linhas.length && (y + alturasMM[j]) <= limite){ y += alturasMM[j]; j++; }
+        if(j === i) j = i + 1; // garante progresso mesmo se uma linha sozinha já estourasse a página
+        paginas.push({inicio:i, fim:j});
+        i = j;
+      }
     }
-  }
 
-  // 3ª passada: monta o HTML final já sabendo o total de páginas (pro "Página X/Y")
-  const totalPaginas = paginas.length;
-  area.innerHTML = paginas.map((p,idx)=>{
-    const num = idx+1;
-    const quebra = idx>0 ? ' class="p-pagebreak"' : "";
-    const corpo = `<table class="p-tbl">${theadHtml}<tbody>${linhas.slice(p.inicio,p.fim).join("")}</tbody></table>`;
-    const rodape = num===1 ? rodapeHtml : "";
-    return `<div${quebra}>${cabecalhoHtml(num,totalPaginas)}${corpo}${rodape}</div>`;
-  }).join("");
+    // 3ª passada: monta o HTML final já sabendo o total de páginas (pro "Página X/Y")
+    const totalPaginas = paginas.length;
+    area.innerHTML = paginas.map((p,idx)=>{
+      const num = idx+1;
+      const quebra = idx>0 ? ' class="p-pagebreak"' : "";
+      const corpo = `<table class="p-tbl">${theadHtml}<tbody>${linhas.slice(p.inicio,p.fim).join("")}</tbody></table>`;
+      const rodape = num===1 ? rodapeHtml : "";
+      return `<div${quebra}>${cabecalhoHtml(num,totalPaginas)}${corpo}${rodape}</div>`;
+    }).join("");
+  }else{
+    const bannerHtml = (nome, idx, total) => `<div class="p-conjunto">⚠ Conjunto — ${escHtml(nome)} · peça ${idx} de ${total} — não expedir sozinha</div>`;
+
+    // mede com o banner presente (ele aparece em toda página no modo conjunto, então desloca
+    // o início da tabela igual em todas), medindo todas as linhas de todos os blocos de uma vez
+    const linhasTeste = gruposSub.flatMap(g=>g.itens.map(linhaPrint));
+    area.innerHTML = `${cabecalhoHtml(1,1)}${bannerHtml(gruposSub[0].nome,1,gruposSub.length)}<table class="p-tbl">${theadHtml}<tbody>${linhasTeste.join("")}</tbody></table>`;
+    const areaTop = area.getBoundingClientRect().top;
+    const tabelaEl = area.querySelector(".p-tbl");
+    const tableStartMM = tabelaEl ? mm(tabelaEl.getBoundingClientRect().top - areaTop) : 60;
+    const alturasFlatMM = Array.from(area.querySelectorAll(".p-tbl tbody tr")).map(tr => mm(tr.getBoundingClientRect().height));
+
+    // separa as alturas de volta por bloco (mesma ordem da medição) e pagina cada bloco isolado
+    // — página 1 de cada bloco reserva o rodapé, as seguintes do mesmo bloco usam o limite maior
+    let cursor = 0;
+    const gruposPag = gruposSub.map(g=>{
+      const n = g.itens.length;
+      const alturas = alturasFlatMM.slice(cursor, cursor+n);
+      cursor += n;
+      const linhasHtml = g.itens.map(linhaPrint);
+      const paginas = [];
+      let i = 0;
+      while(i < linhasHtml.length){
+        const limite = paginas.length===0 ? TABLE_MAX_BOTTOM_MM : TABLE_MAX_BOTTOM_MM_CONT;
+        let y = tableStartMM, j = i;
+        while(j < linhasHtml.length && (y + alturas[j]) <= limite){ y += alturas[j]; j++; }
+        if(j === i) j = i + 1;
+        paginas.push({inicio:i, fim:j});
+        i = j;
+      }
+      if(!paginas.length) paginas.push({inicio:0, fim:0});
+      return {nome:g.nome, linhasHtml, paginas};
+    });
+
+    const totalPaginas = gruposPag.reduce((s,g)=>s+g.paginas.length, 0);
+    let numGlobal = 0;
+    area.innerHTML = gruposPag.map((g,gi)=> g.paginas.map((p,pi)=>{
+      numGlobal++;
+      const quebra = numGlobal>1 ? ' class="p-pagebreak"' : "";
+      const corpo = `<table class="p-tbl">${theadHtml}<tbody>${g.linhasHtml.slice(p.inicio,p.fim).join("")}</tbody></table>`;
+      const rodape = pi===0 ? rodapeHtml : "";
+      return `<div${quebra}>${cabecalhoHtml(numGlobal,totalPaginas)}${bannerHtml(g.nome, gi+1, gruposPag.length)}${corpo}${rodape}</div>`;
+    }).join("")).join("");
+  }
 
   // espera logo + QR carregarem antes de abrir a impressão
   const imgs = Array.from(document.querySelectorAll("#printArea img"));

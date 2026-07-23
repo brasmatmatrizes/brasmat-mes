@@ -624,11 +624,13 @@ function buscarSugg(q){
       const os = String(r.os||"").trim(), qtd = String(r.quantidade||"").trim();
       const jaTem = ROTS.find(x=>x.codigo_peca===cod && x.pedido===ped);
       const matResumo = materialResumoItem(r.id, {componentes:MAT_COMPONENTES, ultimos:MAT_ULTIMOS, estagios:MAT_ESTAGIOS});
-      const liberado = !!r.ferramenta_interna || (matResumo && matResumo.algumComponentePronto);
+      const industrializacao = ((getTipo(r)||{}).label === "I");
+      const liberado = itemDispensaSeparacao(r) || (matResumo && matResumo.algumComponentePronto);
       const tag = jaTem ? '<span class="rot-cnt" style="background:rgba(45,191,126,0.15);color:var(--ok)">✓ já tem roteiro</span>'
         : liberado ? '<span class="rot-cnt">+ criar roteiro</span>'
         : '<span class="rot-cnt" style="background:rgba(240,69,69,0.15);color:var(--danger)">🔒 bloqueado</span>';
       const matTag = r.ferramenta_interna ? '<span class="rot-cnt" style="background:rgba(124,58,237,0.15);color:var(--roxo)">🔧 ferramenta interna</span>'
+        : industrializacao ? '<span class="rot-cnt" style="background:rgba(245,166,35,0.15);color:var(--warn)">📦 material do cliente</span>'
         : !matResumo ? '<span class="rot-cnt" style="background:rgba(240,69,69,0.15);color:var(--danger)">🔒 sem material separado</span>'
         : matResumo.completo ? `<span class="rot-cnt" style="background:rgba(45,191,126,0.15);color:var(--ok)">✓ material pronto${matResumo.total>1?` (${matResumo.total} lotes)`:''}</span>`
         : matResumo.algumComponentePronto ? `<span class="rot-cnt" style="background:rgba(245,166,35,0.15);color:var(--warn)">${matResumo.prontos}/${matResumo.total} lotes prontos</span>`
@@ -656,7 +658,7 @@ async function selPeca(codigo, pedido){
   // cria o cabeçalho já com os dados do item cadastrado (Cadastro Item)
   const it = ITENS_CAD.find(r=>String(r.codigo_peca||"").trim()===codigo && String(r.pedido||"").trim()===pedido);
   if(!it){ toast("Item não encontrado — cadastre em Cadastro › Item"); return; }
-  if(!it.ferramenta_interna){
+  if(!itemDispensaSeparacao(it)){
     const matResumo = materialResumoItem(it.id, {componentes:MAT_COMPONENTES, ultimos:MAT_ULTIMOS, estagios:MAT_ESTAGIOS});
     if(!matResumo || !matResumo.algumComponentePronto){
       toast("Não é possível criar o roteiro — nenhum material desta peça está pronto ainda. Veja a Separação de Material.", "erro");
@@ -686,6 +688,9 @@ function renderMatBanner(item, resumo){
   if(!item) return '';
   if(item.ferramenta_interna){
     return `<div class="mat-banner ferramenta"><span class="mat-banner-ico">🔧</span><div><div class="mat-banner-title">Ferramenta interna</div><div class="mat-banner-detail">não passa pelo controle de material</div></div></div>`;
+  }
+  if(((getTipo(item)||{}).label === "I")){
+    return `<div class="mat-banner warn"><span class="mat-banner-ico">📦</span><div><div class="mat-banner-title">Industrialização — material do cliente</div><div class="mat-banner-detail">não passa pela Separação de Material</div></div></div>`;
   }
   if(!resumo){
     return `<div class="mat-banner danger"><span class="mat-banner-ico">🔒</span><div><div class="mat-banner-title">Nenhum material separado ainda</div><div class="mat-banner-detail">o PCP ainda não criou nenhum lote pra esse item</div></div><a class="mat-banner-link" href="separacao-material.html">ver Separação de Material →</a></div>`;

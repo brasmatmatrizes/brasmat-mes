@@ -219,6 +219,16 @@ function materialResumoItem(itemId, dados){
   return { total: detalhe.length, prontos, completo: prontos===detalhe.length, algumComponentePronto, detalhe };
 }
 
+// Regra: um item dispensa a Separação de Material (não precisa de lote Pronto pra
+// liberar o roteiro) quando é ferramenta interna OU quando é de Industrialização —
+// nesse caso o material vem do cliente e já está em mãos, não passa pelo PCP.
+function itemDispensaSeparacao(item){
+  if(!item) return false;
+  if(item.ferramenta_interna) return true;
+  const t = getTipo(item);
+  return !!(t && t.label === "I");
+}
+
 function calcProgresso(eventos){
   const ultimo = eventos[eventos.length-1];
   const total  = parseInt(ultimo.quantidade_operacoes)||0;

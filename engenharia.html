@@ -323,6 +323,7 @@
 
     <div id="edMatSt"></div>
     <div id="edLancSt"></div>
+    <div id="edConjSt"></div>
 
     <div class="ed-hdr">
       <div class="ed-f"><span class="ed-l">Pedido</span><span class="ed-v" id="edPedido">—</span></div>
@@ -929,7 +930,31 @@ async function ensureFamilia(nome){
   }catch(e){}
 }
 
+// ou a peça é normal (nenhuma operação com subcomponente) ou é conjunto (TODAS marcadas, com
+// pelo menos 2 partes distintas, ex. Inferior+Superior) — não existe meio-termo: uma peça
+// "normal" com só parte do roteiro marcada já causou docket de impressão com título em branco
+function validarConjunto(){
+  if(!ITENS.length) return {ok:true};
+  const marcadas = ITENS.filter(it=>String(it.subcomponente||"").trim());
+  if(!marcadas.length) return {ok:true}; // peça normal
+  if(marcadas.length < ITENS.length) return {ok:false, motivo:"mista"};
+  const nomes = [...new Set(ITENS.map(it=>String(it.subcomponente||"").trim()))];
+  if(nomes.length < 2) return {ok:false, motivo:"unica", nome:nomes[0]};
+  return {ok:true};
+}
+function renderConjuntoBanner(){
+  const el = document.getElementById("edConjSt");
+  if(!el) return;
+  const v = validarConjunto();
+  if(v.ok){ el.innerHTML = ""; return; }
+  const detalhe = v.motivo==="mista"
+    ? "tem operação marcada com subcomponente e outra sem — ou marque TODAS com uma parte (Inferior/Superior/...) ou deixe TODAS sem marcação. Não existe peça normal misturada com conjunto."
+    : `só "${escHtml(v.nome)}" está marcado — um conjunto precisa de pelo menos duas partes (ex.: Inferior e Superior). Marque a(s) outra(s) operação(ões) com a parte que falta ou remova as marcações pra virar peça normal.`;
+  el.innerHTML = `<div class="mat-banner danger"><span class="mat-banner-ico">⚠</span><div><div class="mat-banner-title">Subcomponente incompleto — impressão bloqueada</div><div class="mat-banner-detail">${detalhe}</div></div></div>`;
+}
+
 function renderSeq(){
+  renderConjuntoBanner();
   const el = document.getElementById("seqBody");
   if(!ITENS.length){
     el.innerHTML = '<div class="seq-empty">Clique nas operações da paleta ao lado para montar a sequência →</div>';
@@ -1000,6 +1025,7 @@ async function renumerar(){
 function setSub(id,val){
   const it = ITENS.find(x=>x.id===id); if(!it) return;
   it.subcomponente = val;
+  renderConjuntoBanner();
   supaWrite(`/rest/v1/roteiro_itens?id=eq.${id}`,"PATCH",{subcomponente:val},"return=minimal").then(tocarHdr).catch(e=>toast("Erro: "+e.message));
 }
 function setObs(id,val){
@@ -1101,6 +1127,13 @@ function montarLinhasArray(){
 
 function imprimir(){
   if(!R) return;
+  const validacao = validarConjunto();
+  if(!validacao.ok){
+    alert(validacao.motivo==="mista"
+      ? "Corrija o subcomponente antes de imprimir: tem operação marcada com subcomponente e outra sem. Marque todas com uma parte (Inferior/Superior/...) ou remova todas as marcações."
+      : `Corrija o subcomponente antes de imprimir: só "${validacao.nome}" está marcado. Um conjunto precisa de pelo menos duas partes (ex.: Inferior e Superior).`);
+    return;
+  }
   // link manual sobrescreve; senão monta automático a partir dos dados do roteiro
   const override = String(R.forms_link||"").trim();
   const formsLink = override || montarLinkForms(R, ITENS.length);

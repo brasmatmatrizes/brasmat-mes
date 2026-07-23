@@ -708,6 +708,7 @@ function renderMatBanner(item, resumo){
 function lancPendKey(){ return R ? ("brasmatLancPend_"+R.pedido+"_"+R.codigo_peca) : ""; }
 async function checkLancado(){
   if(!R) return;
+  pararPollLancado(); // troca de roteiro — encerra qualquer reconfere anterior
   R._lancInfo = undefined; R._lancPend = undefined; // carregando — evita mostrar o botão antes de saber
   try{
     const rows = await supaFetch(`/rest/v1/producao_eventos?select=operador,data_evento&pedido=eq.${encodeURIComponent(R.pedido)}&codigo_peca=eq.${encodeURIComponent(R.codigo_peca)}&operacao_administrativo=ilike.*Elabora*&order=data_evento.desc&limit=1`);
@@ -716,8 +717,31 @@ async function checkLancado(){
   if(R._lancInfo){ try{ localStorage.removeItem(lancPendKey()); }catch(e){} } // já sincronizou → limpa pendência
   else{
     try{ const raw = localStorage.getItem(lancPendKey()); R._lancPend = raw ? JSON.parse(raw) : null; }catch(e){ R._lancPend = null; }
+    if(R._lancPend) iniciarPollLancado(); // enviado e ainda não chegou — reconfere até virar ✅ sozinho
   }
   renderLancPainel();
+}
+
+// Reconfere o producao_eventos enquanto o apontamento está "enviado, aguardando sincronizar":
+// a chegada no MES é a confirmação real de que o Forms aceitou. Consulta minúscula (1 linha),
+// a cada 45s; para sozinha ao achar, ao trocar de roteiro, ou após 20 min (teto de segurança).
+let _lancPollTimer = null;
+function pararPollLancado(){ if(_lancPollTimer){ clearInterval(_lancPollTimer); _lancPollTimer = null; } }
+function iniciarPollLancado(){
+  pararPollLancado();
+  const pedido = R.pedido, codigo = R.codigo_peca, inicio = Date.now();
+  _lancPollTimer = setInterval(async ()=>{
+    if(!R || R.pedido!==pedido || R.codigo_peca!==codigo || R._lancInfo || (Date.now()-inicio) > 20*60*1000){ pararPollLancado(); return; }
+    try{
+      const rows = await supaFetch(`/rest/v1/producao_eventos?select=operador,data_evento&pedido=eq.${encodeURIComponent(pedido)}&codigo_peca=eq.${encodeURIComponent(codigo)}&operacao_administrativo=ilike.*Elabora*&order=data_evento.desc&limit=1`);
+      if(Array.isArray(rows) && rows[0]){
+        R._lancInfo = rows[0];
+        try{ localStorage.removeItem(lancPendKey()); }catch(e){}
+        pararPollLancado();
+        renderLancPainel(); // ⏳ → ✅ na frente do roteirista
+      }
+    }catch(e){}
+  }, 45000);
 }
 
 function renderLancPainel(){
@@ -731,7 +755,7 @@ function renderLancPainel(){
   }
   if(R._lancPend){ // enviado ao Forms, ainda não sincronizou pro banco
     const info = R._lancPend;
-    el.innerHTML = `<div class="mat-banner warn"><span class="mat-banner-ico">⏳</span><div><div class="mat-banner-title">1º apontamento (11.3) enviado ao Forms</div><div class="mat-banner-detail">por ${escHtml(String(info.operador||"").replace(/^\d+_/,""))} em ${fmtDt(info.data_evento)} — aparece no sistema quando o Forms sincronizar (alguns minutos)</div></div><button class="btn-g" style="margin-left:auto" onclick="reenviarLancamento()">reenviar</button></div>`;
+    el.innerHTML = `<div class="mat-banner warn"><span class="mat-banner-ico">⏳</span><div><div class="mat-banner-title">1º apontamento (11.3) enviado ao Forms</div><div class="mat-banner-detail">por ${escHtml(String(info.operador||"").replace(/^\d+_/,""))} em ${fmtDt(info.data_evento)} — confirmo aqui automaticamente assim que chegar no sistema (alguns minutos)</div></div><button class="btn-g" style="margin-left:auto" onclick="reenviarLancamento()">reenviar</button></div>`;
     return;
   }
   if(!ITENS.length){ el.innerHTML = ""; return; } // só libera com pelo menos 1 operação (senão quantidade_operacoes fica 0)
@@ -816,7 +840,8 @@ async function confirmarLancamento(){
     try{ localStorage.setItem(lancPendKey(), JSON.stringify(pend)); }catch(e){}
     R._lancPend = pend;
     _lancFormOpen = false;
-    toast("✅ 1º apontamento enviado ao Forms — vai aparecer no sistema quando sincronizar");
+    iniciarPollLancado(); // reconfere até o apontamento chegar no MES (confirmação real)
+    toast("✅ Enviado ao Forms — confirmo aqui assim que chegar no sistema");
   }catch(e){
     toast("Erro ao enviar ao Forms: "+(e&&e.message||e)+" — verifique a conexão", "erro");
   }

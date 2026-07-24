@@ -648,6 +648,23 @@ async function init(){
   preencherSelectClientes(document.getElementById("novoCli"));
   renderLista();
   setSync("atualizado " + new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}));
+  wireEnterNav();
+}
+
+// Enter avança para o próximo campo do cadastro (Tab já funciona nativo)
+function wireEnterNav(){
+  const ordem = ["novoCod","novoPed","novoOs","novoQtd","novoTipo","novoCli","novoPrazo","novoFerramenta"];
+  ordem.forEach((id,i)=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener("keydown", ev=>{
+      if(ev.key!=="Enter") return;
+      ev.preventDefault();
+      const prox = ordem.slice(i+1).map(x=>document.getElementById(x)).find(Boolean);
+      if(prox) prox.focus();
+      else salvarItem();
+    });
+  });
 }
 init();
 </script>

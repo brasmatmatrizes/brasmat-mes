@@ -146,6 +146,7 @@
 .wz-sub-l{font-size:11px;color:var(--text3);font-family:var(--mono);margin-top:2px}
 .wz-opts.linha{flex-direction:row;flex-wrap:wrap}
 .wz-opts.linha .wz-opt{flex:1;min-width:145px}
+.wz-opts.linha.tres .wz-opt{min-width:96px}
 .wz-opt.compact{padding:10px 12px;gap:10px}
 .wz-opt.compact .wz-opt-ic{width:34px;height:34px;font-size:17px}
 .wz-opt.compact .wz-opt-t{font-size:13.5px}
@@ -360,10 +361,11 @@ body.tv-mode .mc-dot{width:7px;height:7px}
 <script>
 function navTo(p){ location.href = p; }
 
-// Posições possíveis de um lote. A peça tem UM núcleo (`nucleo`) ou DOIS empilhados
-// (`nucleo_superior` + `nucleo_inferior`) — nunca as duas formas ao mesmo tempo.
-const POS_LABEL = { nucleo:"Núcleo", nucleo_superior:"Núcleo sup.", nucleo_inferior:"Núcleo inf.", carcaca:"Carcaça", luva:"Luva" };
-const POS_TODAS = ["nucleo","nucleo_superior","nucleo_inferior","luva","carcaca"];
+// Posições possíveis de um lote. O miolo da peça tem 1, 2 ou 3 núcleos empilhados:
+//   1 → `nucleo`; 2 → `nucleo_superior` + `nucleo_inferior`; 3 → + `nucleo_meio`.
+const POS_LABEL = { nucleo:"Núcleo", nucleo_superior:"Núcleo sup.", nucleo_meio:"Núcleo meio", nucleo_inferior:"Núcleo inf.", carcaca:"Carcaça", luva:"Luva" };
+const POS_TODAS = ["nucleo","nucleo_superior","nucleo_meio","nucleo_inferior","luva","carcaca"];
+const NUCLEO_POS = { 1:["nucleo"], 2:["nucleo_superior","nucleo_inferior"], 3:["nucleo_superior","nucleo_meio","nucleo_inferior"] };
 const ehNucleo = pos => String(pos||"").indexOf("nucleo")===0;
 const MATERIAL_LABEL = { metal_duro:"Metal Duro", aco:"Aço" };
 
@@ -745,9 +747,9 @@ document.addEventListener("click", e=>{
 // pode ter 2 lotes enquanto a carcaça tem só 1, porque cada material tem sua própria lógica de fornecimento.
 // Estado é só rascunho em memória até confirmar na última etapa — nada é gravado antes disso.
 let _mesaItem = null;
-// molde da peça: `duplo` diz se o miolo é um núcleo só ou dois empilhados (superior+inferior);
-// cada posição de núcleo guarda o SEU material — os dois podem ser diferentes.
-let _mesaEstrutura = { duplo:false, nucleo:null, nucleo_superior:null, nucleo_inferior:null, carcaca:false, luva:false };
+// molde da peça: `nnuc` (1/2/3) diz quantos núcleos empilhados o miolo tem; cada posição de
+// núcleo guarda o SEU material — os núcleos podem ser de materiais diferentes.
+let _mesaEstrutura = { nnuc:1, nucleo:null, nucleo_superior:null, nucleo_meio:null, nucleo_inferior:null, carcaca:false, luva:false };
 let _mesaPosicoes = {};    // { nucleo:[linha,...], carcaca:[...], luva:[...] } — só existe a chave se a posição está ativa
 let _mesaTempSeq = 1;
 let _mesaConcluirChecked = false; // estado do checkbox "planejamento concluído" — em variável pra sobreviver a um clique sem precisar re-renderizar tudo
@@ -765,11 +767,12 @@ function abrirMesa(itemId){
   // a estrutura já reflete o que o item já tem salvo — reabrir a Mesa não pode "esconder" o que já existe
   const existentesDoItem = COMPONENTES.filter(c=>c.item_id===itemId);
   const matDe = pos => { const c = existentesDoItem.find(x=>x.posicao===pos); return c ? c.tipo_material : null; };
-  const matSup = matDe("nucleo_superior"), matInf = matDe("nucleo_inferior");
+  const matSup = matDe("nucleo_superior"), matMeio = matDe("nucleo_meio"), matInf = matDe("nucleo_inferior");
   _mesaEstrutura = {
-    duplo: !!(matSup || matInf),
+    nnuc: matMeio ? 3 : ((matSup || matInf) ? 2 : 1),
     nucleo: matDe("nucleo"),
     nucleo_superior: matSup,
+    nucleo_meio: matMeio,
     nucleo_inferior: matInf,
     carcaca: existentesDoItem.some(c=>c.posicao==="carcaca"),
     luva: existentesDoItem.some(c=>c.posicao==="luva")
@@ -791,11 +794,9 @@ function fecharMesa(){
   document.getElementById("mesaPanel").classList.remove("open");
 }
 
-// núcleo(s) da peça, de cima para baixo — um só, ou superior + inferior
+// núcleo(s) da peça, de cima para baixo, já com material escolhido
 function mesaNucleos(){
-  return _mesaEstrutura.duplo
-    ? ["nucleo_superior","nucleo_inferior"].filter(p=>_mesaEstrutura[p])
-    : (_mesaEstrutura.nucleo ? ["nucleo"] : []);
+  return NUCLEO_POS[_mesaEstrutura.nnuc].filter(p=>_mesaEstrutura[p]);
 }
 // posições ativas, na ordem em que viram etapa do assistente — do centro da peça para fora
 function mesaPassos(){
@@ -811,15 +812,13 @@ function mesaTemLoteSalvo(pos){
 function mesaTotalLinhasNovas(){
   return POS_TODAS.reduce((s,p)=>s+((_mesaPosicoes[p]||[]).length),0);
 }
-// núcleo completo = 1 material escolhido (peça simples) ou os 2 (peça de núcleo duplo)
+// núcleo completo = todos os núcleos da estrutura escolhida têm material
 function mesaNucleoCompleto(){
-  return _mesaEstrutura.duplo
-    ? !!(_mesaEstrutura.nucleo_superior && _mesaEstrutura.nucleo_inferior)
-    : !!_mesaEstrutura.nucleo;
+  return NUCLEO_POS[_mesaEstrutura.nnuc].every(p=>!!_mesaEstrutura[p]);
 }
 function mesaProximo(){
   if(_mesaStep===0 && !mesaNucleoCompleto()){
-    toast(_mesaEstrutura.duplo ? "Escolha o material dos dois núcleos para continuar" : "Escolha o material do núcleo para continuar","erro");
+    toast(_mesaEstrutura.nnuc>1 ? "Escolha o material de todos os núcleos para continuar" : "Escolha o material do núcleo para continuar","erro");
     return;
   }
   if(_mesaStep < mesaTotalSteps()-1){ _mesaStep++; renderMesa(); }
@@ -850,14 +849,16 @@ function mesaSincronizar(){
     if(!ativo && _mesaPosicoes[pos]) delete _mesaPosicoes[pos];
   });
 }
-// 1 ou 2 núcleos — só dá pra trocar enquanto nenhum núcleo virou lote de verdade
-function mesaSetDuplo(v){
-  if(_mesaEstrutura.duplo===v) return;
-  const travado = ["nucleo","nucleo_superior","nucleo_inferior"].some(mesaTemLoteSalvo);
+// 1, 2 ou 3 núcleos — só dá pra trocar enquanto nenhum núcleo virou lote de verdade
+function mesaSetNNucleos(n){
+  if(_mesaEstrutura.nnuc===n) return;
+  const travado = ["nucleo","nucleo_superior","nucleo_meio","nucleo_inferior"].some(mesaTemLoteSalvo);
   if(travado){ toast("Já existe lote de núcleo criado — não dá pra mudar a quantidade de núcleos aqui","erro"); return; }
-  _mesaEstrutura.duplo = v;
-  if(v) _mesaEstrutura.nucleo = null;
-  else { _mesaEstrutura.nucleo_superior = null; _mesaEstrutura.nucleo_inferior = null; }
+  _mesaEstrutura.nnuc = n;
+  // limpa o material das posições de núcleo que não existem mais nessa quantidade
+  ["nucleo","nucleo_superior","nucleo_meio","nucleo_inferior"].forEach(p=>{
+    if(NUCLEO_POS[n].indexOf(p)<0) _mesaEstrutura[p] = null;
+  });
   mesaSincronizar();
   renderMesa();
 }
@@ -977,7 +978,7 @@ function mesaSetIntencao(pos, tempId, ordem){
 // manda o desenho mecânico); vista superior é a planta, sem hachura. O núcleo é sempre furado
 // no centro (Ø do furo ≈ 30% do Ø do núcleo).
 const POS_COR = { nucleo:"var(--accent)", carcaca:"var(--roxo)", luva:"var(--orange)" };
-const POS_ICONE = { nucleo:"⬤", nucleo_superior:"⬤", nucleo_inferior:"⬤", carcaca:"⭕", luva:"🔘" };
+const POS_ICONE = { nucleo:"⬤", nucleo_superior:"⬤", nucleo_meio:"⬤", nucleo_inferior:"⬤", carcaca:"⭕", luva:"🔘" };
 const CROQUI_HACHURA = { nucleo:{ang:45,sp:4.5}, luva:{ang:-45,sp:4.5}, carcaca:{ang:45,sp:7.5} };
 // material real daquela posição na peça — só os núcleos variam; luva e carcaça são sempre aço
 function mesaMaterialDaPosicao(pos){
@@ -1005,12 +1006,9 @@ function mesaCamadasCroqui(){
   aneis.forEach((a,i)=>{
     const ri = i===0 ? rFuro : RAIOS[i-1], re = RAIOS[i];
     if(a==="miolo"){
-      if(nucs.length===2){
-        camadas.push({pos:nucs[0], ri, re, y0:0, y1:0.5});
-        camadas.push({pos:nucs[1], ri, re, y0:0.5, y1:1});
-      }else{
-        camadas.push({pos:nucs[0], ri, re, y0:0, y1:1});
-      }
+      // o miolo é um anel dividido em k faixas horizontais (um núcleo por faixa, de cima para baixo)
+      const k = nucs.length;
+      nucs.forEach((p,idx)=>camadas.push({pos:p, ri, re, y0:idx/k, y1:(idx+1)/k}));
       aneisOut.push({pos:nucs[0], re}); // de cima, vê-se o núcleo superior
     }else{
       camadas.push({pos:a, ri, re, y0:0, y1:1});
@@ -1056,12 +1054,12 @@ function mesaCroquiSvg(destaque){
   const outlinePeca = c => {
     const f = foco(c), y = yDe(c), h = altDe(c), w = c.re-c.ri;
     const at = `fill="none" stroke="${CB}" stroke-width="${bW(f)}" stroke-opacity="${bOp(f)}" stroke-linejoin="miter"`;
-    // camada que encosta no furo fecha o vão com uma tampa em cima e outra embaixo
+    // cada núcleo fecha o furo com a borda em cima e embaixo da sua faixa (a divisa entre dois
+    // núcleos empilhados também cruza o furo, pra cada núcleo virar um retângulo fechado)
     let caps = "";
     if(Math.abs(c.ri-rFuro)<0.01){
       const cap = yc => `<line x1="${cx-rFuro}" y1="${yc}" x2="${cx+rFuro}" y2="${yc}" stroke="${CB}" stroke-width="${bW(f)}" stroke-opacity="${bOp(f)}"/>`;
-      if(c.y0===0) caps += cap(fY);
-      if(c.y1===1) caps += cap(fY+fH);
+      caps += cap(y) + cap(y+h);
     }
     return `<rect x="${cx-c.re}" y="${y}" width="${w}" height="${h}" ${at}/><rect x="${cx+c.ri}" y="${y}" width="${w}" height="${h}" ${at}/>${caps}`;
   };
@@ -1086,7 +1084,7 @@ function mesaCroquiSvg(destaque){
 }
 function mesaLegendaHtml(destaque){
   const e = _mesaEstrutura;
-  const nucs = e.duplo ? ["nucleo_superior","nucleo_inferior"] : ["nucleo"];
+  const nucs = NUCLEO_POS[e.nnuc];
   const linhas = nucs.map(p=>({
     pos:p, on:!!e[p], lbl:POS_LABEL[p]+(e[p]?" · "+MATERIAL_LABEL[e[p]]:"")
   })).concat([
@@ -1127,15 +1125,15 @@ function mesaMaterialNucleoHtml(pos, compacto){
 }
 function mesaStepEstruturaHtml(){
   const e = _mesaEstrutura;
-  const lockQtd = ["nucleo","nucleo_superior","nucleo_inferior"].some(mesaTemLoteSalvo);
-  const quantos = `<div class="wz-opts linha">
-    ${mesaOptHtml(!e.duplo,"c-acc compact","①","1 núcleo","","mesaSetDuplo(false)",lockQtd)}
-    ${mesaOptHtml(e.duplo,"c-acc compact","②","2 núcleos (empilhados)","","mesaSetDuplo(true)",lockQtd)}
+  const lockQtd = ["nucleo","nucleo_superior","nucleo_meio","nucleo_inferior"].some(mesaTemLoteSalvo);
+  const quantos = `<div class="wz-opts linha tres">
+    ${mesaOptHtml(e.nnuc===1,"c-acc compact","①","1 núcleo","","mesaSetNNucleos(1)",lockQtd)}
+    ${mesaOptHtml(e.nnuc===2,"c-acc compact","②","2 núcleos","","mesaSetNNucleos(2)",lockQtd)}
+    ${mesaOptHtml(e.nnuc===3,"c-acc compact","③","3 núcleos","","mesaSetNNucleos(3)",lockQtd)}
   </div>`;
-  const materiais = e.duplo
-    ? `<div class="wz-sub-l">Núcleo superior — material</div>${mesaMaterialNucleoHtml("nucleo_superior",true)}
-       <div class="wz-sub-l">Núcleo inferior — material</div>${mesaMaterialNucleoHtml("nucleo_inferior",true)}`
-    : mesaMaterialNucleoHtml("nucleo",false);
+  const materiais = e.nnuc===1
+    ? mesaMaterialNucleoHtml("nucleo",false)
+    : NUCLEO_POS[e.nnuc].map(p=>`<div class="wz-sub-l">${POS_LABEL[p]} — material</div>${mesaMaterialNucleoHtml(p,true)}`).join("");
   return `<div class="wz-q">Do que essa peça é feita?</div>
   <div class="wz-q-sub">Marque tudo que compõe a estrutura. Depois você planeja os lotes de cada parte, uma por vez.</div>
   <div class="wz-sec-l">1 · Núcleo <span style="color:var(--text3);font-weight:400">(obrigatório)</span></div>

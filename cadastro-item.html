@@ -267,6 +267,18 @@ function removerDesenho(){
 let DESENHO_ITEM_ID = null;
 const EXT_DESENHO = ["pdf","jpg","jpeg","png","gif","webp","bmp","tif","tiff","heic","heif","svg"];
 
+function copiarTexto(txt, btn){
+  const done = ()=>{ if(!btn) return; const o=btn.textContent; btn.textContent="✓ copiado"; setTimeout(()=>{btn.textContent=o;},1200); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done).catch(()=>fallbackCopia(txt,done));
+  } else fallbackCopia(txt, done);
+}
+function fallbackCopia(txt, done){
+  const ta=document.createElement("textarea"); ta.value=txt; ta.style.cssText="position:fixed;opacity:0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); done&&done(); }catch(e){}
+  document.body.removeChild(ta);
+}
 function abrirDesenhoItem(id){
   const it = ITENS.find(x=>x.id===id); if(!it) return;
   DESENHO_ITEM_ID = id;
@@ -296,7 +308,9 @@ function renderDesenhoItemModal(){
   ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:460px;width:100%;overflow:hidden">
     <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--text)">${escHtml(it.codigo_peca||"")}</span>
+      ${it.codigo_peca?`<button onclick="copiarTexto('${escHtml(it.codigo_peca)}',this)" title="Copiar código" style="background:none;border:1px solid var(--border);color:var(--text2);height:24px;padding:0 8px;border-radius:6px;cursor:pointer;font-size:11px">⧉ código</button>`:""}
       <span style="font-size:11px;font-family:var(--mono);color:var(--text3)">${escHtml(it.pedido||"")}${it.os?" · OS "+escHtml(it.os):""}</span>
+      ${it.pedido?`<button onclick="copiarTexto('${escHtml(it.pedido)}',this)" title="Copiar pedido" style="background:none;border:1px solid var(--border);color:var(--text2);height:24px;padding:0 8px;border-radius:6px;cursor:pointer;font-size:11px">⧉ pedido</button>`:""}
       <button onclick="fecharDesenhoItem()" title="Fechar" style="margin-left:auto;background:none;border:1px solid var(--border);color:var(--text2);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px">✕</button>
     </div>
     <div style="padding:18px">

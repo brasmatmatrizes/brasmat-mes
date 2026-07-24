@@ -208,8 +208,15 @@
 .mesa-existente-badge{color:var(--ok)}
 
 .wz-rev{display:flex;flex-direction:column;gap:8px}
-.wz-rev-row{display:flex;align-items:center;gap:10px;border:2px solid var(--border);border-radius:12px;padding:11px 13px;background:var(--bg3);font-size:12.5px;color:var(--text2)}
-.wz-rev-row.alerta{border-color:rgba(245,166,35,.5)}
+.wz-rev-grp{display:flex;flex-direction:column;gap:9px;border:2px solid var(--border);border-radius:12px;padding:11px 13px;background:var(--bg3);font-size:12.5px;color:var(--text2)}
+.wz-rev-grp.alerta{border-color:rgba(245,166,35,.5)}
+.wz-rev-head{display:flex;align-items:center;gap:10px}
+.wz-rev-lotes{display:flex;flex-direction:column;gap:5px;border-top:1px solid var(--border);padding-top:8px}
+.wz-rev-lote{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px}
+.wz-rev-lote-n{font-family:var(--mono);font-weight:600;color:var(--text);background:var(--bg4);border-radius:999px;padding:2px 9px;flex-shrink:0}
+.wz-rev-lote-q{font-family:var(--mono);color:var(--text2)}
+.wz-rev-lote-sit{color:var(--text3)}
+.wz-rev-lote-obs{color:var(--text3);font-style:italic}
 .wz-rev-sw{width:11px;height:11px;border-radius:3px;flex-shrink:0}
 .wz-rev-t{color:var(--text);font-weight:500}
 .wz-rev-q{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text3);text-align:right}
@@ -1252,14 +1259,27 @@ function mesaStepRevisaoHtml(){
     const salvos = COMPONENTES.filter(c=>c.item_id===_mesaItem.id && c.posicao===pos).length;
     const tipoMaterial = mesaMaterialDaPosicao(pos);
     const desalinhado = linhas.length && alocado!==total;
-    const detalhe = linhas.length
-      ? linhas.map(l=>l.quantidade).join(" + ")+" pç"
-      : (salvos ? "nada novo" : "nenhum lote");
-    return `<div class="wz-rev-row${desalinhado?" alerta":""}">
-      <span class="wz-rev-sw" style="background:${mesaCorPosicao(pos)}"></span>
-      <span><span class="wz-rev-t">${POS_LABEL[pos]}</span> <span style="color:var(--text3)">· ${MATERIAL_LABEL[tipoMaterial]}</span>
-        ${desalinhado?`<div class="wz-rev-warn">⚠ soma ${alocado} pç ≠ ${total} pç do item</div>`:""}</span>
-      <span class="wz-rev-q">${linhas.length} lote${linhas.length===1?"":"s"} novo${linhas.length===1?"":"s"}<br>${detalhe}</span>
+    const ops = mesaRetratoOpcoes(tipoMaterial);
+    // detalhe de cada lote novo: número (continua depois dos já salvos), qtd, situação e observação
+    const lotesDetalhe = linhas.length
+      ? `<div class="wz-rev-lotes">${linhas.map((l,i)=>{
+          const op = ops.find(o=>o.ordem===l.fato);
+          return `<div class="wz-rev-lote">
+            <span class="wz-rev-lote-n">Lote ${salvos+i+1}</span>
+            <span class="wz-rev-lote-q">${escHtml(String(l.quantidade))} pç</span>
+            <span class="wz-rev-lote-sit">${op?op.ic+" entra em "+escHtml(op.col):"—"}</span>
+            ${l.observacao?`<span class="wz-rev-lote-obs">"${escHtml(l.observacao)}"</span>`:""}
+          </div>`;
+        }).join("")}</div>`
+      : "";
+    return `<div class="wz-rev-grp${desalinhado?" alerta":""}">
+      <div class="wz-rev-head">
+        <span class="wz-rev-sw" style="background:${mesaCorPosicao(pos)}"></span>
+        <span><span class="wz-rev-t">${POS_LABEL[pos]}</span> <span style="color:var(--text3)">· ${MATERIAL_LABEL[tipoMaterial]}</span>
+          ${desalinhado?`<div class="wz-rev-warn">⚠ soma ${alocado} pç ≠ ${total} pç do item</div>`:""}</span>
+        <span class="wz-rev-q">${linhas.length} lote${linhas.length===1?"":"s"} novo${linhas.length===1?"":"s"}${linhas.length?"":(salvos?"<br>nada novo":"<br>nenhum lote")}</span>
+      </div>
+      ${lotesDetalhe}
     </div>`;
   }).join("");
 

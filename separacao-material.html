@@ -1030,46 +1030,50 @@ function mesaCroquiSvg(destaque){
       <circle cx="${cx}" cy="${sCy}" r="60" fill="none" stroke="var(--border2)" stroke-width="1.2" stroke-dasharray="6 5"/>
     </svg>`;
   }
-  const corExt = mesaCorPosicao(aneis[aneis.length-1].pos);
   const foco = c => !destaque || destaque===c.pos;
   const yDe = c => fY + c.y0*fH, altDe = c => (c.y1-c.y0)*fH;
+  const CB = "var(--text)";                        // borda sempre neutra — a cor vive só na hachura
+  const bOp = f => f?0.95:0.20, bW = f => f?1.7:1.0;
 
-  // hachura de corte: aço = simples; metal duro = cruzada (grade a 45°)
+  // hachura de corte: aço = simples; metal duro = cruzada (grade a 45°). A cor identifica a peça;
+  // a etapa em foco acende a hachura, as demais ficam apagadas.
   const defs = camadas.map(c=>{
-    const h = CROQUI_HACHURA[ehNucleo(c.pos)?"nucleo":c.pos], cor = mesaCorPosicao(c.pos), op = foco(c)?0.9:0.18;
+    const h = CROQUI_HACHURA[ehNucleo(c.pos)?"nucleo":c.pos], cor = mesaCorPosicao(c.pos), op = foco(c)?0.95:0.13;
     const cruzada = mesaMaterialDaPosicao(c.pos)==="metal_duro";
     const traco = (x1,y1,x2,y2)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${cor}" stroke-width="0.9" stroke-opacity="${op}"/>`;
     return `<pattern id="hx_${c.pos}" patternUnits="userSpaceOnUse" width="${h.sp}" height="${h.sp}" patternTransform="rotate(${h.ang})">
       ${traco(0,0,0,h.sp)}${cruzada?traco(0,0,h.sp,0):""}</pattern>`;
   }).join("");
 
-  // VISTA FRONTAL — corte pelo eixo: material dos dois lados do furo, silhueta externa fechada
+  // VISTA FRONTAL — corte pelo eixo: material dos dois lados do furo
   const preench = camadas.map(c=>{
-    const cor = mesaCorPosicao(c.pos), f = foco(c), w = c.re-c.ri, y = yDe(c), h = altDe(c);
-    const lado = x => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${cor}" fill-opacity="${f?0.10:0.03}"/>
-      <rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#hx_${c.pos})"/>`;
+    const f = foco(c), w = c.re-c.ri, y = yDe(c), h = altDe(c);
+    const lado = x => `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#hx_${c.pos})" fill-opacity="${f?1:0.5}"/>`;
     return lado(cx-c.re) + lado(cx+c.ri);
   }).join("");
-  // fronteiras internas: parede do furo, divisa com a peça de dentro e, no miolo duplo, a junta horizontal
-  const divisorias = camadas.map(c=>{
-    const cor = mesaCorPosicao(c.pos), f = foco(c), y = yDe(c), h = altDe(c);
-    const w = `stroke="${cor}" stroke-width="${f?1.5:0.9}" stroke-opacity="${f?1:0.25}"`;
-    const vert = x => `<line x1="${x}" y1="${y}" x2="${x}" y2="${y+h}" ${w}/>`;
-    const junta = c.y0>0
-      ? `<line x1="${cx-c.re}" y1="${y}" x2="${cx-c.ri}" y2="${y}" ${w}/><line x1="${cx+c.ri}" y1="${y}" x2="${cx+c.re}" y2="${y}" ${w}/>`
-      : "";
-    return vert(cx-c.ri)+vert(cx+c.ri)+junta;
-  }).join("");
-  const contorno = `<rect x="${cx-rMax}" y="${fY}" width="${rMax*2}" height="${fH}" fill="none" stroke="${corExt}" stroke-width="1.8" stroke-linejoin="miter"/>`;
-  const frontal = preench + divisorias + contorno;
+  // contorno de cada peça (bordas neutras): parede do furo, divisas e silhueta externa saem daqui.
+  // Desenho as apagadas primeiro e a peça em foco por último, pra sua borda ficar acesa por cima.
+  const outlinePeca = c => {
+    const f = foco(c), y = yDe(c), h = altDe(c), w = c.re-c.ri;
+    const at = `fill="none" stroke="${CB}" stroke-width="${bW(f)}" stroke-opacity="${bOp(f)}" stroke-linejoin="miter"`;
+    return `<rect x="${cx-c.re}" y="${y}" width="${w}" height="${h}" ${at}/><rect x="${cx+c.ri}" y="${y}" width="${w}" height="${h}" ${at}/>`;
+  };
+  const outlines = camadas.filter(c=>!foco(c)).map(outlinePeca).join("") + camadas.filter(foco).map(outlinePeca).join("");
+  const frontal = preench + outlines;
 
-  // VISTA SUPERIOR — planta: circunferências concêntricas + furo, contorno externo cheio
-  const superior = aneis.slice().reverse().map(a=>{
-    const cor = mesaCorPosicao(a.pos), f = foco(a);
-    return `<circle cx="${cx}" cy="${sCy}" r="${a.re}" fill="${cor}" fill-opacity="${f?0.13:0.035}" stroke="${cor}" stroke-width="${f?1.5:0.9}" stroke-opacity="${f?1:0.25}"/>`;
+  // VISTA SUPERIOR — planta: hachura em anel por peça + bordas neutras concêntricas + furo
+  const anelPreench = aneis.map((a,i)=>{
+    const ri = i===0 ? rFuro : aneis[i-1].re, f = foco(a);
+    // anel = disco externo menos o buraco interno, via clip
+    return `<mask id="mk_${a.pos}"><circle cx="${cx}" cy="${sCy}" r="${a.re}" fill="#fff"/><circle cx="${cx}" cy="${sCy}" r="${ri}" fill="#000"/></mask>
+      <rect x="${cx-a.re}" y="${sCy-a.re}" width="${a.re*2}" height="${a.re*2}" fill="url(#hx_${a.pos})" fill-opacity="${f?1:0.5}" mask="url(#mk_${a.pos})"/>`;
+  }).join("");
+  const bordasTopo = aneis.map(a=>{
+    const f = foco(a);
+    return `<circle cx="${cx}" cy="${sCy}" r="${a.re}" fill="none" stroke="${CB}" stroke-width="${bW(f)}" stroke-opacity="${bOp(f)}"/>`;
   }).join("")
-    + `<circle cx="${cx}" cy="${sCy}" r="${rFuro}" fill="var(--bg3)" stroke="${mesaCorPosicao(aneis[0].pos)}" stroke-width="1.2" stroke-opacity="${foco(aneis[0])?1:0.25}"/>`
-    + `<circle cx="${cx}" cy="${sCy}" r="${rMax}" fill="none" stroke="${corExt}" stroke-width="1.8"/>`;
+    + `<circle cx="${cx}" cy="${sCy}" r="${rFuro}" fill="none" stroke="${CB}" stroke-width="${bW(foco(aneis[0]))}" stroke-opacity="${bOp(foco(aneis[0]))}"/>`;
+  const superior = anelPreench + bordasTopo;
 
   return `<svg viewBox="${VB}" class="wz-croqui"><defs>${defs}</defs>${frontal}${superior}</svg>`;
 }

@@ -1141,10 +1141,10 @@ function mesaStepEstruturaHtml(){
   <div class="wz-sec-l">1 · Núcleo <span style="color:var(--text3);font-weight:400">(obrigatório)</span></div>
   ${quantos}
   ${materiais}
-  <div class="wz-sec-l">2 · Partes de aço em volta <span style="color:var(--text3);font-weight:400">(opcional — do centro para fora)</span></div>
+  <div class="wz-sec-l">2 · Partes de aço em volta <span style="color:var(--text3);font-weight:400">(opcional)</span></div>
   <div class="wz-opts">
-    ${mesaOptHtml(e.luva,"c-orange","🔘","Luva de Aço","Anel intermediário: fica entre o núcleo e a carcaça.","mesaToggle('luva')",mesaTemLoteSalvo("luva"))}
     ${mesaOptHtml(e.carcaca,"c-roxo","⭕","Carcaça de Aço","Anel mais externo, que fecha o conjunto.","mesaToggle('carcaca')",mesaTemLoteSalvo("carcaca"))}
+    ${mesaOptHtml(e.luva,"c-orange","🔘","Luva de Aço","Anel intermediário: fica entre o núcleo e a carcaça.","mesaToggle('luva')",mesaTemLoteSalvo("luva"))}
   </div>`;
 }
 

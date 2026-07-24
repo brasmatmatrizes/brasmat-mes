@@ -168,12 +168,8 @@
 .wz-opt.on .wz-opt-ck{opacity:1}
 .wz-opt.lock .wz-opt-ck{opacity:.55}
 
-.wz-nlotes{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.wz-nbtn{width:50px;height:50px;border-radius:14px;border:2px solid var(--border);background:var(--bg3);color:var(--text);font-size:17px;font-weight:600;cursor:pointer;font-family:var(--sans);box-shadow:0 3px 0 var(--border);transition:transform .1s,border-color .12s}
-.wz-nbtn:hover{border-color:var(--border2)}
-.wz-nbtn:active{transform:translateY(2px);box-shadow:none}
-.wz-nbtn.on{border-color:var(--accent);background:rgba(59,127,255,.14);box-shadow:0 3px 0 var(--accent)}
-.wz-nbtn.mais{width:auto;padding:0 14px;font-size:13px;color:var(--text2)}
+.mesa-add-lote{width:100%;border:2px dashed var(--border2);background:var(--bg2);color:var(--text2);border-radius:12px;padding:11px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:var(--sans);transition:border-color .12s,color .12s}
+.mesa-add-lote:hover{border-color:var(--accent);color:var(--accent)}
 
 .mesa-alloc-track{height:11px;background:var(--bg3);border:1px solid var(--border);border-radius:999px;overflow:hidden}
 .mesa-alloc-fill{height:100%;background:var(--ok);border-radius:999px;transition:width .18s}
@@ -190,19 +186,17 @@
 .wz-lote-acoes .btn-g{padding:4px 9px;height:30px;font-size:12px}
 .wz-lote-acoes .danger{color:var(--danger);border-color:var(--danger)}
 .wz-pergunta{font-size:11.5px;color:var(--text2)}
-.wz-trilha{display:flex;gap:6px;flex-wrap:wrap}
-.wz-st{border:2px solid var(--border);background:var(--bg2);border-radius:11px;padding:7px 9px;min-width:78px;font-size:10.5px;color:var(--text2);cursor:pointer;font-family:var(--sans);display:flex;flex-direction:column;align-items:center;gap:3px;transition:transform .1s,border-color .12s}
-.wz-st:hover{border-color:var(--border2);color:var(--text)}
-.wz-st:active{transform:translateY(2px)}
-.wz-st-ic{font-size:15px;line-height:1}
-.wz-st.done{border-color:rgba(45,191,126,.5);background:rgba(45,191,126,.10);color:var(--ok)}
-.wz-st.cur{border-color:var(--ok);background:var(--ok);color:#fff;font-weight:600}
-.wz-st.intent{border-color:var(--warn);border-style:dashed;color:var(--warn)}
-.mesa-intencao{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.mesa-intencao-lbl{font-size:10.5px;color:var(--text3);font-family:var(--mono)}
-.mesa-chip{background:var(--bg2);border:1px solid var(--border);border-radius:999px;padding:5px 11px;font-size:10.5px;color:var(--text2);cursor:pointer;font-family:var(--sans);transition:all .12s}
-.mesa-chip:hover{border-color:var(--border2);color:var(--text)}
-.mesa-chip.on{background:var(--warn);border-color:var(--warn);color:#111}
+.mesa-sit-wrap{display:flex;gap:7px;flex-wrap:wrap}
+.mesa-sit{flex:1;min-width:130px;display:flex;align-items:center;gap:8px;border:2px solid var(--border);background:var(--bg2);border-radius:12px;padding:9px 11px;font-size:11.5px;color:var(--text2);cursor:pointer;font-family:var(--sans);text-align:left;transition:transform .1s,border-color .12s,background .12s}
+.mesa-sit:hover{border-color:var(--border2);color:var(--text)}
+.mesa-sit:active{transform:translateY(2px)}
+.mesa-sit-ic{font-size:18px;line-height:1;flex-shrink:0}
+.mesa-sit-t{font-weight:600;line-height:1.25}
+.mesa-sit.on{border-color:var(--accent);background:rgba(59,127,255,.12);color:var(--text)}
+.mesa-conseq{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin-top:3px;font-size:11px;font-family:var(--mono)}
+.mesa-conseq-col{color:var(--text)}
+.mesa-conseq-col b{color:var(--accent)}
+.mesa-conseq-falta{color:var(--text3)}
 
 .mesa-hint{font-size:12px;color:var(--text3);font-family:var(--mono);padding:16px;text-align:center;background:var(--bg3);border-radius:12px}
 .mesa-existentes{display:flex;flex-direction:column;gap:5px}
@@ -828,7 +822,8 @@ function mesaVoltar(){
 }
 
 function mesaNovaLinhaObj(qtd){
-  return { tempId:_mesaTempSeq++, quantidade:qtd, observacao:"", fato:0, intencao:null };
+  // fato = ordem da coluna onde o lote entra (retrato do material). Padrão: 1 = Compra ("ainda precisa comprar").
+  return { tempId:_mesaTempSeq++, quantidade:qtd, observacao:"", fato:1 };
 }
 // quanto já está alocado numa posição (lotes já salvos + rascunho) — cada posição soma só a si mesma
 function mesaAlocado(pos){
@@ -845,7 +840,15 @@ function mesaSincronizar(){
   const ativas = mesaPassos();
   POS_TODAS.forEach(pos=>{
     const ativo = ativas.indexOf(pos)>=0;
-    if(ativo && !_mesaPosicoes[pos]) _mesaPosicoes[pos] = [];
+    if(ativo && !_mesaPosicoes[pos]){
+      _mesaPosicoes[pos] = [];
+      // padrão: já entra com 1 lote novo (só quando a posição ainda não tem lote salvo)
+      const temSalvo = _mesaItem && COMPONENTES.some(c=>c.item_id===_mesaItem.id && c.posicao===pos);
+      if(!temSalvo){
+        const total = parseInt(_mesaItem && _mesaItem.quantidade,10)||0;
+        _mesaPosicoes[pos].push(mesaNovaLinhaObj(total||1));
+      }
+    }
     if(!ativo && _mesaPosicoes[pos]) delete _mesaPosicoes[pos];
   });
 }
@@ -875,14 +878,6 @@ function mesaToggle(pos){
   renderMesa();
 }
 
-// "em quantos lotes?" — cria/remove linhas de rascunho e reparte a quantidade que falta alocar entre elas
-function mesaDefinirNLotes(pos, n){
-  const linhas = _mesaPosicoes[pos] || (_mesaPosicoes[pos] = []);
-  if(n < linhas.length) linhas.splice(n);
-  else while(linhas.length < n) linhas.push(mesaNovaLinhaObj(1));
-  mesaRepartir(pos);
-  renderMesa();
-}
 function mesaRepartir(pos){
   const linhas = _mesaPosicoes[pos] || [];
   if(!linhas.length) return;
@@ -907,7 +902,7 @@ function mesaDividir(pos, tempId){
   const metade1 = Math.ceil(qtd/2), metade2 = qtd-metade1;
   l.quantidade = metade1;
   const nova = mesaNovaLinhaObj(metade2);
-  nova.observacao = l.observacao; nova.fato = l.fato; nova.intencao = l.intencao;
+  nova.observacao = l.observacao; nova.fato = l.fato;
   linhas.splice(idx+1,0,nova);
   renderMesa();
 }
@@ -917,7 +912,7 @@ function mesaDuplicar(pos, tempId){
   if(idx<0) return;
   const l = linhas[idx];
   const nova = mesaNovaLinhaObj(l.quantidade);
-  nova.observacao = l.observacao; nova.fato = l.fato; nova.intencao = l.intencao;
+  nova.observacao = l.observacao; nova.fato = l.fato;
   linhas.splice(idx+1,0,nova);
   renderMesa();
 }
@@ -956,19 +951,11 @@ function mesaAtualizarBarra(pos){
   lbl.textContent = alocado+" de "+total+" pç alocada"+(alocado>total?" — ⚠ passou do total":"");
 }
 
-// clique na trilha = FATO ("já está aqui" — vira evento real ao salvar); clicar de novo no mesmo ponto desfaz
-function mesaSetFato(pos, tempId, ordem){
+// retrato do material = coluna onde o lote nasce (vira evento real ao salvar). Sempre tem uma situação escolhida.
+function mesaSetSituacao(pos, tempId, ordem){
   const l = (_mesaPosicoes[pos]||[]).find(x=>x.tempId===tempId);
   if(!l) return;
-  l.fato = (l.fato===ordem) ? 0 : ordem;
-  if(l.fato>0) l.intencao = null;
-  renderMesa();
-}
-// só disponível enquanto a linha ainda está em Aguardando (fato=0) — intenção nunca vira evento sozinha
-function mesaSetIntencao(pos, tempId, ordem){
-  const l = (_mesaPosicoes[pos]||[]).find(x=>x.tempId===tempId);
-  if(!l) return;
-  l.intencao = (l.intencao===ordem) ? null : ordem;
+  l.fato = ordem;
   renderMesa();
 }
 
@@ -1156,27 +1143,48 @@ function estagioIcone(desc){
   if(d.includes("pronto")) return "✅";
   return "•";
 }
-function mesaTrilhaHtml(pos, tempId, l, tipoMaterial){
-  const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
-  const aplicaveis = ESTAGIOS.filter(e=>e.ordem>0 && colunaAplica(e,tipoMaterial)).sort((a,b)=>a.ordem-b.ordem);
-  const aguardando = `<button type="button" class="wz-st${l.fato===0?" cur":""}" onclick="mesaSetFato('${pos}',${tempId},0)"><span class="wz-st-ic">⏳</span>Aguardando</button>`;
-  const passos = aplicaveis.map(e=>{
-    const cls = l.fato===e.ordem ? " cur" : (l.fato>0 && e.ordem<l.fato ? " done" : (l.fato===0 && l.intencao===e.ordem ? " intent" : ""));
-    return `<button type="button" class="wz-st${cls}" onclick="mesaSetFato('${pos}',${tempId},${e.ordem})"><span class="wz-st-ic">${estagioIcone(e.descricao)}</span>${escHtml(e.ordem>=maxOrdem?"Pronto":e.descricao)}</button>`;
-  }).join("");
-  const intencaoHtml = l.fato===0 ? mesaIntencaoHtml(pos,tempId,l,tipoMaterial) : "";
-  return `<div class="wz-pergunta">Onde este lote está agora?</div>
-    <div class="wz-trilha">${aguardando}${passos}</div>
-    ${intencaoHtml}`;
+// papel da coluna, deduzido da descrição (mesma leitura de estagioIcone)
+function estagioRole(desc){
+  const d = (desc||"").toLowerCase();
+  if(d.includes("compra")) return "compra";
+  if(d.includes("receb")||d.includes("estoque")) return "recebido";
+  if(d.includes("usinag")) return "usinagem";
+  if(d.includes("trat")) return "tt";
+  if(d.includes("pronto")) return "pronto";
+  return "";
 }
-// "entra por" — só as etapas intermediárias (exclui Aguardando e Pronto, que não são pontos de entrada)
-function mesaIntencaoHtml(pos, tempId, l, tipoMaterial){
-  const maxOrdem = Math.max(...ESTAGIOS.map(e=>e.ordem), 0);
-  const opcoes = ESTAGIOS.filter(e=>e.ordem>0 && e.ordem<maxOrdem && colunaAplica(e,tipoMaterial)).sort((a,b)=>a.ordem-b.ordem);
-  if(!opcoes.length) return "";
-  return `<div class="mesa-intencao"><span class="mesa-intencao-lbl">ainda vai começar — deve entrar por:</span>${opcoes.map(o=>
-    `<button type="button" class="mesa-chip${l.intencao===o.ordem?" on":""}" onclick="mesaSetIntencao('${pos}',${tempId},${o.ordem})">${escHtml(o.descricao)}</button>`
-  ).join("")}</div>`;
+// "retrato do material hoje" — situações de entrada (o lote entra na coluna do último processo JÁ concluído).
+// Metal Duro: 2 situações (Compra / Pronto). Aço: 4 (Compra / Recebido-Estoque / Usinagem / Pronto) — TT nunca é entrada.
+function mesaRetratoOpcoes(tipoMaterial){
+  const md = tipoMaterial==="metal_duro";
+  const aplic = ESTAGIOS.filter(e=>e.ordem>0 && colunaAplica(e,tipoMaterial)).sort((a,b)=>a.ordem-b.ordem);
+  const cfg = {
+    compra: md
+      ? { ic:"🛒", tit:"Não tem — precisa comprar", falta:"comprar (o metal duro chega pronto)" }
+      : { ic:"🛒", tit:"Não tem o aço ainda",        falta:"comprar → usinar → tratar" },
+    recebido: { ic:"📦", tit:"Aço em estoque (bruto)", falta:"usinar → tratar" },
+    usinagem: { ic:"⚙️", tit:"Já usinado",            falta:"só o tratamento térmico (TT)" },
+    pronto: md
+      ? { ic:"✅", tit:"Já tem em estoque — pronto", falta:"nada — pronto pra usar" }
+      : { ic:"✅", tit:"Já tratado — pronto",        falta:"nada — pronto pra usar" }
+  };
+  return aplic
+    .map(e=>({ ordem:e.ordem, col:e.descricao, role:estagioRole(e.descricao) }))
+    .filter(o=>o.role!=="tt" && cfg[o.role])        // TT não é ponto de entrada (usinado → coluna Usinagem)
+    .map(o=>Object.assign({ ordem:o.ordem, col:o.col }, cfg[o.role]));
+}
+function mesaRetratoHtml(pos, tempId, l, tipoMaterial){
+  const ops = mesaRetratoOpcoes(tipoMaterial);
+  const sel = ops.find(o=>o.ordem===l.fato) || null;
+  const botoes = ops.map(o=>
+    `<button type="button" class="mesa-sit${l.fato===o.ordem?" on":""}" onclick="mesaSetSituacao('${pos}',${tempId},${o.ordem})"><span class="mesa-sit-ic">${o.ic}</span><span class="mesa-sit-t">${escHtml(o.tit)}</span></button>`
+  ).join("");
+  const conseq = sel
+    ? `<div class="mesa-conseq"><span class="mesa-conseq-col">${estagioIcone(sel.col)} entra em <b>${escHtml(sel.col)}</b></span><span class="mesa-conseq-falta">falta: ${escHtml(sel.falta)}</span></div>`
+    : "";
+  return `<div class="wz-pergunta">Qual a situação deste material hoje?</div>
+    <div class="mesa-sit-wrap">${botoes}</div>
+    ${conseq}`;
 }
 function mesaLinhaHtml(pos, l, i, tipoMaterial, offset){
   return `<div class="wz-lote">
@@ -1191,7 +1199,7 @@ function mesaLinhaHtml(pos, l, i, tipoMaterial, offset){
         <button type="button" class="btn-g mini danger" title="Remover este lote do planejamento" onclick="mesaRemoverLinha('${pos}',${l.tempId})">🗑</button>
       </div>
     </div>
-    ${mesaTrilhaHtml(pos,l.tempId,l,tipoMaterial)}
+    ${mesaRetratoHtml(pos,l.tempId,l,tipoMaterial)}
   </div>`;
 }
 function mesaLoteExistenteHtml(comp){
@@ -1212,11 +1220,6 @@ function mesaStepPosicaoHtml(pos){
   const total = parseInt(_mesaItem.quantidade,10)||0;
   const alocado = mesaAlocado(pos);
   const pct = total>0 ? Math.min(100, alocado/total*100) : 0;
-  const n = linhas.length;
-
-  const chips = [0,1,2,3,4,5].map(x=>
-    `<button type="button" class="wz-nbtn${n===x?" on":""}" onclick="mesaDefinirNLotes('${pos}',${x})">${x}</button>`
-  ).join("") + `<button type="button" class="wz-nbtn mais" onclick="mesaDefinirNLotes('${pos}',${n+1})">+ mais</button>`;
 
   const existentesHtml = existentes.length
     ? `<div class="wz-sec-l">Lotes que já existem (${existentes.length}) <span style="color:var(--text3);font-weight:400">— clique para ver no Kanban</span></div>
@@ -1225,17 +1228,17 @@ function mesaStepPosicaoHtml(pos){
 
   const lotesHtml = linhas.length
     ? linhas.map((l,i)=>mesaLinhaHtml(pos,l,i,tipoMaterial,existentes.length)).join("")
-    : `<div class="mesa-hint">Nenhum lote novo — escolha um número acima.</div>`;
+    : `<div class="mesa-hint">Nenhum lote novo. Use “+ Adicionar lote” se precisar separar esta parte.</div>`;
 
   return `<div class="wz-q"><span style="color:${mesaCorPosicao(pos)}">${POS_ICONE[pos]}</span> ${POS_LABEL[pos]} · ${MATERIAL_LABEL[tipoMaterial]}</div>
   <div class="wz-q-sub">${total} pç no total do item.${existentes.length?" Já existem "+existentes.length+" lote(s) desta parte.":""}</div>
-  <div class="wz-sec-l">Em quantos lotes novos essa parte vai ser separada?</div>
-  <div class="wz-nlotes">${chips}</div>
+  <div class="wz-sec-l">Lotes novos desta parte</div>
   <div>
     <div class="mesa-alloc-track"><div class="mesa-alloc-fill${alocado>total?" over":""}" id="mesaAllocFill_${pos}" style="width:${pct}%"></div></div>
     <div class="mesa-alloc-lbl" id="mesaAllocLbl_${pos}">${alocado} de ${total} pç alocada${alocado>total?" — ⚠ passou do total":""}</div>
   </div>
   ${lotesHtml}
+  <button type="button" class="mesa-add-lote" onclick="mesaAdicionarLinha('${pos}')">+ Adicionar lote</button>
   ${existentesHtml}`;
 }
 
@@ -1357,7 +1360,7 @@ async function mesaSalvar(){
           item_id: itemId, posicao: p, tipo_material: tipoMaterial,
           lote_numero: nLotesExistentes, quantidade: parseInt(l.quantidade,10),
           observacao: (l.observacao||"").trim() || null,
-          entrada_prevista_ordem: (l.fato>0) ? null : (l.intencao || null)
+          entrada_prevista_ordem: null   // retrato sempre define uma coluna real de entrada — não há mais "entrada prevista"
         };
         const novo = await supaWrite("/rest/v1/material_lote_componentes","POST",payload);
         const row = Array.isArray(novo)?novo[0]:novo;

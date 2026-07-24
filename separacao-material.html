@@ -1056,7 +1056,14 @@ function mesaCroquiSvg(destaque){
   const outlinePeca = c => {
     const f = foco(c), y = yDe(c), h = altDe(c), w = c.re-c.ri;
     const at = `fill="none" stroke="${CB}" stroke-width="${bW(f)}" stroke-opacity="${bOp(f)}" stroke-linejoin="miter"`;
-    return `<rect x="${cx-c.re}" y="${y}" width="${w}" height="${h}" ${at}/><rect x="${cx+c.ri}" y="${y}" width="${w}" height="${h}" ${at}/>`;
+    // camada que encosta no furo fecha o vão com uma tampa em cima e outra embaixo
+    let caps = "";
+    if(Math.abs(c.ri-rFuro)<0.01){
+      const cap = yc => `<line x1="${cx-rFuro}" y1="${yc}" x2="${cx+rFuro}" y2="${yc}" stroke="${CB}" stroke-width="${bW(f)}" stroke-opacity="${bOp(f)}"/>`;
+      if(c.y0===0) caps += cap(fY);
+      if(c.y1===1) caps += cap(fY+fH);
+    }
+    return `<rect x="${cx-c.re}" y="${y}" width="${w}" height="${h}" ${at}/><rect x="${cx+c.ri}" y="${y}" width="${w}" height="${h}" ${at}/>${caps}`;
   };
   const outlines = camadas.filter(c=>!foco(c)).map(outlinePeca).join("") + camadas.filter(foco).map(outlinePeca).join("");
   const frontal = preench + outlines;
